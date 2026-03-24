@@ -406,13 +406,9 @@ function App() {
     appConfig.googleMapsApiKey ? "loading" : "missingKey"
   );
   const [mapReady, setMapReady] = useState(false);
-  const [calendlyState, setCalendlyState] = useState(
-    appConfig.calendlyUrl ? "loading" : "missingUrl"
-  );
 
   const mapLanguageRef = useRef(language);
   const mapRef = useRef(null);
-  const calendlyRef = useRef(null);
   const pickupInputRef = useRef(null);
   const destinationInputRef = useRef(null);
   const directionsServiceRef = useRef(null);
@@ -446,10 +442,6 @@ function App() {
     error: "map.placeholderError"
   }[mapState];
   const mapPlaceholderMessage = mapPlaceholderKey ? translate(mapPlaceholderKey) : "";
-  const calendlyPlaceholderMessage =
-    calendlyState === "error"
-      ? translate("schedule.placeholderError")
-      : translate("schedule.placeholder");
   const clientSummary =
     formData.customerName || formData.customerPhone
       ? `${formData.customerName || translate("summary.unnamedClient")} | ${
@@ -615,39 +607,6 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!appConfig.calendlyUrl || !calendlyRef.current) {
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    loadScript("https://assets.calendly.com/assets/external/widget.js")
-      .then(() => {
-        if (cancelled || !window.Calendly || !calendlyRef.current) {
-          return;
-        }
-
-        calendlyRef.current.innerHTML = "";
-        window.Calendly.initInlineWidget({
-          url: appConfig.calendlyUrl,
-          parentElement: calendlyRef.current
-        });
-        setCalendlyState("ready");
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-
-        setCalendlyState("error");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   function handleLanguageSelect(nextLanguage) {
     setLanguage(nextLanguage);
     storeLanguagePreference(nextLanguage);
@@ -801,7 +760,6 @@ function App() {
 
         <nav className="nav-links" aria-label="Primary">
           <a href="#planner">{translate("nav.reserve")}</a>
-          <a href="#schedule">{translate("nav.schedule")}</a>
         </nav>
 
         <div className="topbar-actions">
@@ -1122,45 +1080,11 @@ function App() {
                   <a className="button button-secondary" href={whatsAppLink} target="_blank" rel="noreferrer">
                     {translate("summary.whatsAppTrip")}
                   </a>
-                  <a className="button button-outline" href="#schedule">
-                    {translate("summary.chooseSlot")}
-                  </a>
                 </div>
 
                 <p className={`status-message${statusTone ? ` ${statusTone}` : ""}`} aria-live="polite">
                   {translate(statusKey)}
                 </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="schedule" id="schedule">
-          <div className="section-heading section-heading-compact">
-            <h2>{translate("schedule.eyebrow")}</h2>
-          </div>
-
-          <div className="schedule-layout">
-            <div className="schedule-copy">
-              <a
-                className={`button ${appConfig.calendlyUrl ? "button-primary" : "button-outline"}`}
-                href={appConfig.calendlyUrl || "#schedule"}
-                target={appConfig.calendlyUrl ? "_blank" : undefined}
-                rel={appConfig.calendlyUrl ? "noreferrer" : undefined}
-              >
-                {translate("schedule.openPage")}
-              </a>
-              {!appConfig.calendlyUrl && (
-                <p className="schedule-helper">{translate("schedule.helperMissing")}</p>
-              )}
-            </div>
-
-            <div className="calendly-shell">
-              <div className="calendly-inline">
-                <div ref={calendlyRef} className="calendly-embed"></div>
-                {calendlyState !== "ready" && (
-                  <div className="calendly-placeholder">{calendlyPlaceholderMessage}</div>
-                )}
               </div>
             </div>
           </div>

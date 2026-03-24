@@ -65,7 +65,7 @@ export const translations = {
     planner: {
       eyebrow: "Reserve a ride",
       title: "Plan the trip first, then choose the confirmation method.",
-      body: "This is the strongest version of your idea: one form for route details, one clean summary, and then the client can either email you, call you, or choose a slot for scheduling.",
+      body: "One form for route details, one clear summary, then the client can send the trip by email or WhatsApp in just a few taps.",
       introLabel: "Mobile booking flow",
       steps: ["1. Route", "2. Contact", "3. Confirm"],
       tripTitle: "Trip details",
@@ -96,7 +96,7 @@ export const translations = {
       roundTripHint: "Round-trip estimates currently use the same route in reverse, so the total updates instantly.",
       calculateTrip: "Calculate route and fare",
       prepareEmail: "Prepare booking email",
-      footnote: "Tip: if a client prefers speaking directly, they can always call instead of filling everything in."
+      footnote: "Tip: if a client prefers speaking directly, they can send the trip on WhatsApp instead of filling everything in."
     },
     map: {
       label: "Live route preview",
@@ -110,7 +110,7 @@ export const translations = {
     },
     summary: {
       label: "Trip summary",
-      tag: "Ready for email or scheduling",
+      tag: "Ready to send",
       readyLabel: "Current estimate",
       distance: "Distance",
       duration: "Duration",
@@ -128,7 +128,6 @@ export const translations = {
       phoneMissing: "Phone missing",
       emailTrip: "Email this trip",
       whatsAppTrip: "Send on WhatsApp",
-      chooseSlot: "Choose a pickup slot",
       defaultStatus: "Enter a pickup, destination, and client details to prepare the request."
     },
     schedule: {
@@ -163,12 +162,12 @@ export const translations = {
       destinationRequired: "Destination is required.",
       nameRequired: "Client name is required.",
       phoneRequired: "Phone number is required.",
-      mapsNotConfigured: "Google Maps is not configured yet. You can still prepare the booking email or accept phone calls.",
+      mapsNotConfigured: "Google Maps is not configured yet. You can still prepare the booking email or send the request on WhatsApp.",
       mapsLoading: "Google Maps is still loading. Please try again in a moment.",
       calculatingRoute: "Calculating the driving route...",
-      routeReady: "Route ready. The client can now email the request or choose a pickup slot.",
-      routeReadyRoundTrip: "Route ready. The total estimate now includes the return trip as well.",
-      routeError: "I could not calculate that route right now. Please check the addresses or contact directly by phone.",
+      routeReady: "Route ready. The client can now send the request by email or WhatsApp.",
+      routeReadyRoundTrip: "Route ready. The total estimate now includes the return trip and is ready to send.",
+      routeError: "I could not calculate that route right now. Please check the addresses or send the trip manually by email or WhatsApp.",
       emailWithoutRoute: "The route could not be calculated automatically, but the booking email can still be prepared.",
       emailPrepared: "Your email app should open with the trip details already filled in.",
       mapsConnected: "Google Maps is connected. Clients can now calculate driving routes.",
@@ -273,7 +272,7 @@ export const translations = {
     planner: {
       eyebrow: "Reserver un trajet",
       title: "Commencez par le trajet, puis choisissez le mode de confirmation.",
-      body: "C'est la version la plus solide de votre idee : un seul formulaire pour les details du trajet, un resume clair, puis le client choisit entre email, appel ou reservation d'un creneau.",
+      body: "Un seul formulaire pour les details du trajet, un resume clair, puis le client peut envoyer la demande par email ou WhatsApp en quelques clics.",
       introLabel: "Parcours mobile",
       steps: ["1. Itineraire", "2. Contact", "3. Confirmation"],
       tripTitle: "Details du trajet",
@@ -304,7 +303,7 @@ export const translations = {
       roundTripHint: "Les estimations aller-retour utilisent actuellement le meme trajet en sens inverse pour mettre a jour le total instantanement.",
       calculateTrip: "Calculer le trajet et le tarif",
       prepareEmail: "Preparer l'email de reservation",
-      footnote: "Astuce : si un client prefere parler directement, il peut toujours appeler au lieu de tout remplir."
+      footnote: "Astuce : si un client prefere aller vite, il peut envoyer le trajet sur WhatsApp au lieu de tout remplir."
     },
     map: {
       label: "Apercu de l'itineraire",
@@ -318,7 +317,7 @@ export const translations = {
     },
     summary: {
       label: "Resume du trajet",
-      tag: "Pret pour email ou planification",
+      tag: "Pret a envoyer",
       readyLabel: "Estimation actuelle",
       distance: "Distance",
       duration: "Duree",
@@ -336,7 +335,6 @@ export const translations = {
       phoneMissing: "Telephone manquant",
       emailTrip: "Envoyer ce trajet par email",
       whatsAppTrip: "Envoyer sur WhatsApp",
-      chooseSlot: "Choisir un creneau",
       defaultStatus: "Entrez le depart, la destination et les details du client pour preparer la demande."
     },
     schedule: {
@@ -371,12 +369,12 @@ export const translations = {
       destinationRequired: "La destination est obligatoire.",
       nameRequired: "Le nom du client est obligatoire.",
       phoneRequired: "Le numero de telephone est obligatoire.",
-      mapsNotConfigured: "Google Maps n'est pas encore configure. Vous pouvez quand meme preparer l'email de reservation ou accepter les appels.",
+      mapsNotConfigured: "Google Maps n'est pas encore configure. Vous pouvez quand meme preparer l'email de reservation ou envoyer la demande sur WhatsApp.",
       mapsLoading: "Google Maps est encore en cours de chargement. Reessayez dans un instant.",
       calculatingRoute: "Calcul de l'itineraire en cours...",
-      routeReady: "Itineraire pret. Le client peut maintenant envoyer la demande par email ou choisir un creneau.",
-      routeReadyRoundTrip: "Itineraire pret. Le total estime inclut maintenant aussi le retour.",
-      routeError: "Impossible de calculer cet itineraire pour le moment. Verifiez les adresses ou contactez directement par telephone.",
+      routeReady: "Itineraire pret. Le client peut maintenant envoyer la demande par email ou WhatsApp.",
+      routeReadyRoundTrip: "Itineraire pret. Le total estime inclut maintenant aussi le retour et peut etre envoye.",
+      routeError: "Impossible de calculer cet itineraire pour le moment. Verifiez les adresses ou envoyez la demande manuellement par email ou WhatsApp.",
       emailWithoutRoute: "L'itineraire n'a pas pu etre calcule automatiquement, mais l'email de reservation peut quand meme etre prepare.",
       emailPrepared: "Votre application email devrait s'ouvrir avec les details du trajet deja remplis.",
       mapsConnected: "Google Maps est connecte. Les clients peuvent maintenant calculer les itineraires routiers.",
