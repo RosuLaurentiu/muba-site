@@ -20,6 +20,7 @@ export const translations = {
       schedule: "Schedule",
       contact: "Contact",
       callNow: "Call now",
+      whatsApp: "WhatsApp",
       languageLabel: "Language selector"
     },
     hero: {
@@ -110,6 +111,7 @@ export const translations = {
     summary: {
       label: "Trip summary",
       tag: "Ready for email or scheduling",
+      readyLabel: "Current estimate",
       distance: "Distance",
       duration: "Duration",
       fare: "Estimated fare",
@@ -119,11 +121,13 @@ export const translations = {
       roundTrip: "Round trip",
       client: "Client",
       notCalculated: "Not calculated yet",
-      farePending: "Min EUR 20 and EUR 1 per km. Over 100 km: from EUR 140 at EUR 1.4 per km, with a EUR 30 per hour traffic floor.",
+      farePending: "Estimate after route",
+      fareHint: "Calculate the route to show the total estimate.",
       clientPending: "Waiting for trip details",
       unnamedClient: "Unnamed client",
       phoneMissing: "Phone missing",
       emailTrip: "Email this trip",
+      whatsAppTrip: "Send on WhatsApp",
       chooseSlot: "Choose a pickup slot",
       defaultStatus: "Enter a pickup, destination, and client details to prepare the request."
     },
@@ -199,6 +203,11 @@ export const translations = {
       notApplicable: "Not applicable",
       confirm: "Please confirm availability.",
       notProvided: "Not provided"
+    },
+    whatsApp: {
+      greeting: "Hello",
+      requestLine: "I would like to request this ride on WhatsApp.",
+      confirm: "Please confirm availability here on WhatsApp."
     }
   },
   fr: {
@@ -219,6 +228,7 @@ export const translations = {
       schedule: "Planifier",
       contact: "Contact",
       callNow: "Appeler",
+      whatsApp: "WhatsApp",
       languageLabel: "Selecteur de langue"
     },
     hero: {
@@ -309,6 +319,7 @@ export const translations = {
     summary: {
       label: "Resume du trajet",
       tag: "Pret pour email ou planification",
+      readyLabel: "Estimation actuelle",
       distance: "Distance",
       duration: "Duree",
       fare: "Tarif estime",
@@ -318,11 +329,13 @@ export const translations = {
       roundTrip: "Aller-retour",
       client: "Client",
       notCalculated: "Pas encore calcule",
-      farePending: "Min 20 EUR et 1 EUR par km. Au-dela de 100 km : a partir de 140 EUR a 1,4 EUR par km, avec un plancher de 30 EUR par heure.",
+      farePending: "Estimation apres l'itineraire",
+      fareHint: "Calculez l'itineraire pour afficher le total estime.",
       clientPending: "En attente des details du trajet",
       unnamedClient: "Client sans nom",
       phoneMissing: "Telephone manquant",
       emailTrip: "Envoyer ce trajet par email",
+      whatsAppTrip: "Envoyer sur WhatsApp",
       chooseSlot: "Choisir un creneau",
       defaultStatus: "Entrez le depart, la destination et les details du client pour preparer la demande."
     },
@@ -398,6 +411,11 @@ export const translations = {
       notApplicable: "Non applicable",
       confirm: "Merci de confirmer la disponibilite.",
       notProvided: "Non renseigne"
+    },
+    whatsApp: {
+      greeting: "Bonjour",
+      requestLine: "Je souhaite demander ce trajet sur WhatsApp.",
+      confirm: "Merci de confirmer la disponibilite ici sur WhatsApp."
     }
   }
 };

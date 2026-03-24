@@ -252,6 +252,59 @@ function buildMailtoLink({ formData, route, language }) {
   return `mailto:${appConfig.email}?subject=${subject}&body=${body}`;
 }
 
+function buildWhatsAppLink({ formData, route, language }) {
+  const mail = getText(language, "mail");
+  const whatsApp = getText(language, "whatsApp");
+  const businessName = getLocalizedConfigValue(appConfig.businessName, language);
+  const vehicle = getVehicleConfig(formData.vehicleType);
+  const totals = getRouteTotals(route, formData.roundTrip);
+  const tripTypeSummary = getTripTypeLabel(language, formData.roundTrip);
+  const vehicleSummary = getLocalizedConfigValue(vehicle.label, language);
+  const dateSummary = formData.pickupDate || mail.toBeConfirmed;
+  const timeSummary = formData.pickupTime || mail.toBeConfirmed;
+  const returnDateSummary = formData.roundTrip
+    ? formData.returnDate || mail.toBeConfirmed
+    : mail.notApplicable;
+  const returnTimeSummary = formData.roundTrip
+    ? formData.returnTime || mail.toBeConfirmed
+    : mail.notApplicable;
+  const distanceSummary = totals
+    ? formatDistance(totals.distanceKm, language)
+    : mail.toBeConfirmed;
+  const durationSummary = totals
+    ? formatDuration(totals.durationMinutes, language)
+    : mail.toBeConfirmed;
+  const fareSummary = totals ? formatFare(totals.fare, language) : mail.toBeConfirmed;
+  const phone = appConfig.phoneLink.replace(/\D/g, "");
+  const message = encodeURIComponent(
+    [
+      `${whatsApp.greeting} ${businessName},`,
+      "",
+      whatsApp.requestLine,
+      "",
+      `${mail.name}: ${formData.customerName || mail.notProvided}`,
+      `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
+      `${mail.vehicle}: ${vehicleSummary}`,
+      `${mail.tripType}: ${tripTypeSummary}`,
+      `${mail.pickup}: ${formData.pickup || mail.notProvided}`,
+      `${mail.destination}: ${formData.destination || mail.notProvided}`,
+      `${mail.preferredDate}: ${dateSummary}`,
+      `${mail.preferredTime}: ${timeSummary}`,
+      `${mail.returnDate}: ${returnDateSummary}`,
+      `${mail.returnTime}: ${returnTimeSummary}`,
+      `${mail.passengers}: ${formData.passengers || "1"}`,
+      `${mail.distance}: ${distanceSummary}`,
+      `${mail.travelTime}: ${durationSummary}`,
+      `${mail.estimatedFare}: ${fareSummary}`,
+      `${mail.extraDetails}: ${formData.notes || mail.none}`,
+      "",
+      whatsApp.confirm
+    ].join("\n")
+  );
+
+  return `https://wa.me/${phone}?text=${message}`;
+}
+
 function getMapStyles() {
   return [
     { elementType: "geometry", stylers: [{ color: "#151516" }] },
@@ -299,6 +352,20 @@ function clearPacContainers() {
 function syncPacContainer(inputElement) {
   window.setTimeout(() => {
     const inputRect = inputElement.getBoundingClientRect();
+
+    if (window.innerWidth <= 780) {
+      document.querySelectorAll(".pac-container").forEach((container) => {
+        container.classList.add("pac-container-active");
+        container.style.left = "10px";
+        container.style.top = `${Math.min(
+          inputRect.bottom + 8,
+          window.innerHeight - 220
+        )}px`;
+        container.style.width = `${Math.max(window.innerWidth - 20, 0)}px`;
+      });
+      return;
+    }
+
     const inputLeft = inputRect.left + window.scrollX;
     const inputBottom = inputRect.bottom + window.scrollY;
     const containers = Array.from(document.querySelectorAll(".pac-container"));
@@ -355,6 +422,7 @@ function App() {
   const businessName = getLocalizedConfigValue(appConfig.businessName, language);
   const selectedVehicle = getVehicleConfig(formData.vehicleType);
   const routeTotals = getRouteTotals(route, formData.roundTrip);
+  const routeReady = Boolean(routeTotals);
   const vehicleOptions = Object.entries(appConfig.vehicles).map(([key, vehicle]) => ({
     key,
     label: getLocalizedConfigValue(vehicle.label, language),
@@ -364,6 +432,7 @@ function App() {
     String(index + 1)
   );
   const mailtoLink = buildMailtoLink({ formData, route, language });
+  const whatsAppLink = buildWhatsAppLink({ formData, route, language });
   const mapBadgeKey = {
     missingKey: "map.badgeAddKey",
     loading: "map.badgeWaiting",
@@ -381,6 +450,21 @@ function App() {
     calendlyState === "error"
       ? translate("schedule.placeholderError")
       : translate("schedule.placeholder");
+  const clientSummary =
+    formData.customerName || formData.customerPhone
+      ? `${formData.customerName || translate("summary.unnamedClient")} | ${
+          formData.customerPhone || translate("summary.phoneMissing")
+        }`
+      : translate("summary.clientPending");
+  const fareDisplay = routeReady
+    ? formatFare(routeTotals.fare, language)
+    : translate("summary.farePending");
+  const fareContext = routeReady
+    ? `${getTripTypeLabel(language, formData.roundTrip)} • ${getLocalizedConfigValue(
+        selectedVehicle.label,
+        language
+      )}`
+    : translate("summary.fareHint");
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -740,15 +824,27 @@ function App() {
       <main>
         <section className="planner" id="planner">
           <div className="section-heading section-heading-compact" id="home">
-            <h2>{translate("planner.eyebrow")}</h2>
+            <p className="eyebrow">{translate("planner.eyebrow")}</p>
+            <h2>{translate("planner.title")}</h2>
+            <p>{translate("planner.body")}</p>
           </div>
 
           <div className="planner-layout">
             <form className="booking-form" onSubmit={handlePrepareEmail}>
               <section className="form-intro" aria-label={translate("planner.introLabel")}>
+                <div className="form-intro-head">
+                  <div className="intro-flow" aria-label={translate("planner.introLabel")}>
+                    {translate("planner.steps").map((step) => (
+                      <span key={step} className="step-pill">
+                        {step}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="form-intro-note">{translate("planner.footnote")}</p>
+                </div>
                 <div className="form-intro-contact">
-                  <a className="contact-shortcut-card" href={`tel:${appConfig.phoneLink}`}>
-                    <span className="contact-shortcut-label">{translate("nav.callNow")}</span>
+                  <a className="contact-shortcut-card" href={whatsAppLink} target="_blank" rel="noreferrer">
+                    <span className="contact-shortcut-label">{translate("nav.whatsApp")}</span>
                     <strong>{appConfig.phoneDisplay}</strong>
                   </a>
 
@@ -762,6 +858,7 @@ function App() {
               <section className="form-section" aria-labelledby="trip-details-heading">
                 <div className="form-section-head">
                   <h3 id="trip-details-heading">{translate("planner.tripTitle")}</h3>
+                  <p>{translate("planner.tripBody")}</p>
                 </div>
 
                 <div className="field field-full">
@@ -828,48 +925,56 @@ function App() {
 
                   <label className="field">
                     <span>{translate("planner.labels.date")}</span>
-                    <input
-                      id="pickup-date"
-                      name="pickupDate"
-                      type="date"
-                      value={formData.pickupDate}
-                      onChange={handleInputChange}
-                    />
+                    <div className="input-shell input-shell-picker input-shell-date">
+                      <input
+                        id="pickup-date"
+                        name="pickupDate"
+                        type="date"
+                        value={formData.pickupDate}
+                        onChange={handleInputChange}
+                      />
+                    </div>
                   </label>
 
                   <label className="field">
                     <span>{translate("planner.labels.time")}</span>
-                    <input
-                      id="pickup-time"
-                      name="pickupTime"
-                      type="time"
-                      value={formData.pickupTime}
-                      onChange={handleInputChange}
-                    />
+                    <div className="input-shell input-shell-picker input-shell-time">
+                      <input
+                        id="pickup-time"
+                        name="pickupTime"
+                        type="time"
+                        value={formData.pickupTime}
+                        onChange={handleInputChange}
+                      />
+                    </div>
                   </label>
 
                   {formData.roundTrip && (
                     <>
                       <label className="field">
                         <span>{translate("planner.labels.returnDate")}</span>
-                        <input
-                          id="return-date"
-                          name="returnDate"
-                          type="date"
-                          value={formData.returnDate}
-                          onChange={handleInputChange}
-                        />
+                        <div className="input-shell input-shell-picker input-shell-date">
+                          <input
+                            id="return-date"
+                            name="returnDate"
+                            type="date"
+                            value={formData.returnDate}
+                            onChange={handleInputChange}
+                          />
+                        </div>
                       </label>
 
                       <label className="field">
                         <span>{translate("planner.labels.returnTime")}</span>
-                        <input
-                          id="return-time"
-                          name="returnTime"
-                          type="time"
-                          value={formData.returnTime}
-                          onChange={handleInputChange}
-                        />
+                        <div className="input-shell input-shell-picker input-shell-time">
+                          <input
+                            id="return-time"
+                            name="returnTime"
+                            type="time"
+                            value={formData.returnTime}
+                            onChange={handleInputChange}
+                          />
+                        </div>
                       </label>
 
                       <p className="field-hint field-full">{translate("planner.roundTripHint")}</p>
@@ -881,6 +986,7 @@ function App() {
               <section className="form-section" aria-labelledby="contact-details-heading">
                 <div className="form-section-head">
                   <h3 id="contact-details-heading">{translate("planner.contactTitle")}</h3>
+                  <p>{translate("planner.contactBody")}</p>
                 </div>
 
                 <div className="form-grid">
@@ -970,11 +1076,19 @@ function App() {
                   <span className="summary-tag">{translate("summary.tag")}</span>
                 </div>
 
+                <div className={`summary-hero${routeReady ? " is-ready" : ""}`}>
+                  <span className="summary-hero-label">{translate("summary.readyLabel")}</span>
+                  <strong className={`summary-amount${routeReady ? "" : " is-placeholder"}`}>
+                    {fareDisplay}
+                  </strong>
+                  <p className="summary-subcopy">{fareContext}</p>
+                </div>
+
                 <dl className="summary-grid">
                   <div>
                     <dt>{translate("summary.distance")}</dt>
                     <dd>
-                      {routeTotals
+                      {routeReady
                         ? formatDistance(routeTotals.distanceKm, language)
                         : translate("summary.notCalculated")}
                     </dd>
@@ -982,17 +1096,9 @@ function App() {
                   <div>
                     <dt>{translate("summary.duration")}</dt>
                     <dd>
-                      {routeTotals
+                      {routeReady
                         ? formatDuration(routeTotals.durationMinutes, language)
                         : translate("summary.notCalculated")}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{translate("summary.fare")}</dt>
-                    <dd>
-                      {routeTotals
-                        ? formatFare(routeTotals.fare, language)
-                        : translate("summary.farePending")}
                     </dd>
                   </div>
                   <div>
@@ -1003,26 +1109,20 @@ function App() {
                     <dt>{translate("summary.tripType")}</dt>
                     <dd>{getTripTypeLabel(language, formData.roundTrip)}</dd>
                   </div>
-                  <div>
+                  <div className="summary-wide">
                     <dt>{translate("summary.client")}</dt>
-                    <dd>
-                      {formData.customerName || formData.customerPhone
-                        ? `${formData.customerName || translate("summary.unnamedClient")} | ${
-                            formData.customerPhone || translate("summary.phoneMissing")
-                          }`
-                        : translate("summary.clientPending")}
-                    </dd>
+                    <dd>{clientSummary}</dd>
                   </div>
                 </dl>
 
                 <div className="summary-actions">
-                  <a className="button button-secondary" href={`tel:${appConfig.phoneLink}`}>
-                    {translate("nav.callNow")}
-                  </a>
-                  <a className="button button-outline" href={mailtoLink}>
+                  <a className="button button-primary" href={mailtoLink}>
                     {translate("summary.emailTrip")}
                   </a>
-                  <a className="button button-secondary" href="#schedule">
+                  <a className="button button-secondary" href={whatsAppLink} target="_blank" rel="noreferrer">
+                    {translate("summary.whatsAppTrip")}
+                  </a>
+                  <a className="button button-outline" href="#schedule">
                     {translate("summary.chooseSlot")}
                   </a>
                 </div>
