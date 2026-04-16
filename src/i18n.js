@@ -183,10 +183,17 @@ export const translations = {
       toBeConfirmed: "To be confirmed",
       greeting: "Hello",
       requestLine: "I would like to request a taxi ride.",
+      requestShort: "Please find my booking request below.",
       name: "Name",
+      client: "Client",
       phone: "Phone",
       vehicle: "Vehicle",
       tripType: "Trip type",
+      route: "Route",
+      departure: "Departure",
+      returnTrip: "Return",
+      estimate: "Estimate",
+      notes: "Notes",
       pickup: "Pickup",
       destination: "Destination",
       preferredDate: "Preferred date",
@@ -206,6 +213,7 @@ export const translations = {
     whatsApp: {
       greeting: "Hello",
       requestLine: "I would like to request this ride on WhatsApp.",
+      requestShort: "Please find my booking request below.",
       confirm: "Please confirm availability here on WhatsApp."
     }
   },
@@ -390,10 +398,17 @@ export const translations = {
       toBeConfirmed: "A confirmer",
       greeting: "Bonjour",
       requestLine: "Je souhaite reserver une course en taxi.",
+      requestShort: "Veuillez trouver ma demande de reservation ci-dessous.",
       name: "Nom",
+      client: "Client",
       phone: "Telephone",
       vehicle: "Vehicule",
       tripType: "Type de trajet",
+      route: "Trajet",
+      departure: "Depart",
+      returnTrip: "Retour",
+      estimate: "Estimation",
+      notes: "Notes",
       pickup: "Depart",
       destination: "Destination",
       preferredDate: "Date souhaitee",
@@ -413,6 +428,7 @@ export const translations = {
     whatsApp: {
       greeting: "Bonjour",
       requestLine: "Je souhaite demander ce trajet sur WhatsApp.",
+      requestShort: "Veuillez trouver ma demande de reservation ci-dessous.",
       confirm: "Merci de confirmer la disponibilite ici sur WhatsApp."
     }
   }

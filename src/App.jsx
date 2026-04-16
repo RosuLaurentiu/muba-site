@@ -176,6 +176,42 @@ function getTripTypeLabel(language, roundTrip) {
   return getText(language, roundTrip ? "summary.roundTrip" : "summary.oneWay");
 }
 
+function buildCompactTripLines({ formData, language, route }) {
+  const mail = getText(language, "mail");
+  const totals = getRouteTotals(route, formData.roundTrip);
+  const dateSummary = formData.pickupDate || mail.toBeConfirmed;
+  const timeSummary = formData.pickupTime || mail.toBeConfirmed;
+  const routeSummary = `${formData.pickup || mail.notProvided} -> ${
+    formData.destination || mail.notProvided
+  }`;
+  const timingSummary = `${dateSummary} | ${timeSummary}`;
+  const tripSummary = getTripTypeLabel(language, formData.roundTrip);
+  const passengerSummary = formData.passengers || "1";
+  const estimateParts = [];
+
+  if (totals) {
+    estimateParts.push(formatDistance(totals.distanceKm, language));
+    estimateParts.push(formatDuration(totals.durationMinutes, language));
+    estimateParts.push(formatFare(totals.fare, language));
+  }
+
+  return [
+    `${mail.route}: ${routeSummary}`,
+    `${mail.departure}: ${timingSummary}`,
+    `${mail.tripType}: ${tripSummary}`,
+    `${mail.passengers}: ${passengerSummary}`,
+    `${mail.client}: ${formData.customerName || mail.notProvided}`,
+    `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
+    estimateParts.length ? `${mail.estimate}: ${estimateParts.join(" | ")}` : "",
+    formData.roundTrip && (formData.returnDate || formData.returnTime)
+      ? `${mail.returnTrip}: ${formData.returnDate || mail.toBeConfirmed} | ${
+          formData.returnTime || mail.toBeConfirmed
+        }`
+      : "",
+    formData.notes ? `${mail.notes}: ${formData.notes}` : ""
+  ].filter(Boolean);
+}
+
 function getRouteTotals(route, roundTrip) {
   if (!route) {
     return null;
@@ -193,24 +229,8 @@ function getRouteTotals(route, roundTrip) {
 function buildMailtoLink({ formData, route, language }) {
   const mail = getText(language, "mail");
   const businessName = getLocalizedConfigValue(appConfig.businessName, language);
-  const vehicle = getVehicleConfig(formData.vehicleType);
-  const totals = getRouteTotals(route, formData.roundTrip);
-  const tripTypeSummary = getTripTypeLabel(language, formData.roundTrip);
   const dateSummary = formData.pickupDate || mail.toBeConfirmed;
-  const timeSummary = formData.pickupTime || mail.toBeConfirmed;
-  const returnDateSummary = formData.roundTrip
-    ? formData.returnDate || mail.toBeConfirmed
-    : mail.notApplicable;
-  const returnTimeSummary = formData.roundTrip
-    ? formData.returnTime || mail.toBeConfirmed
-    : mail.notApplicable;
-  const distanceSummary = totals
-    ? formatDistance(totals.distanceKm, language)
-    : mail.toBeConfirmed;
-  const durationSummary = totals
-    ? formatDuration(totals.durationMinutes, language)
-    : mail.toBeConfirmed;
-  const fareSummary = totals ? formatFare(totals.fare, language) : mail.toBeConfirmed;
+  const compactTripLines = buildCompactTripLines({ formData, language, route });
 
   const subject = encodeURIComponent(
     `${mail.subjectPrefix} | ${formData.customerName || mail.newClient} | ${dateSummary}`
@@ -219,22 +239,9 @@ function buildMailtoLink({ formData, route, language }) {
     [
       `${mail.greeting} ${businessName},`,
       "",
-      mail.requestLine,
+      mail.requestShort,
       "",
-      `${mail.name}: ${formData.customerName || mail.notProvided}`,
-      `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
-      `${mail.tripType}: ${tripTypeSummary}`,
-      `${mail.pickup}: ${formData.pickup || mail.notProvided}`,
-      `${mail.destination}: ${formData.destination || mail.notProvided}`,
-      `${mail.preferredDate}: ${dateSummary}`,
-      `${mail.preferredTime}: ${timeSummary}`,
-      `${mail.returnDate}: ${returnDateSummary}`,
-      `${mail.returnTime}: ${returnTimeSummary}`,
-      `${mail.passengers}: ${formData.passengers || "1"}`,
-      `${mail.distance}: ${distanceSummary}`,
-      `${mail.travelTime}: ${durationSummary}`,
-      `${mail.estimatedFare}: ${fareSummary}`,
-      `${mail.extraDetails}: ${formData.notes || mail.none}`,
+      ...compactTripLines,
       "",
       mail.confirm
     ].join("\n")
@@ -247,45 +254,15 @@ function buildWhatsAppLink({ formData, route, language }) {
   const mail = getText(language, "mail");
   const whatsApp = getText(language, "whatsApp");
   const businessName = getLocalizedConfigValue(appConfig.businessName, language);
-  const vehicle = getVehicleConfig(formData.vehicleType);
-  const totals = getRouteTotals(route, formData.roundTrip);
-  const tripTypeSummary = getTripTypeLabel(language, formData.roundTrip);
-  const dateSummary = formData.pickupDate || mail.toBeConfirmed;
-  const timeSummary = formData.pickupTime || mail.toBeConfirmed;
-  const returnDateSummary = formData.roundTrip
-    ? formData.returnDate || mail.toBeConfirmed
-    : mail.notApplicable;
-  const returnTimeSummary = formData.roundTrip
-    ? formData.returnTime || mail.toBeConfirmed
-    : mail.notApplicable;
-  const distanceSummary = totals
-    ? formatDistance(totals.distanceKm, language)
-    : mail.toBeConfirmed;
-  const durationSummary = totals
-    ? formatDuration(totals.durationMinutes, language)
-    : mail.toBeConfirmed;
-  const fareSummary = totals ? formatFare(totals.fare, language) : mail.toBeConfirmed;
   const phone = appConfig.phoneLink.replace(/\D/g, "");
+  const compactTripLines = buildCompactTripLines({ formData, language, route });
   const message = encodeURIComponent(
     [
       `${whatsApp.greeting} ${businessName},`,
       "",
-      whatsApp.requestLine,
+      whatsApp.requestShort,
       "",
-      `${mail.name}: ${formData.customerName || mail.notProvided}`,
-      `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
-      `${mail.tripType}: ${tripTypeSummary}`,
-      `${mail.pickup}: ${formData.pickup || mail.notProvided}`,
-      `${mail.destination}: ${formData.destination || mail.notProvided}`,
-      `${mail.preferredDate}: ${dateSummary}`,
-      `${mail.preferredTime}: ${timeSummary}`,
-      `${mail.returnDate}: ${returnDateSummary}`,
-      `${mail.returnTime}: ${returnTimeSummary}`,
-      `${mail.passengers}: ${formData.passengers || "1"}`,
-      `${mail.distance}: ${distanceSummary}`,
-      `${mail.travelTime}: ${durationSummary}`,
-      `${mail.estimatedFare}: ${fareSummary}`,
-      `${mail.extraDetails}: ${formData.notes || mail.none}`,
+      ...compactTripLines,
       "",
       whatsApp.confirm
     ].join("\n")
