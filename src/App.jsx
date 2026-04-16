@@ -416,6 +416,7 @@ function App() {
 
   const translate = (key) => getText(language, key);
   const businessName = getLocalizedConfigValue(appConfig.businessName, language);
+  const brandMark = businessName.trim().charAt(0).toUpperCase() || "P";
   const selectedVehicle = getVehicleConfig(formData.vehicleType);
   const routeTotals = getRouteTotals(route, formData.roundTrip);
   const routeReady = Boolean(routeTotals);
@@ -452,7 +453,7 @@ function App() {
     ? formatFare(routeTotals.fare, language)
     : translate("summary.farePending");
   const fareContext = routeReady
-    ? `${getTripTypeLabel(language, formData.roundTrip)} • ${getLocalizedConfigValue(
+    ? `${getTripTypeLabel(language, formData.roundTrip)} | ${getLocalizedConfigValue(
         selectedVehicle.label,
         language
       )}`
@@ -754,8 +755,8 @@ function App() {
 
       <header className="topbar">
         <a className="brand" href="#home">
-          <span className="brand-mark">M</span>
-          <span>{businessName}</span>
+          <span className="brand-mark">{brandMark}</span>
+          <span id="brand-name">{businessName}</span>
         </a>
 
         <nav className="nav-links" aria-label="Primary">
@@ -781,16 +782,16 @@ function App() {
 
       <main>
         <section className="planner" id="planner">
-          <div className="section-heading section-heading-compact" id="home">
-            <p className="eyebrow">{translate("planner.eyebrow")}</p>
-            <h2>{translate("planner.title")}</h2>
-            <p>{translate("planner.body")}</p>
-          </div>
-
           <div className="planner-layout">
-            <form className="booking-form" onSubmit={handlePrepareEmail}>
-              <section className="form-intro" aria-label={translate("planner.introLabel")}>
-                <div className="form-intro-head">
+            <div className="planner-main">
+              <section className="hero-card" id="home">
+                <div className="section-heading section-heading-compact">
+                  <p className="eyebrow">{translate("planner.eyebrow")}</p>
+                  <h2>{translate("planner.title")}</h2>
+                  <p>{translate("planner.body")}</p>
+                </div>
+
+                <div className="hero-card-footer">
                   <div className="intro-flow" aria-label={translate("planner.introLabel")}>
                     {translate("planner.steps").map((step) => (
                       <span key={step} className="step-pill">
@@ -798,223 +799,226 @@ function App() {
                       </span>
                     ))}
                   </div>
-                  <p className="form-intro-note">{translate("planner.footnote")}</p>
-                </div>
-                <div className="form-intro-contact">
-                  <a className="contact-shortcut-card" href={whatsAppLink} target="_blank" rel="noreferrer">
-                    <span className="contact-shortcut-label">{translate("nav.whatsApp")}</span>
-                    <strong>{appConfig.phoneDisplay}</strong>
-                  </a>
 
-                  <a className="contact-shortcut-card" href={`mailto:${appConfig.email}`}>
-                    <span className="contact-shortcut-label">{translate("footer.email")}</span>
-                    <strong>{appConfig.email}</strong>
-                  </a>
-                </div>
-              </section>
+                  <div className="form-intro-contact">
+                    <a className="contact-shortcut-card" href={whatsAppLink} target="_blank" rel="noreferrer">
+                      <span className="contact-shortcut-label">{translate("nav.whatsApp")}</span>
+                      <strong>{appConfig.phoneDisplay}</strong>
+                    </a>
 
-              <section className="form-section" aria-labelledby="trip-details-heading">
-                <div className="form-section-head">
-                  <h3 id="trip-details-heading">{translate("planner.tripTitle")}</h3>
-                  <p>{translate("planner.tripBody")}</p>
-                </div>
-
-                <div className="field field-full">
-                  <span>{translate("planner.labels.vehicle")}</span>
-                  <div className="vehicle-grid" role="radiogroup" aria-label={translate("planner.labels.vehicle")}>
-                    {vehicleOptions.map((vehicle) => (
-                      <button
-                        key={vehicle.key}
-                        className={`vehicle-card${formData.vehicleType === vehicle.key ? " is-active" : ""}`}
-                        type="button"
-                        onClick={() => handleVehicleSelect(vehicle.key)}
-                        aria-pressed={formData.vehicleType === vehicle.key}
-                      >
-                        <strong>{vehicle.label}</strong>
-                        <span>{formatSeatCount(vehicle.capacity, language)}</span>
-                      </button>
-                    ))}
+                    <a className="contact-shortcut-card" href={`mailto:${appConfig.email}`}>
+                      <span className="contact-shortcut-label">{translate("footer.email")}</span>
+                      <strong>{appConfig.email}</strong>
+                    </a>
                   </div>
                 </div>
-
-                <label className="trip-toggle">
-                  <input
-                    id="round-trip"
-                    name="roundTrip"
-                    type="checkbox"
-                    checked={formData.roundTrip}
-                    onChange={handleInputChange}
-                  />
-                  <span>{translate("planner.labels.roundTrip")}</span>
-                </label>
-
-                <div className="form-grid">
-                  <label className="field">
-                    <span>{translate("planner.labels.pickup")}</span>
-                    <input
-                      ref={pickupInputRef}
-                      id="pickup"
-                      name="pickup"
-                      type="text"
-                      value={formData.pickup}
-                      onChange={handleInputChange}
-                      placeholder={translate("planner.placeholders.pickup")}
-                      autoComplete="street-address"
-                      enterKeyHint="next"
-                      required
-                    />
-                  </label>
-
-                  <label className="field">
-                    <span>{translate("planner.labels.destination")}</span>
-                    <input
-                      ref={destinationInputRef}
-                      id="destination"
-                      name="destination"
-                      type="text"
-                      value={formData.destination}
-                      onChange={handleInputChange}
-                      placeholder={translate("planner.placeholders.destination")}
-                      autoComplete="street-address"
-                      enterKeyHint="next"
-                      required
-                    />
-                  </label>
-
-                  <label className="field">
-                    <span>{translate("planner.labels.date")}</span>
-                    <div className="input-shell input-shell-picker input-shell-date">
-                      <input
-                        id="pickup-date"
-                        name="pickupDate"
-                        type="date"
-                        value={formData.pickupDate}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </label>
-
-                  <label className="field">
-                    <span>{translate("planner.labels.time")}</span>
-                    <div className="input-shell input-shell-picker input-shell-time">
-                      <input
-                        id="pickup-time"
-                        name="pickupTime"
-                        type="time"
-                        value={formData.pickupTime}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </label>
-
-                  {formData.roundTrip && (
-                    <>
-                      <label className="field">
-                        <span>{translate("planner.labels.returnDate")}</span>
-                        <div className="input-shell input-shell-picker input-shell-date">
-                          <input
-                            id="return-date"
-                            name="returnDate"
-                            type="date"
-                            value={formData.returnDate}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      </label>
-
-                      <label className="field">
-                        <span>{translate("planner.labels.returnTime")}</span>
-                        <div className="input-shell input-shell-picker input-shell-time">
-                          <input
-                            id="return-time"
-                            name="returnTime"
-                            type="time"
-                            value={formData.returnTime}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      </label>
-
-                      <p className="field-hint field-full">{translate("planner.roundTripHint")}</p>
-                    </>
-                  )}
-                </div>
               </section>
 
-              <section className="form-section" aria-labelledby="contact-details-heading">
-                <div className="form-section-head">
-                  <h3 id="contact-details-heading">{translate("planner.contactTitle")}</h3>
-                  <p>{translate("planner.contactBody")}</p>
-                </div>
+              <form className="booking-form" onSubmit={handlePrepareEmail}>
+                <section className="form-section form-section-trip" aria-labelledby="trip-details-heading">
+                  <div className="form-section-head">
+                    <h3 id="trip-details-heading">{translate("planner.tripTitle")}</h3>
+                    <p>{translate("planner.tripBody")}</p>
+                  </div>
 
-                <div className="form-grid">
-                  <label className="field">
-                    <span>{translate("planner.labels.name")}</span>
-                    <input
-                      id="customer-name"
-                      name="customerName"
-                      type="text"
-                      value={formData.customerName}
-                      onChange={handleInputChange}
-                      placeholder={translate("planner.placeholders.name")}
-                      autoComplete="name"
-                      autoCapitalize="words"
-                      enterKeyHint="next"
-                      required
-                    />
-                  </label>
-
-                  <label className="field">
-                    <span>{translate("planner.labels.phone")}</span>
-                    <input
-                      id="customer-phone"
-                      name="customerPhone"
-                      type="tel"
-                      value={formData.customerPhone}
-                      onChange={handleInputChange}
-                      placeholder={translate("planner.placeholders.phone")}
-                      autoComplete="tel"
-                      inputMode="tel"
-                      enterKeyHint="next"
-                      required
-                    />
-                  </label>
-
-                  <label className="field">
-                    <span>{translate("planner.labels.passengers")}</span>
-                    <select id="passengers" name="passengers" value={formData.passengers} onChange={handleInputChange}>
-                      {passengerOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
+                  <div className="field field-full">
+                    <span>{translate("planner.labels.vehicle")}</span>
+                    <div className="vehicle-grid" role="radiogroup" aria-label={translate("planner.labels.vehicle")}>
+                      {vehicleOptions.map((vehicle) => (
+                        <button
+                          key={vehicle.key}
+                          className={`vehicle-card${formData.vehicleType === vehicle.key ? " is-active" : ""}`}
+                          type="button"
+                          onClick={() => handleVehicleSelect(vehicle.key)}
+                          aria-pressed={formData.vehicleType === vehicle.key}
+                        >
+                          <strong>{vehicle.label}</strong>
+                          <span>{formatSeatCount(vehicle.capacity, language)}</span>
+                        </button>
                       ))}
-                    </select>
-                  </label>
+                    </div>
+                  </div>
 
-                  <label className="field field-full">
-                    <span>{translate("planner.labels.notes")}</span>
-                    <textarea
-                      id="notes"
-                      name="notes"
-                      rows="4"
-                      value={formData.notes}
+                  <label className="trip-toggle">
+                    <input
+                      id="round-trip"
+                      name="roundTrip"
+                      type="checkbox"
+                      checked={formData.roundTrip}
                       onChange={handleInputChange}
-                      placeholder={translate("planner.placeholders.notes")}
-                      enterKeyHint="done"
-                    ></textarea>
+                    />
+                    <span>{translate("planner.labels.roundTrip")}</span>
                   </label>
-                </div>
-              </section>
 
-              <div className="form-actions">
-                <button className="button button-primary" type="button" onClick={handleCalculateRoute}>
-                  {translate("planner.calculateTrip")}
-                </button>
-                <button className="button button-outline" type="submit">
-                  {translate("planner.prepareEmail")}
-                </button>
-              </div>
-            </form>
+                  <div className="form-grid form-grid-trip">
+                    <label className="field field-route">
+                      <span>{translate("planner.labels.pickup")}</span>
+                      <input
+                        ref={pickupInputRef}
+                        id="pickup"
+                        name="pickup"
+                        type="text"
+                        value={formData.pickup}
+                        onChange={handleInputChange}
+                        placeholder={translate("planner.placeholders.pickup")}
+                        autoComplete="street-address"
+                        enterKeyHint="next"
+                        required
+                      />
+                    </label>
+
+                    <label className="field field-route">
+                      <span>{translate("planner.labels.destination")}</span>
+                      <input
+                        ref={destinationInputRef}
+                        id="destination"
+                        name="destination"
+                        type="text"
+                        value={formData.destination}
+                        onChange={handleInputChange}
+                        placeholder={translate("planner.placeholders.destination")}
+                        autoComplete="street-address"
+                        enterKeyHint="next"
+                        required
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>{translate("planner.labels.date")}</span>
+                      <div className="input-shell input-shell-picker input-shell-date">
+                        <input
+                          id="pickup-date"
+                          name="pickupDate"
+                          type="date"
+                          value={formData.pickupDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </label>
+
+                    <label className="field">
+                      <span>{translate("planner.labels.time")}</span>
+                      <div className="input-shell input-shell-picker input-shell-time">
+                        <input
+                          id="pickup-time"
+                          name="pickupTime"
+                          type="time"
+                          value={formData.pickupTime}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </label>
+
+                    {formData.roundTrip && (
+                      <>
+                        <label className="field">
+                          <span>{translate("planner.labels.returnDate")}</span>
+                          <div className="input-shell input-shell-picker input-shell-date">
+                            <input
+                              id="return-date"
+                              name="returnDate"
+                              type="date"
+                              value={formData.returnDate}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </label>
+
+                        <label className="field">
+                          <span>{translate("planner.labels.returnTime")}</span>
+                          <div className="input-shell input-shell-picker input-shell-time">
+                            <input
+                              id="return-time"
+                              name="returnTime"
+                              type="time"
+                              value={formData.returnTime}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </label>
+
+                        <p className="field-hint field-full">{translate("planner.roundTripHint")}</p>
+                      </>
+                    )}
+                  </div>
+                </section>
+
+                <section className="form-section form-section-contact" aria-labelledby="contact-details-heading">
+                  <div className="form-section-head">
+                    <h3 id="contact-details-heading">{translate("planner.contactTitle")}</h3>
+                    <p>{translate("planner.contactBody")}</p>
+                  </div>
+
+                  <div className="form-grid form-grid-contact">
+                    <label className="field">
+                      <span>{translate("planner.labels.name")}</span>
+                      <input
+                        id="customer-name"
+                        name="customerName"
+                        type="text"
+                        value={formData.customerName}
+                        onChange={handleInputChange}
+                        placeholder={translate("planner.placeholders.name")}
+                        autoComplete="name"
+                        autoCapitalize="words"
+                        enterKeyHint="next"
+                        required
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>{translate("planner.labels.phone")}</span>
+                      <input
+                        id="customer-phone"
+                        name="customerPhone"
+                        type="tel"
+                        value={formData.customerPhone}
+                        onChange={handleInputChange}
+                        placeholder={translate("planner.placeholders.phone")}
+                        autoComplete="tel"
+                        inputMode="tel"
+                        enterKeyHint="next"
+                        required
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>{translate("planner.labels.passengers")}</span>
+                      <select id="passengers" name="passengers" value={formData.passengers} onChange={handleInputChange}>
+                        {passengerOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="field field-full">
+                      <span>{translate("planner.labels.notes")}</span>
+                      <textarea
+                        id="notes"
+                        name="notes"
+                        rows="3"
+                        value={formData.notes}
+                        onChange={handleInputChange}
+                        placeholder={translate("planner.placeholders.notes")}
+                        enterKeyHint="done"
+                      ></textarea>
+                    </label>
+                  </div>
+                </section>
+
+                <div className="form-actions">
+                  <button className="button button-primary" type="button" onClick={handleCalculateRoute}>
+                    {translate("planner.calculateTrip")}
+                  </button>
+                  <button className="button button-outline" type="submit">
+                    {translate("planner.prepareEmail")}
+                  </button>
+                </div>
+                <p className="form-intro-note">{translate("planner.footnote")}</p>
+              </form>
+            </div>
 
             <div className="planner-sidebar">
               <div className="map-card">

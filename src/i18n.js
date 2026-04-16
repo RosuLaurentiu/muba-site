@@ -11,8 +11,8 @@ export const translations = {
       seatMany: "seats"
     },
     meta: {
-      title: "Muba Chauffeur | Reserve Your Ride",
-      description: "Reserve a private taxi ride, calculate the route, and choose the easiest way to confirm by phone, email, or scheduling."
+      title: "privatetaxiparis",
+      description: "Reserve a private taxi ride in Paris, calculate the route, and confirm quickly by email or WhatsApp."
     },
     nav: {
       home: "Home",
@@ -64,8 +64,8 @@ export const translations = {
     ],
     planner: {
       eyebrow: "Reserve a ride",
-      title: "Plan the trip first, then choose the confirmation method.",
-      body: "One form for route details, one clear summary, then the client can send the trip by email or WhatsApp in just a few taps.",
+      title: "Private Paris transfers with a calmer, faster booking flow.",
+      body: "Plan the route, review the estimate, and send the request in one clean screen on desktop and a smoother stacked flow on mobile.",
       introLabel: "Mobile booking flow",
       steps: ["1. Route", "2. Contact", "3. Confirm"],
       tripTitle: "Trip details",
@@ -128,7 +128,7 @@ export const translations = {
       phoneMissing: "Phone missing",
       emailTrip: "Email this trip",
       whatsAppTrip: "Send on WhatsApp",
-      defaultStatus: "Enter a pickup, destination, and client details to prepare the request."
+      defaultStatus: "Add the trip details to preview the route and send a polished booking request."
     },
     schedule: {
       eyebrow: "Scheduling",
@@ -218,8 +218,8 @@ export const translations = {
       seatMany: "places"
     },
     meta: {
-      title: "Muba Chauffeur | Reservez votre trajet",
-      description: "Reservez un trajet en taxi prive, calculez l'itineraire et choisissez la facon la plus simple de confirmer par telephone, email ou reservation."
+      title: "privatetaxiparis",
+      description: "Reservez un trajet prive a Paris, calculez l'itineraire et confirmez rapidement par email ou WhatsApp."
     },
     nav: {
       home: "Accueil",
@@ -271,8 +271,8 @@ export const translations = {
     ],
     planner: {
       eyebrow: "Reserver un trajet",
-      title: "Commencez par le trajet, puis choisissez le mode de confirmation.",
-      body: "Un seul formulaire pour les details du trajet, un resume clair, puis le client peut envoyer la demande par email ou WhatsApp en quelques clics.",
+      title: "Transferts prives a Paris avec un parcours de reservation plus rapide et plus clair.",
+      body: "Preparez l'itineraire, verifiez l'estimation, puis envoyez la demande depuis un seul ecran sur desktop et un parcours mobile plus fluide.",
       introLabel: "Parcours mobile",
       steps: ["1. Itineraire", "2. Contact", "3. Confirmation"],
       tripTitle: "Details du trajet",
@@ -335,7 +335,7 @@ export const translations = {
       phoneMissing: "Telephone manquant",
       emailTrip: "Envoyer ce trajet par email",
       whatsAppTrip: "Envoyer sur WhatsApp",
-      defaultStatus: "Entrez le depart, la destination et les details du client pour preparer la demande."
+      defaultStatus: "Ajoutez les details du trajet pour afficher l'itineraire et envoyer une demande de reservation plus soignee."
     },
     schedule: {
       eyebrow: "Planification",

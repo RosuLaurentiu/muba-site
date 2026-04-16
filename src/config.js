@@ -1,5 +1,8 @@
 export const appConfig = {
-  businessName: "Muba Chauffeur",
+  businessName: {
+    en: "Private Taxi Paris",
+    fr: "Private Taxi Paris"
+  },
   serviceArea: {
     en: "Paris and nearby cities",
     fr: "Paris et villes voisines"
