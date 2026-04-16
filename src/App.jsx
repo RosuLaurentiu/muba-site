@@ -394,6 +394,8 @@ function syncPacContainer(inputElement) {
       return;
     }
 
+    const inputLeft = inputRect.left;
+    const inputBottom = inputRect.bottom;
     const containers = Array.from(document.querySelectorAll(".pac-container"));
 
     if (!containers.length) {
