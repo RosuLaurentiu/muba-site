@@ -352,10 +352,12 @@ function clearPacContainers() {
 function syncPacContainer(inputElement) {
   window.setTimeout(() => {
     const inputRect = inputElement.getBoundingClientRect();
+    const viewportPadding = 10;
 
     if (window.innerWidth <= 780) {
       document.querySelectorAll(".pac-container").forEach((container) => {
         container.classList.add("pac-container-active");
+        container.style.position = "fixed";
         container.style.left = "10px";
         container.style.top = `${Math.min(
           inputRect.bottom + 8,
@@ -366,8 +368,6 @@ function syncPacContainer(inputElement) {
       return;
     }
 
-    const inputLeft = inputRect.left + window.scrollX;
-    const inputBottom = inputRect.bottom + window.scrollY;
     const containers = Array.from(document.querySelectorAll(".pac-container"));
 
     if (!containers.length) {
@@ -392,6 +392,17 @@ function syncPacContainer(inputElement) {
 
     if (bestContainer) {
       bestContainer.classList.add("pac-container-active");
+      bestContainer.style.position = "fixed";
+      bestContainer.style.left = `${Math.max(inputRect.left, viewportPadding)}px`;
+      bestContainer.style.top = `${Math.min(
+        inputRect.bottom + 10,
+        window.innerHeight - 280
+      )}px`;
+      bestContainer.style.width = `${Math.min(
+        inputRect.width,
+        window.innerWidth - viewportPadding * 2
+      )}px`;
+      bestContainer.style.marginTop = "0";
     }
   }, 0);
 }
