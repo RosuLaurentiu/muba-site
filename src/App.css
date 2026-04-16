@@ -58,7 +58,6 @@ body::before {
 }
 
 .pac-container {
-  display: none !important;
   margin-top: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -66,10 +65,10 @@ body::before {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(18px);
   overflow: hidden;
+  z-index: 9999 !important;
 }
 
 .pac-container.pac-container-active {
-  display: block !important;
   z-index: 9999 !important;
 }
 
@@ -1604,17 +1603,6 @@ footer[id] {
 
   .map-card {
     order: 2;
-  }
-
-  .pac-container {
-    position: fixed !important;
-    left: 10px !important;
-    right: 10px !important;
-    top: auto !important;
-    width: auto !important;
-    max-width: none !important;
-    margin-top: 0;
-    border-radius: 16px;
   }
 
   .input-shell-picker::before {

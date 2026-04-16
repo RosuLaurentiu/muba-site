@@ -312,11 +312,6 @@ function getMapStyles() {
 function clearPacContainers() {
   document.querySelectorAll(".pac-container").forEach((container) => {
     container.classList.remove("pac-container-active");
-    container.style.left = "";
-    container.style.top = "";
-    container.style.width = "";
-    container.style.position = "";
-    container.style.marginTop = "";
   });
 }
 
@@ -382,42 +377,9 @@ function updateStructuredData(language) {
 
 function syncPacContainer(inputElement) {
   window.setTimeout(() => {
-    const inputRect = inputElement.getBoundingClientRect();
-    const viewportPadding = 10;
-    const containers = Array.from(document.querySelectorAll(".pac-container"));
-
-    if (!containers.length) {
-      return;
-    }
-
-    if (window.innerWidth <= 780) {
-      containers.forEach((container) => {
-        container.classList.add("pac-container-active");
-        container.style.position = "fixed";
-        container.style.left = "10px";
-        container.style.top = `${Math.min(
-          inputRect.bottom + 8,
-          window.innerHeight - 220
-        )}px`;
-        container.style.width = `${Math.max(window.innerWidth - 20, 0)}px`;
-      });
-      return;
-    }
-
     clearPacContainers();
-    containers.forEach((container) => {
+    document.querySelectorAll(".pac-container").forEach((container) => {
       container.classList.add("pac-container-active");
-      container.style.position = "fixed";
-      container.style.left = `${Math.max(inputRect.left, viewportPadding)}px`;
-      container.style.top = `${Math.min(
-        inputRect.bottom + 8,
-        window.innerHeight - 280
-      )}px`;
-      container.style.width = `${Math.min(
-        inputRect.width,
-        window.innerWidth - viewportPadding * 2
-      )}px`;
-      container.style.marginTop = "0";
     });
   }, 0);
 }
@@ -437,7 +399,6 @@ function App() {
   const mapRef = useRef(null);
   const pickupInputRef = useRef(null);
   const destinationInputRef = useRef(null);
-  const activeAutocompleteInputRef = useRef(null);
   const directionsServiceRef = useRef(null);
   const directionsRendererRef = useRef(null);
 
@@ -507,40 +468,6 @@ function App() {
     ensureLinkTag("canonical").setAttribute("href", canonicalUrl);
     updateStructuredData(language);
   }, [language]);
-
-  useEffect(() => {
-    const handlePointerDown = (event) => {
-      const target = event.target;
-
-      if (
-        target instanceof HTMLElement &&
-        (target.closest(".pac-container") ||
-          target === pickupInputRef.current ||
-          target === destinationInputRef.current)
-      ) {
-        return;
-      }
-
-      activeAutocompleteInputRef.current = null;
-      clearPacContainers();
-    };
-
-    const handleViewportChange = () => {
-      if (activeAutocompleteInputRef.current) {
-        syncPacContainer(activeAutocompleteInputRef.current);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("resize", handleViewportChange);
-    window.addEventListener("scroll", handleViewportChange, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("resize", handleViewportChange);
-      window.removeEventListener("scroll", handleViewportChange, true);
-    };
-  }, []);
 
   useEffect(() => {
     if (!appConfig.googleMapsApiKey) {
@@ -633,22 +560,11 @@ function App() {
             }
 
             const handleAutocompleteFocus = () => {
-              activeAutocompleteInputRef.current = inputElement;
               syncPacContainer(inputElement);
-            };
-
-            const handleAutocompleteBlur = () => {
-              window.setTimeout(() => {
-                if (document.activeElement !== pickupInputRef.current &&
-                    document.activeElement !== destinationInputRef.current) {
-                  activeAutocompleteInputRef.current = null;
-                }
-              }, 0);
             };
 
             inputElement.addEventListener("focus", handleAutocompleteFocus);
             inputElement.addEventListener("input", handleAutocompleteFocus);
-            inputElement.addEventListener("blur", handleAutocompleteBlur);
 
             autocomplete.addListener("place_changed", () => {
               const place = autocomplete.getPlace();
@@ -667,7 +583,6 @@ function App() {
               }
 
               setRoute(null);
-              activeAutocompleteInputRef.current = null;
               clearPacContainers();
               inputElement.blur();
             });
