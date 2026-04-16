@@ -172,13 +172,6 @@ function formatDuration(durationMinutes, language) {
   return `${minutes} ${minuteLabel}`;
 }
 
-function formatSeatCount(capacity, language) {
-  const seatLabel =
-    capacity === 1 ? getText(language, "units.seatOne") : getText(language, "units.seatMany");
-
-  return `${capacity} ${seatLabel}`;
-}
-
 function getTripTypeLabel(language, roundTrip) {
   return getText(language, roundTrip ? "summary.roundTrip" : "summary.oneWay");
 }
@@ -203,7 +196,6 @@ function buildMailtoLink({ formData, route, language }) {
   const vehicle = getVehicleConfig(formData.vehicleType);
   const totals = getRouteTotals(route, formData.roundTrip);
   const tripTypeSummary = getTripTypeLabel(language, formData.roundTrip);
-  const vehicleSummary = getLocalizedConfigValue(vehicle.label, language);
   const dateSummary = formData.pickupDate || mail.toBeConfirmed;
   const timeSummary = formData.pickupTime || mail.toBeConfirmed;
   const returnDateSummary = formData.roundTrip
@@ -231,7 +223,6 @@ function buildMailtoLink({ formData, route, language }) {
       "",
       `${mail.name}: ${formData.customerName || mail.notProvided}`,
       `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
-      `${mail.vehicle}: ${vehicleSummary}`,
       `${mail.tripType}: ${tripTypeSummary}`,
       `${mail.pickup}: ${formData.pickup || mail.notProvided}`,
       `${mail.destination}: ${formData.destination || mail.notProvided}`,
@@ -259,7 +250,6 @@ function buildWhatsAppLink({ formData, route, language }) {
   const vehicle = getVehicleConfig(formData.vehicleType);
   const totals = getRouteTotals(route, formData.roundTrip);
   const tripTypeSummary = getTripTypeLabel(language, formData.roundTrip);
-  const vehicleSummary = getLocalizedConfigValue(vehicle.label, language);
   const dateSummary = formData.pickupDate || mail.toBeConfirmed;
   const timeSummary = formData.pickupTime || mail.toBeConfirmed;
   const returnDateSummary = formData.roundTrip
@@ -284,7 +274,6 @@ function buildWhatsAppLink({ formData, route, language }) {
       "",
       `${mail.name}: ${formData.customerName || mail.notProvided}`,
       `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
-      `${mail.vehicle}: ${vehicleSummary}`,
       `${mail.tripType}: ${tripTypeSummary}`,
       `${mail.pickup}: ${formData.pickup || mail.notProvided}`,
       `${mail.destination}: ${formData.destination || mail.notProvided}`,
@@ -347,6 +336,66 @@ function clearPacContainers() {
   document.querySelectorAll(".pac-container").forEach((container) => {
     container.classList.remove("pac-container-active");
   });
+}
+
+function ensureMetaTag(attributeName, attributeValue) {
+  const selector = `meta[${attributeName}="${attributeValue}"]`;
+  let element = document.head.querySelector(selector);
+
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attributeName, attributeValue);
+    document.head.appendChild(element);
+  }
+
+  return element;
+}
+
+function ensureLinkTag(rel) {
+  let element = document.head.querySelector(`link[rel="${rel}"]`);
+
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", rel);
+    document.head.appendChild(element);
+  }
+
+  return element;
+}
+
+function updateStructuredData(language) {
+  const businessName = getLocalizedConfigValue(appConfig.businessName, language);
+  const serviceArea = getLocalizedConfigValue(appConfig.serviceArea, language);
+  const description = getText(language, "meta.description");
+  const siteUrl =
+    appConfig.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "TaxiService",
+    name: businessName,
+    description,
+    areaServed: serviceArea,
+    serviceType: "Private taxi and chauffeur service",
+    telephone: appConfig.phoneDisplay,
+    email: appConfig.email,
+    url: siteUrl || undefined,
+    availableLanguage: SUPPORTED_LANGUAGES.map((option) => option.toUpperCase()),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Paris",
+      addressCountry: "FR"
+    }
+  };
+  let script = document.head.querySelector('script[data-seo="taxi-service"]');
+
+  if (!script) {
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.dataset.seo = "taxi-service";
+    document.head.appendChild(script);
+  }
+
+  script.textContent = JSON.stringify(schema);
 }
 
 function syncPacContainer(inputElement) {
@@ -431,11 +480,6 @@ function App() {
   const selectedVehicle = getVehicleConfig(formData.vehicleType);
   const routeTotals = getRouteTotals(route, formData.roundTrip);
   const routeReady = Boolean(routeTotals);
-  const vehicleOptions = Object.entries(appConfig.vehicles).map(([key, vehicle]) => ({
-    key,
-    label: getLocalizedConfigValue(vehicle.label, language),
-    capacity: vehicle.capacity
-  }));
   const passengerOptions = Array.from({ length: selectedVehicle.capacity }, (_, index) =>
     String(index + 1)
   );
@@ -464,22 +508,37 @@ function App() {
     ? formatFare(routeTotals.fare, language)
     : translate("summary.farePending");
   const fareContext = routeReady
-    ? `${getTripTypeLabel(language, formData.roundTrip)} | ${getLocalizedConfigValue(
-        selectedVehicle.label,
-        language
-      )}`
+    ? getTripTypeLabel(language, formData.roundTrip)
     : translate("summary.fareHint");
 
   useEffect(() => {
     document.documentElement.lang = language;
     document.title = getText(language, "meta.title");
     mapLanguageRef.current = language;
+    const pageTitle = getText(language, "meta.title");
+    const pageDescription = getText(language, "meta.description");
+    const siteUrl =
+      appConfig.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+    const canonicalUrl =
+      typeof window !== "undefined" ? `${siteUrl}${window.location.pathname}` : siteUrl;
 
     const metaDescription = document.querySelector('meta[name="description"]');
 
     if (metaDescription) {
-      metaDescription.setAttribute("content", getText(language, "meta.description"));
+      metaDescription.setAttribute("content", pageDescription);
     }
+
+    ensureMetaTag("property", "og:title").setAttribute("content", pageTitle);
+    ensureMetaTag("property", "og:description").setAttribute("content", pageDescription);
+    ensureMetaTag("property", "og:locale").setAttribute(
+      "content",
+      language === "fr" ? "fr_FR" : "en_GB"
+    );
+    ensureMetaTag("property", "og:url").setAttribute("content", canonicalUrl);
+    ensureMetaTag("name", "twitter:title").setAttribute("content", pageTitle);
+    ensureMetaTag("name", "twitter:description").setAttribute("content", pageDescription);
+    ensureLinkTag("canonical").setAttribute("href", canonicalUrl);
+    updateStructuredData(language);
   }, [language]);
 
   useEffect(() => {
@@ -655,18 +714,6 @@ function App() {
     }
   }
 
-  function handleVehicleSelect(vehicleType) {
-    const nextVehicle = getVehicleConfig(vehicleType);
-
-    setFormData((currentFormData) => ({
-      ...currentFormData,
-      vehicleType,
-      passengers: String(
-        Math.min(Math.max(Number(currentFormData.passengers) || 1, 1), nextVehicle.capacity)
-      )
-    }));
-  }
-
   async function requestRoute(origin, destination) {
     const response = await directionsServiceRef.current.route({
       origin,
@@ -798,7 +845,7 @@ function App() {
               <section className="hero-card" id="home">
                 <div className="section-heading section-heading-compact">
                   <p className="eyebrow">{translate("planner.eyebrow")}</p>
-                  <h2>{translate("planner.title")}</h2>
+                  <h1>{translate("planner.title")}</h1>
                   <p>{translate("planner.body")}</p>
                 </div>
 
@@ -830,24 +877,6 @@ function App() {
                   <div className="form-section-head">
                     <h3 id="trip-details-heading">{translate("planner.tripTitle")}</h3>
                     <p>{translate("planner.tripBody")}</p>
-                  </div>
-
-                  <div className="field field-full">
-                    <span>{translate("planner.labels.vehicle")}</span>
-                    <div className="vehicle-grid" role="radiogroup" aria-label={translate("planner.labels.vehicle")}>
-                      {vehicleOptions.map((vehicle) => (
-                        <button
-                          key={vehicle.key}
-                          className={`vehicle-card${formData.vehicleType === vehicle.key ? " is-active" : ""}`}
-                          type="button"
-                          onClick={() => handleVehicleSelect(vehicle.key)}
-                          aria-pressed={formData.vehicleType === vehicle.key}
-                        >
-                          <strong>{vehicle.label}</strong>
-                          <span>{formatSeatCount(vehicle.capacity, language)}</span>
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   <label className="trip-toggle">
@@ -1073,10 +1102,6 @@ function App() {
                         ? formatDuration(routeTotals.durationMinutes, language)
                         : translate("summary.notCalculated")}
                     </dd>
-                  </div>
-                  <div>
-                    <dt>{translate("summary.vehicle")}</dt>
-                    <dd>{getLocalizedConfigValue(selectedVehicle.label, language)}</dd>
                   </div>
                   <div>
                     <dt>{translate("summary.tripType")}</dt>

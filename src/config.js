@@ -19,6 +19,7 @@ export const appConfig = {
     en: "24/7 by reservation",
     fr: "24/7 sur reservation"
   },
+  siteUrl: "https://privatetaxiparis.com",
   phoneDisplay: "+33 6 68 47 81 37",
   phoneLink: "+33668478137",
   email: "privatetaxiparis@gmail.com",

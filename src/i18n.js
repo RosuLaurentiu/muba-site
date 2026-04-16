@@ -11,8 +11,8 @@ export const translations = {
       seatMany: "seats"
     },
     meta: {
-      title: "privatetaxiparis",
-      description: "Reserve a private taxi ride in Paris, calculate the route, and confirm quickly by email or WhatsApp."
+      title: "Private Taxi Paris | Paris Airport Transfers & Chauffeur Service",
+      description: "Book a private taxi in Paris for airport transfers, city rides, and chauffeur trips. Get a route estimate and confirm fast by email or WhatsApp."
     },
     nav: {
       home: "Home",
@@ -218,8 +218,8 @@ export const translations = {
       seatMany: "places"
     },
     meta: {
-      title: "privatetaxiparis",
-      description: "Reservez un trajet prive a Paris, calculez l'itineraire et confirmez rapidement par email ou WhatsApp."
+      title: "Private Taxi Paris | Transferts aeroport et chauffeur prive a Paris",
+      description: "Reservez un taxi prive a Paris pour vos transferts aeroport, trajets en ville et courses avec chauffeur. Obtenez une estimation et confirmez rapidement par email ou WhatsApp."
     },
     nav: {
       home: "Accueil",
