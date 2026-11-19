@@ -54,3 +54,10 @@ There are no tests. Verify changes with `npm run lint`, `npm run build`, and a l
 - The Google Maps key in `src/config.js` is a browser key that ships in the bundle by design; it must be protected by an HTTP-referrer restriction in Google Cloud, not by secrecy. Do not replace it, print it in logs or chat, or add any server-side secret to this client-only repo.
 - Do not add dependencies, a router, or a state library for small changes; the site is intentionally a single component with two runtime dependencies.
 - The phone number, email and Calendly URL in `src/config.js` are the owner's real contact details — change them only when asked.
+
+## Backlog
+
+Tasks live in this project's own Backlog; task IDs start with MS. Use
+`.\Backlog.ps1` from this folder, or the Backlog MCP tools when they are bound
+to this folder. Read `.\Backlog.ps1 instructions overview` before the first task
+change in a session.

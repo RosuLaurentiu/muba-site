@@ -1,0 +1,14 @@
+{
+    "mcpServers":  {
+                       "backlog":  {
+                                       "type":  "stdio",
+                                       "command":  "C:/Users/rosu_/Desktop/Development/Project Manager Agent/.tools/backlog/current/backlog.exe",
+                                       "args":  [
+                                                    "mcp",
+                                                    "start",
+                                                    "--cwd",
+                                                    "C:/Users/rosu_/Desktop/Development/Muba Site"
+                                                ]
+                                   }
+                   }
+}
