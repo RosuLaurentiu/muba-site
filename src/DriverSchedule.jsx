@@ -254,7 +254,9 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   async function save(event) {
     event.preventDefault();
     if (prevented || writing.current) return;
-    const validation = validateBooking(draft, capacity);
+    const validation = validateBooking(draft, capacity, new Date(), ride ? {
+      pickup: parisMinute(ride.pickup_at), return: ride.return_at && parisMinute(ride.return_at)
+    } : {});
     if (!durationValid) validation.estimatedMinutes = "schedule.durationInvalid";
     setErrors(validation);
     const invalid = [...event.currentTarget.elements].find((field) => validation[field.name]);

@@ -22,6 +22,7 @@ and was verified with Supabase CLI 3.2.0.
 docker network create --driver bridge --opt com.docker.network.bridge.host_binding_ipv4=127.0.0.1 muba-site-local
 npx --yes supabase@3.2.0 start --network-id muba-site-local -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor | Out-Null
 npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/ride-storage.mjs
+npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/intake-limits.mjs
 npx --yes supabase@3.2.0 db advisors --level warn --fail-on warn
 node supabase/tests/rider-input.mjs
 node supabase/tests/schedule.mjs
@@ -134,6 +135,21 @@ key. It checks the intake pause, 90-day cutoff, seven dated encrypted copies
 and a private booking lookup after restore. Before public release, verify the
 scheduled purge and export on the approved environment. Store the export key
 separately from the archives.
+
+### Web request limits
+
+`save_ride` accepts at most 10 web requests per hour and 30 per day across
+all riders. Above either limit it refuses new web requests with
+`WEB_INTAKE_LIMIT`, and the rider sees the phone and WhatsApp fallback. A retry
+with an already saved key still returns that booking. Driver phone and WhatsApp
+rides are not limited. Each rider email address gets at most 3 automatic
+receipts per day. The booking still saves and later decision emails still go
+out. These defaults keep a scripted flood within a small daily email volume.
+The owner must approve the numbers before public release. Change them in a new
+migration.
+
+A confirmed round trip can keep an outbound pickup that already happened while
+the driver moves the return. Every moved leg must be in the future.
 
 ### Pause public booking intake
 

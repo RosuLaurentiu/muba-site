@@ -20,6 +20,13 @@ assert.deepEqual(validateBooking({ ...trip, passengers: "9", customerPhone: "123
   customerPhone: "booking.validPhoneRequired"
 });
 assert.equal(validateBooking({ ...trip, pickupTime: "09:00" }, 8, now).pickupTime, "booking.futurePickup");
+// At 12:00 Paris the 10:00 outbound is past. Moving only the return keeps the outbound valid.
+const noon = new Date("2090-05-21T10:00:00Z");
+const kept = { pickup: "2090-05-21T10:00", return: "2090-05-21T17:00" };
+assert.deepEqual(validateTrip({ ...trip, returnTime: "19:00" }, 8, noon, kept), {});
+assert.equal(validateTrip({ ...trip, returnTime: "19:00" }, 8, noon).pickupTime, "booking.futurePickup");
+assert.equal(validateTrip({ ...trip, pickupTime: "09:00" }, 8, noon, kept).pickupTime, "booking.futurePickup");
+assert.equal(validateTrip({ ...trip, returnTime: "11:00" }, 8, noon, kept).returnTime, "booking.futureReturn");
 assert.equal(getParisInstant("2090-03-26T02:30"), null);
 assert.equal(getParisInstant("2090-10-29T02:30").toISOString(), "2090-10-29T01:30:00.000Z");
 assert.deepEqual(bookingPayload({ ...trip, roundTrip: false }, "fr"), {

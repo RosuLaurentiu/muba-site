@@ -113,7 +113,7 @@ function BookingEmailStatus({ language }) {
 function PendingList({ rides, language, day }) {
   const t = (key) => getText(language, key);
   return (
-    <section className="driver-list" id="pending" aria-labelledby="pending-heading">
+    <section className={"driver-list" + (rides.length ? " has-pending" : "")} id="pending" aria-labelledby="pending-heading">
       <h2 id="pending-heading">{t("driver.pending")} <span className="request-count">{rides.length}</span></h2>
       {rides.length ? (
         <ul className="ride-list">
@@ -153,6 +153,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
     if (changing.current) return;
     if (status === "confirmed" && (hasConflict || !durationValid)) return;
     if (status === "cancelled" && !window.confirm(t("schedule.confirmCancel"))) return;
+    if (status === "declined" && !window.confirm(t("driver.confirmDecline"))) return;
     changing.current = true;
     setBusy(true);
     setNotice("");
@@ -185,7 +186,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
           [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
           ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
           [t("planner.labels.passengers"), ride.passengers],
-          [t("planner.labels.name"), ride.passenger_name],
+          [t("driver.passenger"), ride.passenger_name],
           [t("planner.labels.phone"), ride.passenger_phone],
           ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : []),
           ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
@@ -339,7 +340,7 @@ function DriverRides({ session, language }) {
       {load.status === "loadFailed" && haveData && (
         <div className="actions driver-feedback">
           <p role="status">{t("driver.scheduleStale")}</p>
-          <button className="button" type="button" onClick={refresh}>{t("booking.refresh")}</button>
+          <button className="button" type="button" onClick={refresh}>{t("driver.refresh")}</button>
         </div>
       )}
       {haveData && blocking ? (
@@ -368,7 +369,7 @@ function DriverRides({ session, language }) {
       {haveData && <BookingEmailStatus language={language} />}
       {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
-        <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
+        <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("driver.refresh")}</button>
       </div>}
     </>
   );

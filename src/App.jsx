@@ -142,12 +142,6 @@ function getMapStyles() {
   ];
 }
 
-function clearPacContainers() {
-  document.querySelectorAll(".pac-container").forEach((container) => {
-    container.classList.remove("pac-container-active");
-  });
-}
-
 function ensureMetaTag(attributeName, attributeValue) {
   const selector = `meta[${attributeName}="${attributeValue}"]`;
   let element = document.head.querySelector(selector);
@@ -208,13 +202,27 @@ function updateStructuredData(language) {
   script.textContent = JSON.stringify(schema);
 }
 
-function syncPacContainer() {
-  window.setTimeout(() => {
-    clearPacContainers();
-    document.querySelectorAll(".pac-container").forEach((container) => {
-      container.classList.add("pac-container-active");
-    });
-  }, 0);
+function tripRows(ride, t, language) {
+  return [
+    [t("planner.labels.pickup"), ride.pickup],
+    [t("planner.labels.destination"), ride.destination],
+    [t("booking.pickupAt"), formatParisTime(ride.pickup_at, language)],
+    ...(ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
+    [t("planner.labels.passengers"), ride.passengers]
+  ];
+}
+
+function ContactFooter({ language, workspaceLink = false }) {
+  const t = (key) => getText(language, key);
+  return (
+    <footer className="site-footer actions">
+      <span>{t("booking.contact")}</span>
+      <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
+      <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
+      <a href={"mailto:" + appConfig.email}>{t("footer.email")}</a>
+      {workspaceLink && <a className="workspace-link" href="?driver">{t("driver.title")}</a>}
+    </footer>
+  );
 }
 
 function RiderBooking({ language }) {
@@ -224,6 +232,7 @@ function RiderBooking({ language }) {
   const [screen, setScreen] = useState("entry");
   const [receipt, setReceipt] = useState(null);
   const [saveState, setSaveState] = useState("");
+  const [copyState, setCopyState] = useState("");
   const [estimating, setEstimating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const saving = useRef(false);
@@ -371,14 +380,6 @@ function RiderBooking({ language }) {
               autocomplete.setOptions({ strictBounds: false });
             }
 
-            const handleAutocompleteFocus = () => {
-              syncPacContainer();
-            };
-
-            const options = { signal: inputListeners.signal };
-            inputElement.addEventListener("focus", handleAutocompleteFocus, options);
-            inputElement.addEventListener("input", handleAutocompleteFocus, options);
-
             autocompleteListeners.push(autocomplete.addListener("place_changed", () => {
               const place = autocomplete.getPlace();
 
@@ -393,7 +394,6 @@ function RiderBooking({ language }) {
               }));
 
               clearEstimate();
-              clearPacContainers();
               inputElement.blur();
             }));
           } catch {
@@ -452,7 +452,6 @@ function RiderBooking({ language }) {
       return;
     }
 
-    clearPacContainers();
     setScreen("review");
     clearEstimate();
     if (!mapReady) return;
@@ -537,7 +536,17 @@ function RiderBooking({ language }) {
     }
   }
 
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(new URL(receiptLink, window.location.href).href);
+      setCopyState("linkCopied");
+    } catch {
+      setCopyState("linkCopyFailed");
+    }
+  }
+
   function startNewBooking() {
+    setCopyState("");
     attempt.current = null;
     selectedPlaces.current = {};
     clearEstimate();
@@ -551,6 +560,7 @@ function RiderBooking({ language }) {
   const retrySave = saveState === "failed" || saveState === "paused";
   const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected" }[saveState];
   const totals = getRouteTotals(route, formData.roundTrip);
+  const receiptLink = receipt ? "?booking#key=" + receipt.key : "";
   const details = screen === "review" ? [
     ["planner.labels.pickup", formData.pickup.trim()],
     ["planner.labels.destination", formData.destination.trim()],
@@ -656,23 +666,23 @@ function RiderBooking({ language }) {
       </div>
 
       {screen === "review" && (
-        <form className="passenger-form" onSubmit={handleSave} noValidate>
+        <form className="reservation-form passenger-form" onSubmit={handleSave} noValidate>
           <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || retrySave}>
-            <legend>{t("planner.contactTitle")}</legend>
+            <legend><h2>{t("planner.contactTitle")}</h2></legend>
             {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
             {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
             {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
             {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
           </fieldset>
-          <div className="actions form-submit">
+          {saveMessage && (
+            <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}</p>
+          )}
+          <div className="reservation-submit split">
             <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
             <button className="button primary" type="submit" disabled={estimating || saveState === "saving"}>
               {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
             </button>
           </div>
-          {saveMessage && (
-            <p className="field-error" role="alert">{t("booking." + saveMessage)}</p>
-          )}
         </form>
       )}
 
@@ -682,19 +692,18 @@ function RiderBooking({ language }) {
           <div className="panel stack">
             <p className="booking-reference">{t("booking.reference")} <strong>{receipt.reference}</strong></p>
             <p className="booking-status" role="status">{t("booking.state." + receipt.status)}</p>
+            <BookingDetails rows={tripRows(receipt, t, language)} />
             <p>{t("booking.keepLink")}</p>
-            <a className="button primary" href={"?booking#key=" + receipt.key}>{t("booking.view")}</a>
+            <div className="actions">
+              <a className="button primary" href={receiptLink}>{t("booking.view")}</a>
+              <button className="button" type="button" onClick={copyLink}>{t("booking.copyLink")}</button>
+            </div>
+            <p className="muted" role="status">{copyState && t("booking." + copyState)}</p>
           </div>
           <button className="button form-submit" type="button" onClick={startNewBooking}>{t("booking.another")}</button>
         </>
       )}
-      <footer className="site-footer actions">
-        <span>{t("booking.contact")}</span>
-        <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
-        <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
-        <a href={"mailto:" + appConfig.email}>{t("footer.email")}</a>
-        <a className="workspace-link" href="?driver">{t("driver.title")}</a>
-      </footer>
+      <ContactFooter language={language} workspaceLink />
     </main>
   );
 }
@@ -726,13 +735,7 @@ function BookingStatus({ language }) {
             <p className="booking-reference">{t("booking.reference")} <strong>{ride.reference}</strong></p>
             <p className="booking-status" role="status">{t("booking.state." + ride.status)}</p>
             {ride.status === "pending" && <p>{t("booking.checkStatusLater")}</p>}
-            <BookingDetails rows={[
-              [t("planner.labels.pickup"), ride.pickup],
-              [t("planner.labels.destination"), ride.destination],
-              [t("booking.pickupAt"), formatParisTime(ride.pickup_at, language)],
-              ...(ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
-              [t("planner.labels.passengers"), ride.passengers]
-            ]} />
+            <BookingDetails rows={tripRows(ride, t, language)} />
           </>
         ) : <p role="status">{t("booking.lookup." + feedback)}</p>}
       </div>
@@ -743,6 +746,7 @@ function BookingStatus({ language }) {
           setRefresh((count) => count + 1);
         }}>{t("booking.refresh")}</button>}
       </div>
+      <ContactFooter language={language} />
     </main>
   );
 }

@@ -21,24 +21,28 @@ export function getParisInstant(localTime) {
   return null;
 }
 
-export function validateTrip(form, capacity, now = new Date()) {
+// `kept` holds the saved Paris times of a confirmed ride. An unchanged leg may already be past.
+export function validateTrip(form, capacity, now = new Date(), kept = {}) {
   const errors = {};
   if (!form.pickup.trim()) errors.pickup = "status.pickupRequired";
   if (!form.destination.trim()) errors.destination = "status.destinationRequired";
   if (!form.pickupDate) errors.pickupDate = "booking.pickupDateRequired";
   if (!form.pickupTime) errors.pickupTime = "booking.pickupTimeRequired";
-  const pickup = getParisInstant(`${form.pickupDate}T${form.pickupTime}`);
+  const pickupTime = `${form.pickupDate}T${form.pickupTime}`;
+  const pickup = getParisInstant(pickupTime);
   if (form.pickupDate && form.pickupTime) {
     if (!pickup) errors.pickupTime = "booking.invalidParisTime";
-    else if (pickup <= now) errors.pickupTime = "booking.futurePickup";
+    else if (pickup <= now && pickupTime !== kept.pickup) errors.pickupTime = "booking.futurePickup";
   }
   if (form.roundTrip) {
     if (!form.returnDate) errors.returnDate = "status.returnDateRequired";
     if (!form.returnTime) errors.returnTime = "status.returnTimeRequired";
     if (form.returnDate && form.returnTime) {
-      const returning = getParisInstant(`${form.returnDate}T${form.returnTime}`);
+      const returnTime = `${form.returnDate}T${form.returnTime}`;
+      const returning = getParisInstant(returnTime);
       if (!returning) errors.returnTime = "booking.invalidParisTime";
       else if (pickup && returning <= pickup) errors.returnTime = "booking.laterReturn";
+      else if (returning <= now && returnTime !== kept.return) errors.returnTime = "booking.futureReturn";
     }
   }
   if (!Number.isInteger(Number(form.passengers)) || form.passengers < 1 || form.passengers > capacity) {
@@ -61,8 +65,8 @@ export function validatePassenger(form) {
   return errors;
 }
 
-export function validateBooking(form, capacity, now = new Date()) {
-  return { ...validateTrip(form, capacity, now), ...validatePassenger(form) };
+export function validateBooking(form, capacity, now = new Date(), kept = {}) {
+  return { ...validateTrip(form, capacity, now, kept), ...validatePassenger(form) };
 }
 
 export function bookingPayload(form, language) {
