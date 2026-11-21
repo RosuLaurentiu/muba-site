@@ -116,6 +116,9 @@ app URL and the exact `calendar-sync` callback URL for the test environment.
 Retain the encryption key for reconnect and recovery. The authorized
 test-calendar check requires the owner's approval before any external action.
 
+When serving the function locally, use the same Docker network as the stack:
+`npx --yes supabase@3.2.0 functions serve calendar-sync --network-id muba-site-local --env-file <local-secret-file>`.
+
 ## Main files
 
 - `src/App.jsx` renders trip entry, review, receipt, and private status.

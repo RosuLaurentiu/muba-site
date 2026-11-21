@@ -22,6 +22,10 @@ responses. All provider calls were intercepted.
   revision pending until the mirror caught up. In Chromium at 390 px the
   driver saw the failed ride in EN and FR, retried and cleared it. The saved
   ride remained available throughout.
+- The local Supabase Edge gateway handled browser preflight and rejected
+  anonymous, invalid and authenticated non-driver sessions. With fictional
+  OAuth settings, the assigned driver obtained an authorization URL and the
+  function saved one state record. The test did not follow the Google URL.
 
 Actual create, update and delete on an authorized Google test calendar
 remain unverified. The local UI and worker use an owned calendar and support
