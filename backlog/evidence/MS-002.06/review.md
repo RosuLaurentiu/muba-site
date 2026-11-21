@@ -1,6 +1,6 @@
 # Google Calendar mirror verification
 
-The owner chose local simulation for this stage. The checks used the local
+The first stage used local simulation. The checks used the local
 Supabase Auth and Data API, fictional bookings, and simulated Google
 responses. All provider calls were intercepted.
 
@@ -27,7 +27,21 @@ responses. All provider calls were intercepted.
   OAuth settings, the assigned driver obtained an authorization URL and the
   function saved one state record. The test did not follow the Google URL.
 
-Actual create, update and delete on an authorized Google test calendar
-remain unverified. The local UI and worker use an owned calendar and support
-reconnecting that calendar. No hosted resources or Google events were
-created.
+## Authorized Google Calendar test
+
+On 21 November 2026, the owner approved the local app's Google consent flow
+for the private **Muba Calendar Test** calendar. The local Supabase Edge
+function connected to that calendar through Google OAuth, then processed
+fictional return ride 61 through the booking API.
+
+- A pending request produced no Calendar jobs. Confirming the request
+  created exactly two event jobs and Google acknowledged both.
+- Changing the pickup and moving both times updated the same two event IDs.
+  The updated ride appeared as unsynced before the worker ran. A retry after
+  delivery found zero jobs to process.
+- Cancelling the ride cleared both Calendar events. The worker recorded the
+  latest cancellation revision for both IDs and the pending queue was empty.
+
+The test removed its local ride, driver account, and stored Calendar
+connection after both cancellations were acknowledged. The pre-existing
+local booking was preserved. No hosted Supabase project was provisioned.
