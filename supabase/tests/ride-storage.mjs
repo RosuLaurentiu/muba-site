@@ -183,6 +183,9 @@ try {
 } finally {
   // Use hashes so cleanup also covers a save that committed before the test observed its reply.
   const keys = [key, secondKey, manualKey, blockedKey, clockGapKey, ...raceKeys].map(value => `sha256(uuid_send('${value}'::uuid))`);
+  sql(`delete from booking_private.calendar_job where ride_reference in (
+    select reference from booking_private.ride where request_key_hash in (${keys.join(",")})
+  );`);
   sql(`delete from booking_private.ride where request_key_hash in (${keys.join(",")});`);
   sql(`delete from booking_private.time_block where id = '${blockId}';`);
   for (const id of users) await request("/auth/v1/admin/users/" + id, { method: "DELETE", admin: true });

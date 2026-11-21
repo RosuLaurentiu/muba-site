@@ -76,6 +76,8 @@ and shows the unknown finish. Check travel time between adjacent rides.
 
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.
+The hosted build needs the hosted Supabase URL and publishable key before
+release. Avoid publishing a build configured for the local stack.
 
 The owner approved a Supabase Free project in Paris at no subscription cost
 within Free limits. The release plan removes passenger data 90 days after the
@@ -83,6 +85,36 @@ ride or final decision. Keep one encrypted database export per operating day
 for seven days and verify a restore locally before release. These are approved
 operating terms. Purge automation and the backup and restore procedure must
 be in place before release.
+
+## Google Calendar mirror
+
+The driver can connect an owned calendar by its exact Calendar ID from Google
+Calendar settings. The app is the source of truth. Changes to a confirmed ride
+queue one event per leg. The event contains pickup, Paris time, an estimated
+finish if known, and a link to the signed-in ride. Calendar edits are outside
+the workflow.
+
+The driver workspace attempts sync when it loads or saves a change. If a
+connection or delivery fails, the ride stays saved. Expand **Google Calendar**
+to see unsynced rides, reconnect if needed, and retry. Reconnect to the same
+calendar to preserve existing event identities.
+
+Run the simulation against the local Supabase stack described above:
+
+```powershell
+npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/calendar-sync.mjs
+deno check --no-config supabase/functions/calendar-sync/index.ts
+```
+
+The simulation uses local Auth and PostgreSQL plus simulated Google responses.
+For a separate authorized Google test, the Edge Function needs
+`GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`,
+`GOOGLE_CALENDAR_REDIRECT_URI`, `MUBA_APP_URL`, and
+`MUBA_CALENDAR_ENCRYPTION_KEY` (64 hex characters from a secure generator).
+Supply them through the function runtime's secret configuration. Use the
+app URL and the exact `calendar-sync` callback URL for the test environment.
+Retain the encryption key for reconnect and recovery. The authorized
+test-calendar check requires the owner's approval before any external action.
 
 ## Main files
 

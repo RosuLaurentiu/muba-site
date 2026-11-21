@@ -62,6 +62,13 @@ export const translations = {
         body: "The design keeps actions large, readable, and calm so booking is easy even when clients are in a hurry."
       }
     ],
+    calendar: {
+      title: "Google Calendar", calendarId: "Calendar ID from Google Calendar settings",
+      connect: "Connect calendar", reconnect: "Reconnect calendar", connected: "Connected calendar",
+      retry: "Retry sync", unsynced: "unsynced rides", pending: "Waiting to sync", failed: "Sync failed",
+      syncFailed: "Calendar sync could not finish. Your rides are saved.",
+      connectionFailed: "Could not connect the calendar. Check access and try again."
+    },
     schedule: {
       dayView: "Day schedule", parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
       nextPickup: "Next pickup", openDay: "Open day", dayEmpty: "No confirmed rides or time blocks on this day.",
@@ -312,6 +319,13 @@ export const translations = {
         body: "Le design garde des actions larges, lisibles et rassurantes pour reserver facilement meme quand le client est presse."
       }
     ],
+    calendar: {
+      title: "Google Agenda", calendarId: "Identifiant dans les parametres de Google Agenda",
+      connect: "Connecter l'agenda", reconnect: "Reconnecter l'agenda", connected: "Agenda connecte",
+      retry: "Reessayer la synchronisation", unsynced: "courses non synchronisees", pending: "Synchronisation en attente", failed: "Echec de synchronisation",
+      syncFailed: "Synchronisation impossible. Vos courses sont enregistrees.",
+      connectionFailed: "Connexion a l'agenda impossible. Verifiez l'acces et reessayez."
+    },
     schedule: {
       dayView: "Planning du jour", parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
       nextPickup: "Prochain depart", openDay: "Ouvrir ce jour", dayEmpty: "Aucune course confirmee ni plage bloquee ce jour.",

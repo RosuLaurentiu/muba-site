@@ -209,6 +209,10 @@ a { color: var(--accent); }
 .schedule-fieldset { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
 .next-ride { border-left: .3rem solid var(--accent); background: var(--hint); }
 .muted { color: var(--muted); }
+.calendar-panel { margin-bottom: 1rem; }
+.calendar-panel summary { cursor: pointer; }
+.calendar-content { margin-top: 1rem; }
+.calendar-queue { margin: 0; padding-left: 1.5rem; }
 .sr-only {
   position: absolute;
   inline-size: 1px;

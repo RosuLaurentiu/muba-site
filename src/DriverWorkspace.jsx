@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
+import CalendarPanel from "./CalendarPanel";
 import { BlockEditor, DriverDay, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
 import { getText } from "./i18n";
@@ -219,6 +220,7 @@ function DriverRides({ session, language, layout }) {
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
       </div>
       {load.status === "loadFailed" && haveData && <p role="status">{t("driver.loadFailed")}</p>}
+      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (

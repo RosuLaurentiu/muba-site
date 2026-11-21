@@ -16,3 +16,6 @@ enabled = false
 site_url = "http://127.0.0.1:5173"
 enable_signup = false
 enable_anonymous_sign_ins = false
+
+[functions.calendar-sync]
+verify_jwt = false

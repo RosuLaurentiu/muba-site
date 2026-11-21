@@ -187,7 +187,10 @@ export function ScheduleEditor({ ride, schedule, day, language, rpc, refresh, re
       if (ride) {
         await rpc("change_ride", {
           p_reference: ride.reference, p_version: initialVersion, p_status: "confirmed",
-          p_schedule: { pickup_time: payload.pickup_time, return_time: payload.return_time, estimated_minutes: minutes }
+          p_schedule: {
+            pickup_time: payload.pickup_time, return_time: payload.return_time, estimated_minutes: minutes,
+            pickup: payload.pickup, destination: payload.destination
+          }
         });
         window.location.assign(driverLink(payload.pickup_time.slice(0, 10), { ride: ride.reference, saved: "" }));
       } else {
@@ -224,12 +227,8 @@ export function ScheduleEditor({ ride, schedule, day, language, rpc, refresh, re
         <fieldset className="booking-grid schedule-fieldset" disabled={frozen}>
           <legend className="sr-only">{t("planner.tripTitle")}</legend>
           <div className="panel stack">
-            {!ride && (
-              <>
-                {field("pickup", "planner.labels.pickup", { maxLength: 300 })}
-                {field("destination", "planner.labels.destination", { maxLength: 300 })}
-              </>
-            )}
+            {field("pickup", "planner.labels.pickup", { maxLength: 300, required: true })}
+            {field("destination", "planner.labels.destination", { maxLength: 300, required: true })}
             <div className="time-pair">
               {field("pickupDate", "planner.labels.date", { type: "date" })}
               {field("pickupTime", "planner.labels.time", { type: "time" })}
