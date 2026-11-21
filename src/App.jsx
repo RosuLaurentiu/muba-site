@@ -530,7 +530,7 @@ function RiderBooking({ language }) {
         attempt.current = null;
         setSaveState("rejected");
       } else {
-        setSaveState("failed");
+        setSaveState(error.code === "42501" ? "paused" : "failed");
       }
     } finally {
       saving.current = false;
@@ -548,6 +548,8 @@ function RiderBooking({ language }) {
   }
 
   const t = (key) => getText(language, key);
+  const retrySave = saveState === "failed" || saveState === "paused";
+  const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected" }[saveState];
   const totals = getRouteTotals(route, formData.roundTrip);
   const details = screen === "review" ? [
     ["planner.labels.pickup", formData.pickup.trim()],
@@ -655,7 +657,7 @@ function RiderBooking({ language }) {
 
       {screen === "review" && (
         <form className="passenger-form" onSubmit={handleSave} noValidate>
-          <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || saveState === "failed"}>
+          <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || retrySave}>
             <legend>{t("planner.contactTitle")}</legend>
             {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
             {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
@@ -663,13 +665,13 @@ function RiderBooking({ language }) {
             {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
           </fieldset>
           <div className="actions form-submit">
-            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || saveState === "failed"}>{t("booking.edit")}</button>
+            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
             <button className="button primary" type="submit" disabled={estimating || saveState === "saving"}>
-              {t(saveState === "saving" ? "booking.saving" : saveState === "failed" ? "booking.retry" : "booking.send")}
+              {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
             </button>
           </div>
-          {(saveState === "failed" || saveState === "rejected") && (
-            <p className="field-error" role="alert">{t(saveState === "failed" ? "booking.saveFailed" : "booking.saveRejected")}</p>
+          {saveMessage && (
+            <p className="field-error" role="alert">{t("booking." + saveMessage)}</p>
           )}
         </form>
       )}

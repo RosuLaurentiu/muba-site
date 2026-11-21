@@ -39,7 +39,8 @@ try {
 create schema auth;
 create table auth.users (id uuid primary key);
 create table auth.identities (id uuid primary key, user_id uuid, provider text, identity_data jsonb, last_sign_in_at timestamptz);
-create function auth.uid() returns uuid language sql as 'select null::uuid';
+create function auth.uid() returns uuid language sql
+as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 '@
     Get-ChildItem -LiteralPath (Join-Path $root 'migrations') -Filter '*.sql' -File |
         Sort-Object Name | ForEach-Object {
@@ -56,6 +57,60 @@ select public.save_ride('$requestKey', jsonb_build_object(
 ))->>'reference';
 "@
     Assert-Pilot ($active -match '^\d+$') 'Could not save the fictional active booking.'
+    $pauseTest = @'
+begin;
+select set_config('muba.fixture_key', '__REQUEST_KEY__', true);
+select set_config('muba.fixture_trip', jsonb_build_object(
+  'language', 'en', 'pickup', 'Fictional checkpoint', 'destination', 'Fictional airport',
+  'pickup_time', to_char(now() at time zone 'Europe/Paris' + interval '3 days', 'YYYY-MM-DD"T"HH24:MI'),
+  'passengers', 1, 'passenger_name', 'Fictional Rider', 'passenger_phone', '+33000000000'
+)::text, true);
+insert into auth.users (id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');
+insert into booking_private.driver (user_id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');
+revoke execute on function public.save_ride(uuid, jsonb, text),
+  booking_private.save_ride(uuid, jsonb, text) from anon;
+set local role anon;
+do $check$
+begin
+  if public.get_ride(current_setting('muba.fixture_key')::uuid)->>'reference' is null then
+    raise exception 'Private status stopped working during the intake pause';
+  end if;
+  begin
+    perform public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb);
+    raise exception 'Anonymous web intake could still save during the pause';
+  exception when insufficient_privilege then
+    null;
+  end;
+end;
+$check$;
+set local role authenticated;
+set local request.jwt.claim.sub = 'b6b55d5a-5823-49c8-bdec-508544bf66e3';
+do $check$
+begin
+  if (select count(*) from public.list_rides()) <> 1
+      or public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb, 'phone')->>'status'
+         is distinct from 'confirmed' then
+    raise exception 'The assigned driver could not list or save rides during the pause';
+  end if;
+end;
+$check$;
+reset role;
+grant execute on function public.save_ride(uuid, jsonb, text),
+  booking_private.save_ride(uuid, jsonb, text) to anon;
+set local role anon;
+do $check$
+begin
+  if public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb)->>'status'
+      is distinct from 'pending' then
+    raise exception 'Anonymous web intake did not resume';
+  end if;
+end;
+$check$;
+rollback;
+'@
+    Invoke-PilotSql $source ($pauseTest.Replace('__REQUEST_KEY__', $requestKey.ToString())) | Out-Null
+    'PASS anonymous intake pause and resume, private status, and assigned driver operations.'
+
     $result = Invoke-PilotSql $source @'
 begin;
 insert into booking_private.ride

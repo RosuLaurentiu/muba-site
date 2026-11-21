@@ -130,10 +130,36 @@ running.
 ```
 
 It uses two disposable databases, fictional data, and a one-time encryption
-key. It checks the 90-day cutoff, seven dated encrypted copies and a private
-booking lookup after restore. Before opening the pilot, verify the scheduled
-purge and export on the approved environment and store the export key
+key. It checks the intake pause, 90-day cutoff, seven dated encrypted copies
+and a private booking lookup after restore. Before public release, verify the
+scheduled purge and export on the approved environment. Store the export key
 separately from the archives.
+
+### Pause public booking intake
+
+Rehearse this on the test database. A database administrator can apply the
+pause to the approved production backend if requests go missing, booking
+status and driver decisions disagree, passenger data is exposed, or recovery
+fails. Revoke the anonymous save grants so riders can still open their
+private status links and the driver can manage existing and manual rides.
+
+```sql
+revoke execute on function public.save_ride(uuid, jsonb, text),
+  booking_private.save_ride(uuid, jsonb, text) from anon;
+```
+
+Check that a fictional web request is refused and shows the phone and WhatsApp
+fallback. Check that an existing private status link and the assigned driver
+workspace remain available. Restore intake after the failure is resolved and
+the owner approves reopening.
+
+```sql
+grant execute on function public.save_ride(uuid, jsonb, text),
+  booking_private.save_ride(uuid, jsonb, text) to anon;
+```
+
+Verify a fictional pending web request after reopening. The rider's Retry
+button uses the same key and details if the pause began during a submission.
 
 ## Google Calendar mirror
 
