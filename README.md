@@ -60,6 +60,11 @@ $env:VITE_SUPABASE_PUBLISHABLE_KEY = $supabaseStatus.PUBLISHABLE_KEY
 npm run dev -- --host 127.0.0.1
 ```
 
+Add `?driver` to the local site URL and sign in with the assigned driver's
+email and password. Pending requests and confirmed work have separate lists.
+The driver can open a ride, use its passenger contact or pickup directions,
+and accept or decline a pending request. Refresh to load new requests.
+
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.
 

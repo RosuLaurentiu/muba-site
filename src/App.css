@@ -187,6 +187,20 @@ a { color: var(--accent); }
   color: var(--muted);
 }
 
+.driver-auth { max-width: 30rem; }
+.driver-nav { margin-bottom: 1rem; }
+.driver-sign-out { float: right; margin-bottom: .5rem; }
+.driver-list > h2 { margin-bottom: .7rem; }
+.driver-feedback:not(:empty) { margin-top: 1rem; }
+
+.ride-list {
+  display: grid;
+  gap: .7rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .pac-container {
   margin-top: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { appConfig } from "./config";
 import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validateBooking } from "./booking";
+import BookingDetails from "./BookingDetails";
 import {
   getInitialLanguage,
   getLocalizedConfigValue,
@@ -11,6 +12,7 @@ import {
 } from "./i18n";
 
 const SCRIPT_CACHE = new Map();
+const DriverWorkspace = lazy(() => import("./DriverWorkspace"));
 const INITIAL_FORM_DATA = {
   pickup: "",
   destination: "",
@@ -671,19 +673,6 @@ function RiderBooking({ language }) {
   );
 }
 
-function BookingDetails({ rows }) {
-  return (
-    <dl className="booking-details">
-      {rows.map(([key, value]) => (
-        <div key={key}>
-          <dt>{key}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 function BookingStatus({ language }) {
   const [result, setResult] = useState({ status: "loading" });
   const [refresh, setRefresh] = useState(0);
@@ -732,10 +721,13 @@ function BookingStatus({ language }) {
 }
 
 function App() {
+  const query = new URLSearchParams(window.location.search);
+  const driverView = query.has("driver");
+  const layoutStorageKey = driverView ? "muba-driver-layout" : "muba-rider-layout";
   const [language, setLanguage] = useState(getInitialLanguage);
   const [layout, setLayout] = useState(() => {
     try {
-      return localStorage.getItem("muba-rider-layout") === "dark" ? "dark" : "light";
+      return localStorage.getItem(layoutStorageKey) === "dark" ? "dark" : "light";
     } catch {
       return "light";
     }
@@ -749,13 +741,13 @@ function App() {
   function selectLayout(next) {
     setLayout(next);
     try {
-      localStorage.setItem("muba-rider-layout", next);
+      localStorage.setItem(layoutStorageKey, next);
     } catch {
       // The selected layout remains active until this page is closed.
     }
   }
 
-  const privateView = new URLSearchParams(window.location.search).has("booking");
+  const privateView = query.has("booking");
   return (
     <>
       <header className="site-header">
@@ -776,7 +768,11 @@ function App() {
           </div>
         </div>
       </header>
-      {privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
+      {driverView ? (
+        <Suspense fallback={<main className="site-main"><p role="status">{getText(language, "driver.loading")}</p></main>}>
+          <DriverWorkspace language={language} />
+        </Suspense>
+      ) : privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
     </>
   );
 }

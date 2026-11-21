@@ -62,6 +62,20 @@ export const translations = {
         body: "The design keeps actions large, readable, and calm so booking is easy even when clients are in a hurry."
       }
     ],
+    driver: {
+      title: "Driver workspace", signIn: "Driver sign-in", password: "Password", signOut: "Sign out",
+      signInFailed: "Could not sign in. Check your email and password and try again.",
+      signOutFailed: "Could not sign out. Try again.",
+      loading: "Loading the driver workspace...", unavailable: "Driver access is unavailable.",
+      denied: "This account does not have driver access.", loadFailed: "Could not load rides. Try refreshing.",
+      notFound: "This ride could not be found.", back: "Back to rides", detail: "Ride details",
+      pending: "Pending requests", pendingEmpty: "No pending requests.",
+      confirmed: "Confirmed rides", confirmedEmpty: "No confirmed rides.",
+      notes: "Driver notes", call: "Call passenger", directions: "Pickup directions",
+      accept: "Accept request", decline: "Decline request", decisionSaved: "Decision saved.",
+      staleDecision: "This ride changed since you opened it. Review the current status.",
+      decisionFailed: "Could not verify the change. Check the current status before trying again."
+    },
     booking: {
       light: "Light", dark: "Dark", review: "Review request", edit: "Edit details",
       pickupAt: "Pickup in Paris time", returnAt: "Return in Paris time",
@@ -296,6 +310,20 @@ export const translations = {
         body: "Le design garde des actions larges, lisibles et rassurantes pour reserver facilement meme quand le client est presse."
       }
     ],
+    driver: {
+      title: "Espace chauffeur", signIn: "Connexion chauffeur", password: "Mot de passe", signOut: "Se deconnecter",
+      signInFailed: "Connexion impossible. Verifiez votre e-mail et votre mot de passe, puis reessayez.",
+      signOutFailed: "Deconnexion impossible. Reessayez.",
+      loading: "Chargement de l'espace chauffeur...", unavailable: "L'acces chauffeur est indisponible.",
+      denied: "Ce compte ne dispose pas d'un acces chauffeur.", loadFailed: "Impossible de charger les courses. Actualisez le statut.",
+      notFound: "Cette course est introuvable.", back: "Retour aux courses", detail: "Details de la course",
+      pending: "Demandes en attente", pendingEmpty: "Aucune demande en attente.",
+      confirmed: "Courses confirmees", confirmedEmpty: "Aucune course confirmee.",
+      notes: "Notes du chauffeur", call: "Appeler le passager", directions: "Itineraire vers le depart",
+      accept: "Accepter la demande", decline: "Refuser la demande", decisionSaved: "Decision enregistree.",
+      staleDecision: "Cette course a change. Verifiez son statut actuel.",
+      decisionFailed: "Impossible de verifier le changement. Consultez le statut actuel avant de reessayer."
+    },
     booking: {
       light: "Clair", dark: "Sombre", review: "Verifier la demande", edit: "Modifier",
       pickupAt: "Depart, heure de Paris", returnAt: "Retour, heure de Paris",
