@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { appConfig } from "./config";
-import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validateBooking } from "./booking";
+import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validatePassenger, validateTrip } from "./booking";
 import BookingDetails from "./BookingDetails";
 import { getRouteTotals, routeEstimate } from "./fare";
 import {
@@ -444,7 +444,7 @@ function RiderBooking({ language }) {
 
   async function handleReview(event) {
     event.preventDefault();
-    const nextErrors = validateBooking(formData, capacity);
+    const nextErrors = validateTrip(formData, capacity);
     setErrors(nextErrors);
     const invalid = [...event.currentTarget.elements].find((field) => nextErrors[field.name]);
     if (invalid) {
@@ -497,8 +497,18 @@ function RiderBooking({ language }) {
     setScreen("entry");
   }
 
-  async function handleSave() {
-    if (saving.current) return;
+  async function handleSave(event) {
+    event.preventDefault();
+    if (saving.current || estimating) return;
+    if (!attempt.current) {
+      const nextErrors = validatePassenger(formData);
+      setErrors(nextErrors);
+      const invalid = [...event.currentTarget.elements].find((field) => nextErrors[field.name]);
+      if (invalid) {
+        window.requestAnimationFrame(() => invalid.focus());
+        return;
+      }
+    }
     saving.current = true;
     setSaveState("saving");
     try {
@@ -539,17 +549,13 @@ function RiderBooking({ language }) {
 
   const t = (key) => getText(language, key);
   const totals = getRouteTotals(route, formData.roundTrip);
-  const details = [
+  const details = screen === "review" ? [
     ["planner.labels.pickup", formData.pickup.trim()],
     ["planner.labels.destination", formData.destination.trim()],
-    ["booking.pickupAt", formData.pickupDate + " · " + formData.pickupTime],
-    ...(formData.roundTrip ? [["booking.returnAt", formData.returnDate + " · " + formData.returnTime]] : []),
-    ["planner.labels.passengers", formData.passengers],
-    ["planner.labels.name", formData.customerName.trim()],
-    ["planner.labels.phone", formData.customerPhone.trim()],
-    ...(formData.customerEmail.trim() ? [["planner.labels.email", formData.customerEmail.trim()]] : []),
-    ...(formData.notes.trim() ? [["planner.labels.notes", formData.notes.trim()]] : [])
-  ];
+    ["booking.pickupAt", formatParisTime(getParisInstant(formData.pickupDate + "T" + formData.pickupTime), language)],
+    ...(formData.roundTrip ? [["booking.returnAt", formatParisTime(getParisInstant(formData.returnDate + "T" + formData.returnTime), language)]] : []),
+    ["planner.labels.passengers", formData.passengers]
+  ] : [];
 
   function field(name, label, options = {}) {
     const error = errors[name];
@@ -592,7 +598,7 @@ function RiderBooking({ language }) {
             width="1200" height="800" alt={t("planner.fleetImage")} fetchPriority="high" />
         </header>
         <form className="reservation-form" onSubmit={handleReview} noValidate>
-          <div className="booking-grid">
+          <div className="trip-entry">
             <section className="panel stack" aria-labelledby="trip-heading">
               <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
               {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"), maxLength: 300, required: true })}
@@ -613,16 +619,9 @@ function RiderBooking({ language }) {
                 </div>
               )}
             </section>
-            <section className="panel stack" aria-labelledby="passenger-heading">
-              <h2 id="passenger-heading">{t("planner.contactTitle")}</h2>
-              {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
-              {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
-              {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
-              {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
-            </section>
           </div>
           <div className="reservation-submit">
-            <button className="button primary" type="submit">{t("booking.review")} <span aria-hidden="true">→</span></button>
+            <button className="button primary" type="submit">{t("booking.checkFare")} <span aria-hidden="true">→</span></button>
           </div>
         </form>
       </div>
@@ -646,15 +645,6 @@ function RiderBooking({ language }) {
               <p>{t("booking.confirmationNote")}</p>
             </section>
           </div>
-          <div className="actions form-submit">
-            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || saveState === "failed"}>{t("booking.edit")}</button>
-            <button className="button primary" type="button" onClick={handleSave} disabled={estimating || saveState === "saving"}>
-              {t(saveState === "saving" ? "booking.saving" : saveState === "failed" ? "booking.retry" : "booking.send")}
-            </button>
-          </div>
-          {(saveState === "failed" || saveState === "rejected") && (
-            <p className="field-error" role="alert">{t(saveState === "failed" ? "booking.saveFailed" : "booking.saveRejected")}</p>
-          )}
         </>
       )}
 
@@ -663,12 +653,33 @@ function RiderBooking({ language }) {
         <div ref={mapRef} className="map-surface"></div>
       </div>
 
+      {screen === "review" && (
+        <form className="passenger-form" onSubmit={handleSave} noValidate>
+          <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || saveState === "failed"}>
+            <legend>{t("planner.contactTitle")}</legend>
+            {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
+            {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
+            {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
+            {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
+          </fieldset>
+          <div className="actions form-submit">
+            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || saveState === "failed"}>{t("booking.edit")}</button>
+            <button className="button primary" type="submit" disabled={estimating || saveState === "saving"}>
+              {t(saveState === "saving" ? "booking.saving" : saveState === "failed" ? "booking.retry" : "booking.send")}
+            </button>
+          </div>
+          {(saveState === "failed" || saveState === "rejected") && (
+            <p className="field-error" role="alert">{t(saveState === "failed" ? "booking.saveFailed" : "booking.saveRejected")}</p>
+          )}
+        </form>
+      )}
+
       {screen === "receipt" && (
         <>
           <h1 ref={headingRef} tabIndex={-1}>{t("booking.receipt")}</h1>
           <div className="panel stack">
-            <p><strong>{t("booking.reference")} {receipt.reference}</strong></p>
-            <p role="status">{t("booking.state." + receipt.status)}</p>
+            <p className="booking-reference">{t("booking.reference")} <strong>{receipt.reference}</strong></p>
+            <p className="booking-status" role="status">{t("booking.state." + receipt.status)}</p>
             <p>{t("booking.keepLink")}</p>
             <a className="button primary" href={"?booking#key=" + receipt.key}>{t("booking.view")}</a>
           </div>
@@ -710,8 +721,9 @@ function BookingStatus({ language }) {
       <div className="panel stack">
         {ride ? (
           <>
-            <p><strong>{t("booking.reference")} {ride.reference}</strong></p>
-            <p role="status">{t("booking.state." + ride.status)}</p>
+            <p className="booking-reference">{t("booking.reference")} <strong>{ride.reference}</strong></p>
+            <p className="booking-status" role="status">{t("booking.state." + ride.status)}</p>
+            {ride.status === "pending" && <p>{t("booking.checkStatusLater")}</p>}
             <BookingDetails rows={[
               [t("planner.labels.pickup"), ride.pickup],
               [t("planner.labels.destination"), ride.destination],

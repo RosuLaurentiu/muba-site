@@ -105,10 +105,13 @@ h3 { font-size: 1.05rem; }
 .field-error { font-weight: 600; }
 .form-submit, .schedule-controls { margin-block: 1rem; }
 .reservation-form { background: var(--panel); border: 1px solid var(--line); border-radius: .35rem; }
-.reservation-form .booking-grid { gap: 0; align-items: stretch; }
 .reservation-form .panel { border: 0; background: transparent; align-content: start; }
-.reservation-form .panel + .panel { border-top: 1px solid var(--line); }
 .reservation-submit { display: flex; justify-content: flex-end; border-top: 1px solid var(--line); padding: 1rem clamp(1.15rem, 2.1vw, 2rem); }
+.passenger-form { margin-top: 1.5rem; }
+.passenger-fields { min-inline-size: 0; margin: 0; }
+.passenger-fields legend { padding-inline: .35rem; font-size: 1.15rem; font-weight: 700; }
+.booking-reference { font-size: 1.25rem; }
+.booking-status { border-left: 3px solid var(--accent); padding: .65rem .85rem; background: var(--hint); }
 .booking-details { margin: 0; overflow-wrap: anywhere; display: grid; gap: .75rem; }
 .booking-details dt { color: var(--muted); font-size: .85rem; }
 .booking-details dd { margin: 0; white-space: pre-wrap; font-weight: 600; }
@@ -150,7 +153,6 @@ h3 { font-size: 1.05rem; }
 
 @media (min-width: 750px) {
   .booking-grid { grid-template-columns: 1.05fr .95fr; }
-  .reservation-form .panel + .panel { border-top: 0; border-left: 1px solid var(--line); }
   .signin-layout { grid-template-columns: minmax(19rem, .8fr) 1.2fr; }
   .driver-main .booking-grid { grid-template-columns: 1.28fr .72fr; gap: 2.5rem; }
 }

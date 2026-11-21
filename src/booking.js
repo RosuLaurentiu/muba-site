@@ -21,7 +21,7 @@ export function getParisInstant(localTime) {
   return null;
 }
 
-export function validateBooking(form, capacity, now = new Date()) {
+export function validateTrip(form, capacity, now = new Date()) {
   const errors = {};
   if (!form.pickup.trim()) errors.pickup = "status.pickupRequired";
   if (!form.destination.trim()) errors.destination = "status.destinationRequired";
@@ -44,6 +44,11 @@ export function validateBooking(form, capacity, now = new Date()) {
   if (!Number.isInteger(Number(form.passengers)) || form.passengers < 1 || form.passengers > capacity) {
     errors.passengers = "booking.passengersRequired";
   }
+  return errors;
+}
+
+export function validatePassenger(form) {
+  const errors = {};
   if (!form.customerName.trim()) errors.customerName = "status.nameRequired";
   const phone = form.customerPhone.trim();
   if (!/^[+]?[\d ().-]+$/.test(phone) || !/^\d{7,15}$/.test(phone.replace(/\D/g, ""))) {
@@ -54,6 +59,10 @@ export function validateBooking(form, capacity, now = new Date()) {
     errors.customerEmail = "booking.invalidEmail";
   }
   return errors;
+}
+
+export function validateBooking(form, capacity, now = new Date()) {
+  return { ...validateTrip(form, capacity, now), ...validatePassenger(form) };
 }
 
 export function bookingPayload(form, language) {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { bookingPayload, getParisInstant, validateBooking } from "../../src/booking.js";
+import { bookingPayload, getParisInstant, validateBooking, validatePassenger, validateTrip } from "../../src/booking.js";
 
 const now = new Date("2090-05-21T07:00:00Z");
 const trip = {
@@ -9,6 +9,11 @@ const trip = {
 };
 
 assert.deepEqual(validateBooking(trip, 8, now), {});
+const withoutContact = { ...trip, customerName: "", customerPhone: "" };
+assert.deepEqual(validateTrip(withoutContact, 8, now), {});
+assert.deepEqual(validatePassenger(withoutContact), {
+  customerName: "status.nameRequired", customerPhone: "booking.validPhoneRequired"
+});
 assert.deepEqual(validateBooking({ ...trip, passengers: "9", customerPhone: "123", returnTime: "09:00" }, 8, now), {
   returnTime: "booking.laterReturn",
   passengers: "booking.passengersRequired",

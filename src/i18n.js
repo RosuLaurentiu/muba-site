@@ -108,6 +108,7 @@ export const translations = {
     booking: {
       appearance: "Appearance",
       light: "Light", dark: "Dark", review: "Review request", edit: "Edit details",
+      checkFare: "Review trip and fare",
       pickupAt: "Pickup in Paris time", returnAt: "Return in Paris time",
       pickupDateRequired: "Enter a pickup date.", pickupTimeRequired: "Enter a pickup time.",
       invalidParisTime: "Choose a valid local time in Paris.", futurePickup: "Choose a future pickup time in Paris.",
@@ -121,6 +122,7 @@ export const translations = {
       saveRejected: "We could not save the request. Check the details or try again later.",
       receipt: "Request received", reference: "Booking reference",
       keepLink: "Keep the private booking link to see the driver's decision.",
+      checkStatusLater: "Refresh this page to check whether the driver has confirmed your request.",
       view: "View booking", another: "Start a new request", refresh: "Refresh status",
       contact: "Contact the driver", call: "Call",
       state: { pending: "Pending driver confirmation", confirmed: "Ride confirmed", declined: "Request declined", cancelled: "Ride cancelled" },
@@ -374,6 +376,7 @@ export const translations = {
     booking: {
       appearance: "Apparence",
       light: "Clair", dark: "Sombre", review: "Verifier la demande", edit: "Modifier",
+      checkFare: "Verifier le trajet et le tarif",
       pickupAt: "Depart, heure de Paris", returnAt: "Retour, heure de Paris",
       pickupDateRequired: "Indiquez une date de depart.", pickupTimeRequired: "Indiquez une heure de depart.",
       invalidParisTime: "Choisissez une heure locale valide a Paris.", futurePickup: "Choisissez une heure de depart ulterieure a Paris.",
@@ -387,6 +390,7 @@ export const translations = {
       saveRejected: "Impossible d'enregistrer la demande. Verifiez les details ou reessayez plus tard.",
       receipt: "Demande recue", reference: "Reference de reservation",
       keepLink: "Conservez le lien prive pour consulter la decision du chauffeur.",
+      checkStatusLater: "Actualisez cette page pour voir si le chauffeur a confirme votre demande.",
       view: "Voir la reservation", another: "Nouvelle demande", refresh: "Actualiser le statut",
       contact: "Contacter le chauffeur", call: "Appeler",
       state: { pending: "En attente de confirmation du chauffeur", confirmed: "Course confirmee", declined: "Demande refusee", cancelled: "Course annulee" },

@@ -141,6 +141,11 @@ time, decline, or cancellation. The receipt page still provides the private
 status link. The app stores the email in the private schema and creates the
 delivery record in the same transaction as the booking change.
 
+Riders review their trip and estimate before entering passenger details. They
+can edit the trip without losing those details. If a rider cannot verify a
+save, **Retry request** repeats the same request. The private booking page
+shows the current decision, with Paris times for each leg.
+
 Run the local delivery test on an unassigned stack with an empty email queue.
 The test starts a loopback mail capture server and uses fictional addresses.
 
