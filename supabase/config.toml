@@ -1,0 +1,18 @@
+project_id = "muba-site"
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[auth]
+site_url = "http://127.0.0.1:5173"
+enable_signup = false
+enable_anonymous_sign_ins = false
