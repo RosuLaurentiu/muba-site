@@ -23,6 +23,8 @@ docker network create --driver bridge --opt com.docker.network.bridge.host_bindi
 npx --yes supabase@3.2.0 start --network-id muba-site-local -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor | Out-Null
 npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/ride-storage.mjs
 npx --yes supabase@3.2.0 db advisors --level warn --fail-on warn
+node supabase/tests/rider-input.mjs
+node supabase/tests/schedule.mjs
 ```
 
 Run the integration test on an unassigned local stack. It provisions two
@@ -64,6 +66,13 @@ Add `?driver` to the local site URL and sign in with the assigned driver's
 email and password. Pending requests and confirmed work have separate lists.
 The driver can open a ride, use its passenger contact or pickup directions,
 and accept or decline a pending request. Refresh to load new requests.
+
+The day schedule uses Paris time and lists each leg separately. The driver
+can browse upcoming days, block time, record phone or WhatsApp bookings,
+reschedule a confirmed ride, and cancel it. The save controls show overlaps
+with rides and blocks before writing, and the database checks again during
+each write. With no finish estimate, the schedule reserves the pickup minute
+and shows the unknown finish. Check travel time between adjacent rides.
 
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.

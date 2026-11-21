@@ -4,8 +4,8 @@ const parisClock = new Intl.DateTimeFormat("sv-SE", {
   timeStyle: "short"
 });
 
-function parisMinute(date) {
-  return parisClock.format(date).replace(" ", "T");
+export function parisMinute(date) {
+  return parisClock.format(new Date(date)).replace(" ", "T");
 }
 
 export function getParisInstant(localTime) {

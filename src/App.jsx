@@ -512,7 +512,11 @@ function RiderBooking({ language }) {
     setSaveState("saving");
     try {
       if (!attempt.current) {
-        attempt.current = { key: crypto.randomUUID(), payload: bookingPayload(formData, language) };
+        const payload = bookingPayload(formData, language);
+        if (route && route.durationMinutes > 0 && route.durationMinutes <= 1440) {
+          payload.estimated_minutes = Math.ceil(route.durationMinutes);
+        }
+        attempt.current = { key: crypto.randomUUID(), payload };
       }
       const { key, payload } = attempt.current;
       const result = await bookingRpc("save_ride", { p_request_key: key, p_trip: payload });
@@ -770,7 +774,7 @@ function App() {
       </header>
       {driverView ? (
         <Suspense fallback={<main className="site-main"><p role="status">{getText(language, "driver.loading")}</p></main>}>
-          <DriverWorkspace language={language} />
+          <DriverWorkspace language={language} layout={layout} />
         </Suspense>
       ) : privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
     </>

@@ -192,6 +192,33 @@ a { color: var(--accent); }
 .driver-sign-out { float: right; margin-bottom: .5rem; }
 .driver-list > h2 { margin-bottom: .7rem; }
 .driver-feedback:not(:empty) { margin-top: 1rem; }
+.schedule-controls { margin-block: .75rem; }
+.schedule-date {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  align-items: end;
+  gap: .5rem;
+  max-width: 22rem;
+}
+.schedule-date label { grid-column: 2; }
+.schedule-date a:last-child { grid-column: 3; }
+.schedule-controls .field { display: block; font-weight: 650; }
+.schedule-entry { display: grid; gap: .25rem; overflow-wrap: anywhere; }
+.schedule-duration { max-width: 24rem; }
+.schedule-preview { margin-top: 1rem; }
+.schedule-fieldset { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+.next-ride { border-left: .3rem solid var(--accent); background: var(--hint); }
+.muted { color: var(--muted); }
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .ride-list {
   display: grid;

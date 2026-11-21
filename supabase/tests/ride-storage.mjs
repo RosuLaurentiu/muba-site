@@ -26,7 +26,8 @@ async function request(path, { body, token, admin = false, method = "POST", expe
   });
   const content = await response.text();
   const data = content ? JSON.parse(content) : null;
-  assert.equal(response.status, expected, `${path}: ${data?.code ?? response.status}`);
+  const allowed = Array.isArray(expected) ? expected : [expected];
+  assert.ok(allowed.includes(response.status), `${path}: ${data?.code ?? response.status}`);
   return data;
 }
 
@@ -46,6 +47,10 @@ const trip = {
 const key = randomUUID();
 const secondKey = randomUUID();
 const manualKey = randomUUID();
+const blockId = randomUUID();
+const blockedKey = randomUUID();
+const raceKeys = [randomUUID(), randomUUID()];
+const clockGapKey = randomUUID();
 
 async function createAccount(role) {
   const email = `${role}-${randomUUID()}@example.test`;
@@ -145,12 +150,40 @@ try {
   assert.equal(privateRows.length, 3);
   assert.equal(privateRows.find(ride => String(ride.reference) === manual.reference).source, "whatsapp");
   assert.equal((await rpc("save_ride", {
-    p_request_key: randomUUID(), p_trip: { ...trip, pickup_time: "2090-03-26T02:30" },
+    p_request_key: clockGapKey, p_trip: { ...trip, pickup_time: "2090-03-26T02:30" },
   }, null, 400)).message, "INVALID_PARIS_TIME");
   console.log("PASS manual source, restricted rider access, and spring clock-change validation");
+
+  const block = { p_id: blockId, p_start: "2090-05-22T09:00", p_end: "2090-05-22T10:00" };
+  await rpc("list_blocks", {}, null, 401);
+  assert.equal((await rpc("save_block", block, otherToken, 403)).message, "DRIVER_REQUIRED");
+  const savedBlock = await rpc("save_block", block, newToken);
+  assert.deepEqual(await rpc("save_block", block, newToken), savedBlock);
+  assert.equal((await rpc("list_blocks", {}, newToken)).filter(entry => entry.id === blockId).length, 1);
+
+  const blockedTime = { ...trip, pickup_time: "2090-05-22T09:30", return_time: null, estimated_minutes: 35 };
+  const blockedSave = { p_request_key: blockedKey, p_trip: blockedTime };
+  assert.equal((await rpc("save_ride", { ...blockedSave, p_source: "phone" }, newToken, 409)).message, "SCHEDULE_CONFLICT");
+  const blockedRequest = await rpc("save_ride", blockedSave);
+  assert.equal((await rpc("change_ride", {
+    p_reference: blockedRequest.reference, p_version: 1, p_status: "confirmed",
+  }, newToken, 409)).message, "SCHEDULE_CONFLICT");
+  assert.equal((await rpc("change_ride", {
+    p_reference: manual.reference, p_version: 1, p_status: "confirmed", p_schedule: blockedTime,
+  }, newToken, 409)).message, "SCHEDULE_CONFLICT");
+  await rpc("remove_block", { p_id: blockId }, newToken, 204);
+  assert.equal((await rpc("list_blocks", {}, newToken)).some(entry => entry.id === blockId), false);
+
+  const overlapping = await Promise.all(raceKeys.map(p_request_key => rpc("save_ride", {
+    p_request_key, p_source: "phone", p_trip: blockedTime,
+  }, newToken, [200, 409])));
+  assert.equal(overlapping.filter(result => result.status === "confirmed").length, 1);
+  assert.equal(overlapping.filter(result => result.message === "SCHEDULE_CONFLICT").length, 1);
+  console.log("PASS driver-only time blocks, conflicts across all schedule writes, and concurrent overlap rejection");
 } finally {
   // Use hashes so cleanup also covers a save that committed before the test observed its reply.
-  const keys = [key, secondKey, manualKey].map(value => `sha256(uuid_send('${value}'::uuid))`);
+  const keys = [key, secondKey, manualKey, blockedKey, clockGapKey, ...raceKeys].map(value => `sha256(uuid_send('${value}'::uuid))`);
   sql(`delete from booking_private.ride where request_key_hash in (${keys.join(",")});`);
+  sql(`delete from booking_private.time_block where id = '${blockId}';`);
   for (const id of users) await request("/auth/v1/admin/users/" + id, { method: "DELETE", admin: true });
 }

@@ -62,6 +62,24 @@ export const translations = {
         body: "The design keeps actions large, readable, and calm so booking is easy even when clients are in a hurry."
       }
     ],
+    schedule: {
+      dayView: "Day schedule", parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
+      nextPickup: "Next pickup", openDay: "Open day", dayEmpty: "No confirmed rides or time blocks on this day.",
+      returnLeg: "Return leg", finish: "Estimated finish", finishUnknown: "Finish time unavailable",
+      blocked: "Blocked until", addBlock: "Block time", removeBlock: "Remove block", confirmRemove: "Remove this time block?",
+      start: "Start in Paris time", end: "End in Paris time", invalidBlock: "Choose a valid future end after the start.",
+      saveBlock: "Save time block", removed: "Time block removed.",
+      addRide: "Add ride", source: "Booking source", phone: "Phone", saveRide: "Save ride",
+      reschedule: "Reschedule ride", cancelRide: "Cancel ride", confirmCancel: "Cancel this confirmed ride?",
+      duration: "Estimated minutes per leg (optional)", durationInvalid: "Enter a whole number from 1 to 1440.",
+      conflict: "Schedule conflict", legsOverlap: "The outbound and return rides overlap.",
+      neighbors: "Adjacent rides", saved: "Saved.",
+      checkTravel: "Check travel time between pickups.", otherEntries: "Other rides and time blocks",
+      conflictChanged: "The schedule changed. Review the conflicts before trying again.",
+      reopenEdit: "This ride changed. Reopen it to edit the latest schedule.",
+      saveFailed: "Could not save the change. Check the current schedule.",
+      retrySame: "Could not verify the save. Retry with the same details.", retry: "Retry save"
+    },
     driver: {
       title: "Driver workspace", signIn: "Driver sign-in", password: "Password", signOut: "Sign out",
       signInFailed: "Could not sign in. Check your email and password and try again.",
@@ -162,22 +180,6 @@ export const translations = {
       emailTrip: "Email this trip",
       whatsAppTrip: "Send on WhatsApp",
       defaultStatus: "Add the trip details to preview the route and send a polished booking request."
-    },
-    schedule: {
-      eyebrow: "Scheduling",
-      title: "Use Calendly for confirmations and automatic reminders.",
-      body: "For a solo taxi business, this is the simplest production setup: the website handles trip details, while Calendly handles appointment slots, confirmations, and notifications.",
-      label: "Recommended setup",
-      points: [
-        "Keep call and email visible for clients who want immediate contact.",
-        "Use the route form to capture pickup, destination, and phone number.",
-        "Let Calendly manage the time selection and reminder emails."
-      ],
-      openPage: "Open scheduling page",
-      helperMissing: "Add your Calendly link in config.js to enable direct scheduling.",
-      helperWithUrl: "Use this link for a full-page scheduling flow or keep the inline embed below.",
-      placeholder: "Your Calendly inline widget will appear here once the URL is configured.",
-      placeholderError: "Calendly could not be loaded right now. Use the scheduling button instead."
     },
     footer: {
       eyebrow: "Contact",
@@ -310,6 +312,24 @@ export const translations = {
         body: "Le design garde des actions larges, lisibles et rassurantes pour reserver facilement meme quand le client est presse."
       }
     ],
+    schedule: {
+      dayView: "Planning du jour", parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
+      nextPickup: "Prochain depart", openDay: "Ouvrir ce jour", dayEmpty: "Aucune course confirmee ni plage bloquee ce jour.",
+      returnLeg: "Trajet retour", finish: "Fin estimee", finishUnknown: "Heure de fin indisponible",
+      blocked: "Bloque jusqu'a", addBlock: "Bloquer un creneau", removeBlock: "Liberer le creneau", confirmRemove: "Liberer ce creneau ?",
+      start: "Debut, heure de Paris", end: "Fin, heure de Paris", invalidBlock: "Choisissez une fin future apres le debut.",
+      saveBlock: "Enregistrer le creneau", removed: "Creneau libere.",
+      addRide: "Ajouter une course", source: "Origine de la course", phone: "Telephone", saveRide: "Enregistrer la course",
+      reschedule: "Deplacer la course", cancelRide: "Annuler la course", confirmCancel: "Annuler cette course confirmee ?",
+      duration: "Duree estimee par trajet en minutes (facultatif)", durationInvalid: "Saisissez un entier de 1 a 1440.",
+      conflict: "Conflit de planning", legsOverlap: "Le trajet aller chevauche le trajet retour.",
+      neighbors: "Courses proches", saved: "Enregistre.",
+      checkTravel: "Verifiez le temps de trajet entre deux departs.", otherEntries: "Autres courses et creneaux bloques",
+      conflictChanged: "Le planning a change. Verifiez les conflits avant de reessayer.",
+      reopenEdit: "Cette course a change. Rouvrez-la pour modifier le dernier planning.",
+      saveFailed: "Impossible d'enregistrer la modification. Verifiez le planning actuel.",
+      retrySame: "Impossible de verifier l'enregistrement. Reessayez avec les memes donnees.", retry: "Reessayer"
+    },
     driver: {
       title: "Espace chauffeur", signIn: "Connexion chauffeur", password: "Mot de passe", signOut: "Se deconnecter",
       signInFailed: "Connexion impossible. Verifiez votre e-mail et votre mot de passe, puis reessayez.",
@@ -410,22 +430,6 @@ export const translations = {
       emailTrip: "Envoyer ce trajet par email",
       whatsAppTrip: "Envoyer sur WhatsApp",
       defaultStatus: "Ajoutez les details du trajet pour afficher l'itineraire et envoyer une demande de reservation plus soignee."
-    },
-    schedule: {
-      eyebrow: "Planification",
-      title: "Utilisez Calendly pour les confirmations et rappels automatiques.",
-      body: "Pour une activite de taxi independant, c'est la configuration la plus simple : le site gere les details du trajet, tandis que Calendly gere les creneaux, confirmations et notifications.",
-      label: "Configuration recommandee",
-      points: [
-        "Gardez l'appel et l'email visibles pour les clients qui veulent un contact immediat.",
-        "Utilisez le formulaire pour recuperer depart, destination et numero de telephone.",
-        "Laissez Calendly gerer le choix de l'heure et les emails de rappel."
-      ],
-      openPage: "Ouvrir la page de planification",
-      helperMissing: "Ajoutez votre lien Calendly dans config.js pour activer la planification directe.",
-      helperWithUrl: "Utilisez ce lien pour une planification en pleine page ou conservez l'integration ci-dessous.",
-      placeholder: "Votre widget Calendly apparaitra ici une fois l'URL configuree.",
-      placeholderError: "Calendly n'a pas pu se charger pour le moment. Utilisez le bouton de planification a la place."
     },
     footer: {
       eyebrow: "Contact",
