@@ -79,7 +79,11 @@ export function DriverDay({ schedule, day, today, language, layout, onRemove }) 
         {entry.ride ? (
           <>
             <span>{entry.ride.passenger_name} · <a href={"tel:" + entry.ride.passenger_phone.replace(/[^+\d]/g, "")}>{entry.ride.passenger_phone}</a></span>
-            <a className="button" href={driverLink(day, { ride: entry.ride.reference })}>{t("driver.detail")} {entry.ride.reference}</a>
+            <div className="actions">
+              <a className="button" href={driverLink(day, { ride: entry.ride.reference })}>{t("driver.detail")} {entry.ride.reference}</a>
+              {highlighted && <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(entry.pickup)}
+                target="_blank" rel="noreferrer">{t("driver.directions")}</a>}
+            </div>
           </>
         ) : (
           <button className="button" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>

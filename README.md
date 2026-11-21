@@ -201,8 +201,10 @@ The app supports English and French.
 
 - On first load, it defaults to the device/browser language when available.
 - If the visitor manually switches language, that choice is saved locally.
-- Light and Dark are available in both languages. Changing language or layout
-  preserves the entered trip details.
+- The booking page and driver workspace start in Dark. Each remembers its own
+  Light or Dark preference. Switching language or appearance preserves trip details.
+- **Reserve a ride** focuses the pickup field. The footer links to the driver
+  workspace, where the next pickup includes a passenger phone link and directions.
 
 ## Integrations
 

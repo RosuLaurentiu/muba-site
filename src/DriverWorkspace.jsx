@@ -108,7 +108,7 @@ function PendingList({ rides, language, day }) {
   const t = (key) => getText(language, key);
   return (
     <section className="driver-list" id="pending" aria-labelledby="pending-heading">
-      <h2 id="pending-heading">{t("driver.pending")}</h2>
+      <h2 id="pending-heading">{t("driver.pending")} <span className="request-count">{rides.length}</span></h2>
       {rides.length ? (
         <ul className="ride-list">
           {rides.map((ride) => (
@@ -203,14 +203,14 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
           <div className="actions form-submit">
             <button className="button primary" type="button" disabled={busy || refreshing || hasConflict || !durationValid}
               onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
-            <button className="button" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
+            <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
           </div>
         </>
       )}
       {ride.status === "confirmed" && (
         <div className="actions form-submit">
           <a className="button" href={driverLink(day, { ride: ride.reference, edit: "" })}>{t("schedule.reschedule")}</a>
-          <button className="button" type="button" disabled={busy || refreshing} onClick={() => decide("cancelled")}>{t("schedule.cancelRide")}</button>
+          <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("cancelled")}>{t("schedule.cancelRide")}</button>
         </div>
       )}
       <p className="driver-feedback" role="status">{notice && t(notice)}</p>
@@ -315,19 +315,17 @@ function DriverRides({ session, language, layout }) {
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
   return (
     <>
-      <div className="actions driver-nav">
-        {subpage && <a className="button" href={driverLink(day)}>{t("driver.back")}</a>}
-        <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
-      </div>
+      {subpage
+        ? <a className="driver-back" href={driverLink(day)}>← {t("driver.back")}</a>
+        : <h1>{t("driver.title")}</h1>}
       <div role="status">
-        {haveData && alerts?.count > 0 && <p>
+        {haveData && alerts?.count > 0 && <p className="request-alert">
           {t("driver.bookingAlerts")} {alerts.count}{" "}
           <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>
         </p>}
       </div>
       {load.status === "loadFailed" && haveData && <p role="status">{t("driver.loadFailed")}</p>}
       {haveData && <BookingEmailStatus language={language} />}
-      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
@@ -339,7 +337,7 @@ function DriverRides({ session, language, layout }) {
           notice={notice || (query.has("saved") ? "schedule.saved" : "")} refreshing={!ready} schedule={schedule} day={day} />
       ) : (
         <>
-          <h1>{t("driver.title")}</h1>
+          {subpage && <h1>{t("driver.title")}</h1>}
           {haveData && !subpage ? (
             <>
               <p className="driver-feedback" role="status">{notice ? t(notice) : query.has("saved") ? t("schedule.saved") : ""}</p>
@@ -351,6 +349,10 @@ function DriverRides({ session, language, layout }) {
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
+      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
+      <div className="driver-nav">
+        <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
+      </div>
     </>
   );
 }
@@ -449,7 +451,7 @@ export default function DriverWorkspace({ language, layout }) {
   }
 
   return (
-    <main className="site-main">
+    <main className="site-main driver-main">
       {!client || session === undefined || completingSignIn ? (
         <>
           <h1>{t("driver.title")}</h1>
@@ -457,27 +459,30 @@ export default function DriverWorkspace({ language, layout }) {
         </>
       ) : session ? (
         <>
-          <button className="button driver-sign-out" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
           <DriverRides key={session.user.id} session={session} language={language} layout={layout} />
+          <button className="button driver-sign-out" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
         </>
       ) : (
-        <>
-          <h1>{t("driver.signIn")}</h1>
-          <form className="panel stack driver-auth" onSubmit={signIn}>
-            <div className="field"><label htmlFor="driver-email">{t("footer.email")}</label>
-              <input id="driver-email" name="email" type="email" autoComplete="username" required />
-            </div>
-            <div className="field"><label htmlFor="driver-password">{t("driver.password")}</label>
-              <input id="driver-password" name="password" type="password" autoComplete="current-password" required />
-            </div>
-            <button className="button primary" type="submit" disabled={busy}>{t("driver.signIn")}</button>
-            {googleEnabled && (
-              <button className="button" type="button" disabled={busy} onClick={signInWithGoogle}>
-                {t("driver.googleSignIn")}
-              </button>
-            )}
-          </form>
-        </>
+        <div className="signin-layout">
+          <div>
+            <h1>{t("driver.signIn")}</h1>
+            <form className="panel stack driver-auth" onSubmit={signIn}>
+              <div className="field"><label htmlFor="driver-email">{t("footer.email")}</label>
+                <input id="driver-email" name="email" type="email" autoComplete="username" required />
+              </div>
+              <div className="field"><label htmlFor="driver-password">{t("driver.password")}</label>
+                <input id="driver-password" name="password" type="password" autoComplete="current-password" required />
+              </div>
+              <button className="button primary" type="submit" disabled={busy}>{t("driver.signIn")}</button>
+              {googleEnabled && (
+                <button className="button" type="button" disabled={busy} onClick={signInWithGoogle}>
+                  {t("driver.googleSignIn")}
+                </button>
+              )}
+            </form>
+          </div>
+          <img className="fleet-photo" src={import.meta.env.BASE_URL + "paris-fleet.jpg"} width="1200" height="800" alt="" />
+        </div>
       )}
       {errorKey && <p className="field-error form-submit" role="alert">{t(errorKey)}</p>}
     </main>

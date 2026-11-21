@@ -12,7 +12,7 @@ export const translations = {
     },
     meta: {
       title: "Private Taxi Paris | Paris Airport Transfers & Chauffeur Service",
-      description: "Book a private taxi in Paris for airport transfers, city rides, and chauffeur trips. Get a route estimate and confirm fast by email or WhatsApp."
+      description: "Request a private transfer in Paris and review your trip before the driver confirms availability."
     },
     nav: {
       home: "Home",
@@ -106,6 +106,7 @@ export const translations = {
       decisionFailed: "Could not verify the change. Check the current status before trying again."
     },
     booking: {
+      appearance: "Appearance",
       light: "Light", dark: "Dark", review: "Review request", edit: "Edit details",
       pickupAt: "Pickup in Paris time", returnAt: "Return in Paris time",
       pickupDateRequired: "Enter a pickup date.", pickupTimeRequired: "Enter a pickup time.",
@@ -126,9 +127,11 @@ export const translations = {
       lookup: { loading: "Loading booking...", missing: "This booking link is invalid or has expired.", error: "Could not load the booking. Try refreshing." }
     },
     planner: {
-      eyebrow: "Reserve a ride",
-      title: "Book a private taxi in Paris",
-      body: "Request an advance ride in Paris. Your driver will confirm whether they can take the trip.",
+      startBooking: "Reserve a ride",
+      title: "Private transfers",
+      headlinePlace: "in Paris.",
+      fleetImage: "A white Tesla sedan and a black Mercedes van on a Paris boulevard.",
+      body: "Plan a city ride or an airport transfer. Your driver will confirm availability after you send your request.",
       introLabel: "Mobile booking flow",
       steps: ["1. Route", "2. Contact", "3. Confirm"],
       tripTitle: "Trip details",
@@ -275,7 +278,7 @@ export const translations = {
     },
     meta: {
       title: "Private Taxi Paris | Transferts aeroport et chauffeur prive a Paris",
-      description: "Reservez un taxi prive a Paris pour vos transferts aeroport, trajets en ville et courses avec chauffeur. Obtenez une estimation et confirmez rapidement par email ou WhatsApp."
+      description: "Demandez un transfert prive a Paris. Verifiez les details de votre trajet avant la confirmation du chauffeur."
     },
     nav: {
       home: "Accueil",
@@ -369,6 +372,7 @@ export const translations = {
       decisionFailed: "Impossible de verifier le changement. Consultez le statut actuel avant de reessayer."
     },
     booking: {
+      appearance: "Apparence",
       light: "Clair", dark: "Sombre", review: "Verifier la demande", edit: "Modifier",
       pickupAt: "Depart, heure de Paris", returnAt: "Retour, heure de Paris",
       pickupDateRequired: "Indiquez une date de depart.", pickupTimeRequired: "Indiquez une heure de depart.",
@@ -389,9 +393,11 @@ export const translations = {
       lookup: { loading: "Chargement de la reservation...", missing: "Le lien de reservation est invalide ou expire.", error: "Impossible de charger la reservation. Actualisez le statut." }
     },
     planner: {
-      eyebrow: "Reserver un trajet",
-      title: "Reservez un taxi prive a Paris",
-      body: "Demandez une course a Paris a l'avance. Votre chauffeur vous indiquera s'il peut assurer la course.",
+      startBooking: "Reserver un trajet",
+      title: "Transferts prives",
+      headlinePlace: "a Paris.",
+      fleetImage: "Une Tesla blanche et un van Mercedes noir sur un boulevard parisien.",
+      body: "Preparez un trajet en ville ou un transfert aeroport. Le chauffeur confirmera sa disponibilite apres votre demande.",
       introLabel: "Parcours mobile",
       steps: ["1. Itineraire", "2. Contact", "3. Confirmation"],
       tripTitle: "Details du trajet",

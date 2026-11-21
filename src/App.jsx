@@ -584,16 +584,27 @@ function RiderBooking({ language }) {
   }
 
   return (
-    <main className="site-main">
+    <main className="site-main rider-main">
       <div hidden={screen !== "entry"}>
-        <h1 ref={screen === "entry" ? headingRef : null} tabIndex={-1}>{t("planner.title")}</h1>
-        <p className="intro">{t("planner.body")}</p>
-        <form onSubmit={handleReview} noValidate>
+        <header className="booking-hero">
+          <div className="hero-copy">
+            <h1 ref={screen === "entry" ? headingRef : null} tabIndex={-1}>
+              {t("planner.title")} <em>{t("planner.headlinePlace")}</em>
+            </h1>
+            <p className="intro">{t("planner.body")}</p>
+            <button type="button" className="button hero-action" onClick={() => pickupInputRef.current?.focus()}>
+              {t("planner.startBooking")} <span aria-hidden="true">↓</span>
+            </button>
+          </div>
+          <img className="fleet-photo" src={import.meta.env.BASE_URL + "paris-fleet.jpg"}
+            width="1200" height="800" alt={t("planner.fleetImage")} fetchPriority="high" />
+        </header>
+        <form className="reservation-form" onSubmit={handleReview} noValidate>
           <div className="booking-grid">
             <section className="panel stack" aria-labelledby="trip-heading">
               <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
-              {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", maxLength: 300, required: true })}
-              {field("destination", "destination", { ref: destinationInputRef, maxLength: 300, required: true })}
+              {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"), maxLength: 300, required: true })}
+              {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"), maxLength: 300, required: true })}
               <div className="time-pair">
                 {field("pickupDate", "date", { type: "date", required: true })}
                 {field("pickupTime", "time", { type: "time", required: true })}
@@ -615,10 +626,12 @@ function RiderBooking({ language }) {
               {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
               {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
               {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
-              {field("notes", "notes", { rows: 3, maxLength: 1500 })}
+              {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
             </section>
           </div>
-          <button className="button primary form-submit" type="submit">{t("booking.review")}</button>
+          <div className="reservation-submit">
+            <button className="button primary" type="submit">{t("booking.review")} <span aria-hidden="true">→</span></button>
+          </div>
         </form>
       </div>
 
@@ -675,6 +688,7 @@ function RiderBooking({ language }) {
         <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
         <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
         <a href={"mailto:" + appConfig.email}>{t("footer.email")}</a>
+        <a className="workspace-link" href="?driver">{t("driver.title")}</a>
       </footer>
     </main>
   );
@@ -717,11 +731,11 @@ function BookingStatus({ language }) {
         ) : <p role="status">{t("booking.lookup." + feedback)}</p>}
       </div>
       <div className="actions form-submit">
-        <a className="button" href={window.location.pathname}>{t("booking.another")}</a>
-        <button className="button primary" type="button" onClick={() => {
+        <a className={validKey ? "button" : "button primary"} href={window.location.pathname}>{t("booking.another")}</a>
+        {validKey && <button className="button primary" type="button" onClick={() => {
           setResult({ status: "loading" });
           setRefresh((count) => count + 1);
-        }}>{t("booking.refresh")}</button>
+        }}>{t("booking.refresh")}</button>}
       </div>
     </main>
   );
@@ -734,9 +748,9 @@ function App() {
   const [language, setLanguage] = useState(getInitialLanguage);
   const [layout, setLayout] = useState(() => {
     try {
-      return localStorage.getItem(layoutStorageKey) === "dark" ? "dark" : "light";
+      return localStorage.getItem(layoutStorageKey) === "light" ? "light" : "dark";
     } catch {
-      return "light";
+      return "dark";
     }
   });
 
@@ -759,19 +773,26 @@ function App() {
     <>
       <header className="site-header">
         <div className="site-bar">
-          <strong>{getLocalizedConfigValue(appConfig.businessName, language)}</strong>
-          <div className="actions">
-            {["light", "dark"].map((option) => (
-              <button key={option} className="button toggle" type="button" aria-pressed={layout === option}
-                onClick={() => selectLayout(option)}>{getText(language, "booking." + option)}</button>
-            ))}
-            {SUPPORTED_LANGUAGES.map((option) => (
-              <button key={option} className="button toggle" type="button" lang={option} aria-pressed={language === option}
-                onClick={() => {
-                  setLanguage(option);
-                  storeLanguagePreference(option);
-                }}>{option.toUpperCase()}</button>
-            ))}
+          <div className="wordmark">
+            <img className="brand-mark" src={import.meta.env.BASE_URL + "favicon.svg"} width="34" height="34" alt="" />
+            <strong>{getLocalizedConfigValue(appConfig.businessName, language)}</strong>
+          </div>
+          <div className="preferences">
+            <div className="preference-group" role="group" aria-label={getText(language, "booking.appearance")}>
+              {["light", "dark"].map((option) => (
+                <button key={option} className="button toggle" type="button" aria-pressed={layout === option}
+                  onClick={() => selectLayout(option)}>{getText(language, "booking." + option)}</button>
+              ))}
+            </div>
+            <div className="preference-group" role="group" aria-label={getText(language, "nav.languageLabel")}>
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <button key={option} className="button toggle" type="button" lang={option} aria-pressed={language === option}
+                  onClick={() => {
+                    setLanguage(option);
+                    storeLanguagePreference(option);
+                  }}>{option.toUpperCase()}</button>
+              ))}
+            </div>
           </div>
         </div>
       </header>
