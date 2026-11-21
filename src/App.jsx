@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import { appConfig } from "./config";
+import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validateBooking } from "./booking";
 import {
   getInitialLanguage,
   getLocalizedConfigValue,
@@ -9,12 +10,10 @@ import {
   SUPPORTED_LANGUAGES
 } from "./i18n";
 
-const DEFAULT_VEHICLE = Object.keys(appConfig.vehicles || {})[0] || "eco";
 const SCRIPT_CACHE = new Map();
 const INITIAL_FORM_DATA = {
   pickup: "",
   destination: "",
-  vehicleType: DEFAULT_VEHICLE,
   roundTrip: false,
   pickupDate: "",
   pickupTime: "",
@@ -58,62 +57,6 @@ function loadScript(source) {
 
   SCRIPT_CACHE.set(source, promise);
   return promise;
-}
-
-function getVehicleConfig(vehicleType) {
-  return appConfig.vehicles[vehicleType] || Object.values(appConfig.vehicles)[0];
-}
-
-function validateTrip(formData) {
-  if (!formData.pickup) {
-    return "status.pickupRequired";
-  }
-
-  if (!formData.destination) {
-    return "status.destinationRequired";
-  }
-
-  return "";
-}
-
-function validateBooking(formData) {
-  const tripValidationError = validateTrip(formData);
-
-  if (tripValidationError) {
-    return tripValidationError;
-  }
-
-  if (formData.roundTrip && !formData.returnDate) {
-    return "status.returnDateRequired";
-  }
-
-  if (formData.roundTrip && !formData.returnTime) {
-    return "status.returnTimeRequired";
-  }
-
-  if (!formData.customerName) {
-    return "status.nameRequired";
-  }
-
-  if (!formData.customerPhone) {
-    return "status.phoneRequired";
-  }
-
-  return "";
-}
-
-function getDepartureTime(formData) {
-  const now = new Date();
-
-  if (formData.pickupDate && formData.pickupTime) {
-    const departureTime = new Date(`${formData.pickupDate}T${formData.pickupTime}`);
-
-    if (!Number.isNaN(departureTime.getTime()) && departureTime > now) {
-      return departureTime;
-    }
-  }
-
-  return now;
 }
 
 function calculateEstimate(distanceKm, durationMinutes) {
@@ -172,46 +115,6 @@ function formatDuration(durationMinutes, language) {
   return `${minutes} ${minuteLabel}`;
 }
 
-function getTripTypeLabel(language, roundTrip) {
-  return getText(language, roundTrip ? "summary.roundTrip" : "summary.oneWay");
-}
-
-function buildCompactTripLines({ formData, language, route }) {
-  const mail = getText(language, "mail");
-  const totals = getRouteTotals(route, formData.roundTrip);
-  const dateSummary = formData.pickupDate || mail.toBeConfirmed;
-  const timeSummary = formData.pickupTime || mail.toBeConfirmed;
-  const routeSummary = `${formData.pickup || mail.notProvided} -> ${
-    formData.destination || mail.notProvided
-  }`;
-  const timingSummary = `${dateSummary} | ${timeSummary}`;
-  const tripSummary = getTripTypeLabel(language, formData.roundTrip);
-  const passengerSummary = formData.passengers || "1";
-  const estimateParts = [];
-
-  if (totals) {
-    estimateParts.push(formatDistance(totals.distanceKm, language));
-    estimateParts.push(formatDuration(totals.durationMinutes, language));
-    estimateParts.push(formatFare(totals.fare, language));
-  }
-
-  return [
-    `${mail.route}: ${routeSummary}`,
-    `${mail.departure}: ${timingSummary}`,
-    `${mail.tripType}: ${tripSummary}`,
-    `${mail.passengers}: ${passengerSummary}`,
-    `${mail.client}: ${formData.customerName || mail.notProvided}`,
-    `${mail.phone}: ${formData.customerPhone || mail.notProvided}`,
-    estimateParts.length ? `${mail.estimate}: ${estimateParts.join(" | ")}` : "",
-    formData.roundTrip && (formData.returnDate || formData.returnTime)
-      ? `${mail.returnTrip}: ${formData.returnDate || mail.toBeConfirmed} | ${
-          formData.returnTime || mail.toBeConfirmed
-        }`
-      : "",
-    formData.notes ? `${mail.notes}: ${formData.notes}` : ""
-  ].filter(Boolean);
-}
-
 function getRouteTotals(route, roundTrip) {
   if (!route) {
     return null;
@@ -224,51 +127,6 @@ function getRouteTotals(route, roundTrip) {
     durationMinutes: route.durationMinutes * multiplier,
     fare: route.fareOneWay * multiplier
   };
-}
-
-function buildMailtoLink({ formData, route, language }) {
-  const mail = getText(language, "mail");
-  const businessName = getLocalizedConfigValue(appConfig.businessName, language);
-  const dateSummary = formData.pickupDate || mail.toBeConfirmed;
-  const compactTripLines = buildCompactTripLines({ formData, language, route });
-
-  const subject = encodeURIComponent(
-    `${mail.subjectPrefix} | ${formData.customerName || mail.newClient} | ${dateSummary}`
-  );
-  const body = encodeURIComponent(
-    [
-      `${mail.greeting} ${businessName},`,
-      "",
-      mail.requestShort,
-      "",
-      ...compactTripLines,
-      "",
-      mail.confirm
-    ].join("\n")
-  );
-
-  return `mailto:${appConfig.email}?subject=${subject}&body=${body}`;
-}
-
-function buildWhatsAppLink({ formData, route, language }) {
-  const mail = getText(language, "mail");
-  const whatsApp = getText(language, "whatsApp");
-  const businessName = getLocalizedConfigValue(appConfig.businessName, language);
-  const phone = appConfig.phoneLink.replace(/\D/g, "");
-  const compactTripLines = buildCompactTripLines({ formData, language, route });
-  const message = encodeURIComponent(
-    [
-      `${whatsApp.greeting} ${businessName},`,
-      "",
-      whatsApp.requestShort,
-      "",
-      ...compactTripLines,
-      "",
-      whatsApp.confirm
-    ].join("\n")
-  );
-
-  return `https://wa.me/${phone}?text=${message}`;
 }
 
 function getMapStyles() {
@@ -375,7 +233,7 @@ function updateStructuredData(language) {
   script.textContent = JSON.stringify(schema);
 }
 
-function syncPacContainer(inputElement) {
+function syncPacContainer() {
   window.setTimeout(() => {
     clearPacContainers();
     document.querySelectorAll(".pac-container").forEach((container) => {
@@ -384,60 +242,32 @@ function syncPacContainer(inputElement) {
   }, 0);
 }
 
-function App() {
-  const [language, setLanguage] = useState(() => getInitialLanguage());
+function RiderBooking({ language }) {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [errors, setErrors] = useState({});
   const [route, setRoute] = useState(null);
-  const [statusKey, setStatusKey] = useState("summary.defaultStatus");
-  const [statusTone, setStatusTone] = useState("");
-  const [mapState, setMapState] = useState(
-    appConfig.googleMapsApiKey ? "loading" : "missingKey"
-  );
+  const [screen, setScreen] = useState("entry");
+  const [receipt, setReceipt] = useState(null);
+  const [saveState, setSaveState] = useState("");
+  const [estimating, setEstimating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
-
+  const saving = useRef(false);
+  const attempt = useRef(null);
+  const estimateSequence = useRef(0);
+  const headingRef = useRef(null);
+  const previousScreen = useRef(screen);
   const mapLanguageRef = useRef(language);
   const mapRef = useRef(null);
   const pickupInputRef = useRef(null);
   const destinationInputRef = useRef(null);
   const directionsServiceRef = useRef(null);
   const directionsRendererRef = useRef(null);
+  const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
 
-  const translate = (key) => getText(language, key);
-  const businessName = getLocalizedConfigValue(appConfig.businessName, language);
-  const brandMark = businessName.trim().charAt(0).toUpperCase() || "P";
-  const selectedVehicle = getVehicleConfig(formData.vehicleType);
-  const routeTotals = getRouteTotals(route, formData.roundTrip);
-  const routeReady = Boolean(routeTotals);
-  const passengerOptions = Array.from({ length: selectedVehicle.capacity }, (_, index) =>
-    String(index + 1)
-  );
-  const mailtoLink = buildMailtoLink({ formData, route, language });
-  const whatsAppLink = buildWhatsAppLink({ formData, route, language });
-  const mapBadgeKey = {
-    missingKey: "map.badgeAddKey",
-    loading: "map.badgeWaiting",
-    ready: "map.badgeReady",
-    error: "map.badgeUnavailable"
-  }[mapState];
-  const mapPlaceholderKey = {
-    missingKey: "map.placeholderMissingKey",
-    loading: "map.placeholderLoading",
-    ready: "",
-    error: "map.placeholderError"
-  }[mapState];
-  const mapPlaceholderMessage = mapPlaceholderKey ? translate(mapPlaceholderKey) : "";
-  const clientSummary =
-    formData.customerName || formData.customerPhone
-      ? `${formData.customerName || translate("summary.unnamedClient")} | ${
-          formData.customerPhone || translate("summary.phoneMissing")
-        }`
-      : translate("summary.clientPending");
-  const fareDisplay = routeReady
-    ? formatFare(routeTotals.fare, language)
-    : translate("summary.farePending");
-  const fareContext = routeReady
-    ? getTripTypeLabel(language, formData.roundTrip)
-    : translate("summary.fareHint");
+  useEffect(() => {
+    if (screen !== previousScreen.current) headingRef.current?.focus();
+    previousScreen.current = screen;
+  }, [screen]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -480,19 +310,19 @@ function App() {
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(appConfig.googleMapsApiKey)}` +
       `&libraries=places&language=${encodeURIComponent(mapLanguageRef.current)}`;
 
-    const handleMapFailure = (nextStatusKey) => {
+    const handleMapFailure = () => {
       if (cancelled) {
         return;
       }
 
       setMapReady(false);
-      setMapState("error");
-      setStatusKey(nextStatusKey);
-      setStatusTone("error");
+      estimateSequence.current++;
+      setEstimating(false);
+      setRoute(null);
     };
 
     window.gm_authFailure = () => {
-      handleMapFailure("status.mapsAuthError");
+      handleMapFailure();
 
       if (typeof previousAuthFailure === "function") {
         previousAuthFailure();
@@ -511,14 +341,14 @@ function App() {
         }
 
         if (!window.google?.maps) {
-          handleMapFailure("status.mapsLoadError");
+          handleMapFailure();
           return;
         }
 
         const googleMaps = window.google.maps;
 
         if (!googleMaps.places?.Autocomplete) {
-          handleMapFailure("status.mapsPlacesError");
+          handleMapFailure();
           return;
         }
 
@@ -560,7 +390,7 @@ function App() {
             }
 
             const handleAutocompleteFocus = () => {
-              syncPacContainer(inputElement);
+              syncPacContainer();
             };
 
             inputElement.addEventListener("focus", handleAutocompleteFocus);
@@ -591,13 +421,12 @@ function App() {
           attachAutocomplete(pickupInputRef.current, "pickup");
           attachAutocomplete(destinationInputRef.current, "destination");
           setMapReady(true);
-          setMapState("ready");
         } catch {
-          handleMapFailure("status.mapsLoadError");
+          handleMapFailure();
         }
       })
       .catch(() => {
-        handleMapFailure("status.mapsLoadError");
+        handleMapFailure();
       });
 
     return () => {
@@ -606,459 +435,349 @@ function App() {
     };
   }, []);
 
-  function handleLanguageSelect(nextLanguage) {
-    setLanguage(nextLanguage);
-    storeLanguagePreference(nextLanguage);
-  }
-
-  function clearRoute() {
-    if (directionsRendererRef.current) {
-      directionsRendererRef.current.set("directions", null);
-    }
-
-    setRoute(null);
-  }
 
   function handleInputChange(event) {
     const { name, type, value, checked } = event.target;
-    const nextValue = type === "checkbox" ? checked : value;
-
-    setFormData((currentFormData) => {
-      const nextFormData = {
-        ...currentFormData,
-        [name]: nextValue
-      };
-
-      if (name === "roundTrip" && !checked) {
-        nextFormData.returnDate = "";
-        nextFormData.returnTime = "";
-      }
-
-      return nextFormData;
+    setFormData((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value,
+      ...(name === "roundTrip" && !checked ? { returnDate: "", returnTime: "" } : {})
+    }));
+    setErrors((current) => {
+      if (!current[name]) return current;
+      const next = { ...current };
+      delete next[name];
+      return next;
     });
-
-    if (name === "pickup" || name === "destination") {
-      clearRoute();
-    }
   }
 
-  async function requestRoute(origin, destination) {
-    const response = await directionsServiceRef.current.route({
-      origin,
-      destination,
-      travelMode: window.google.maps.TravelMode.DRIVING,
-      drivingOptions: {
-        departureTime: getDepartureTime(formData),
-        trafficModel: window.google.maps.TrafficModel.BEST_GUESS
-      }
-    });
-
-    directionsRendererRef.current.setDirections(response);
-
-    const leg = response.routes[0].legs[0];
-    const distanceKm = leg.distance.value / 1000;
-    const durationMinutes = (leg.duration_in_traffic?.value ?? leg.duration.value) / 60;
-    const estimate = calculateEstimate(distanceKm, durationMinutes);
-    const nextRoute = {
-      distanceKm,
-      durationMinutes,
-      fareOneWay: estimate.price
-    };
-
-    setRoute(nextRoute);
-    return nextRoute;
-  }
-
-  async function handleCalculateRoute() {
-    const validationErrorKey = validateTrip(formData);
-
-    if (validationErrorKey) {
-      setStatusKey(validationErrorKey);
-      setStatusTone("error");
-      return;
-    }
-
-    if (!appConfig.googleMapsApiKey) {
-      setStatusKey("status.mapsNotConfigured");
-      setStatusTone("warning");
-      return;
-    }
-
-    if (!mapReady) {
-      setStatusKey("status.mapsLoading");
-      setStatusTone("warning");
-      return;
-    }
-
-    try {
-      setStatusKey("status.calculatingRoute");
-      setStatusTone("");
-      await requestRoute(formData.pickup, formData.destination);
-      setStatusKey(formData.roundTrip ? "status.routeReadyRoundTrip" : "status.routeReady");
-      setStatusTone("success");
-    } catch {
-      setStatusKey("status.routeError");
-      setStatusTone("error");
-    }
-  }
-
-  async function handlePrepareEmail(event) {
+  async function handleReview(event) {
     event.preventDefault();
-
-    const validationErrorKey = validateBooking(formData);
-
-    if (validationErrorKey) {
-      setStatusKey(validationErrorKey);
-      setStatusTone("error");
+    const nextErrors = validateBooking(formData, capacity);
+    setErrors(nextErrors);
+    const invalid = [...event.currentTarget.elements].find((field) => nextErrors[field.name]);
+    if (invalid) {
+      window.requestAnimationFrame(() => invalid.focus());
       return;
     }
 
-    let routeForEmail = route;
-
-    if (mapReady && !routeForEmail && formData.pickup && formData.destination) {
-      try {
-        routeForEmail = await requestRoute(formData.pickup, formData.destination);
-      } catch {
-        setStatusKey("status.emailWithoutRoute");
-        setStatusTone("warning");
-      }
+    clearPacContainers();
+    setScreen("review");
+    setRoute(null);
+    if (!mapReady) return;
+    directionsRendererRef.current.set("directions", null);
+    const sequence = ++estimateSequence.current;
+    setEstimating(true);
+    let timeout;
+    try {
+      const response = await Promise.race([
+        directionsServiceRef.current.route({
+          origin: formData.pickup.trim(),
+          destination: formData.destination.trim(),
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          drivingOptions: {
+            departureTime: getParisInstant(formData.pickupDate + "T" + formData.pickupTime),
+            trafficModel: window.google.maps.TrafficModel.BEST_GUESS
+          }
+        }),
+        new Promise((resolve) => { timeout = window.setTimeout(() => resolve(null), 6000); })
+      ]);
+      if (!response || sequence !== estimateSequence.current) return;
+      const leg = response.routes[0].legs[0];
+      const distanceKm = leg.distance.value / 1000;
+      const durationMinutes = (leg.duration_in_traffic?.value ?? leg.duration.value) / 60;
+      directionsRendererRef.current.setDirections(response);
+      setRoute({ distanceKm, durationMinutes, fareOneWay: calculateEstimate(distanceKm, durationMinutes).price });
+    } catch {
+      // A fare lookup can fail without preventing a booking.
+    } finally {
+      window.clearTimeout(timeout);
+      if (sequence === estimateSequence.current) setEstimating(false);
     }
+  }
 
-    window.location.href = buildMailtoLink({
-      formData,
-      route: routeForEmail,
-      language
-    });
+  function editTrip() {
+    if (attempt.current) return;
+    estimateSequence.current++;
+    setEstimating(false);
+    setSaveState("");
+    setScreen("entry");
+  }
 
-    setStatusKey("status.emailPrepared");
-    setStatusTone("success");
+  async function handleSave() {
+    if (saving.current) return;
+    saving.current = true;
+    setSaveState("saving");
+    try {
+      if (!attempt.current) {
+        attempt.current = { key: crypto.randomUUID(), payload: bookingPayload(formData, language) };
+      }
+      const { key, payload } = attempt.current;
+      const result = await bookingRpc("save_ride", { p_request_key: key, p_trip: payload });
+      if (!result?.reference) throw new Error("MISSING_BOOKING_RECEIPT");
+      setReceipt({ ...result, key });
+      setSaveState("");
+      setScreen("receipt");
+    } catch (error) {
+      if (error.message === "BOOKING_NOT_CONFIGURED" || /^(22\d{3}|23502|23514)$/.test(error.code)) {
+        attempt.current = null;
+        setSaveState("rejected");
+      } else {
+        setSaveState("failed");
+      }
+    } finally {
+      saving.current = false;
+    }
+  }
+
+  function startNewBooking() {
+    attempt.current = null;
+    setFormData(INITIAL_FORM_DATA);
+    setErrors({});
+    setReceipt(null);
+    setScreen("entry");
+  }
+
+  const t = (key) => getText(language, key);
+  const totals = getRouteTotals(route, formData.roundTrip);
+  const details = [
+    ["planner.labels.pickup", formData.pickup.trim()],
+    ["planner.labels.destination", formData.destination.trim()],
+    ["booking.pickupAt", formData.pickupDate + " · " + formData.pickupTime],
+    ...(formData.roundTrip ? [["booking.returnAt", formData.returnDate + " · " + formData.returnTime]] : []),
+    ["planner.labels.passengers", formData.passengers],
+    ["planner.labels.name", formData.customerName.trim()],
+    ["planner.labels.phone", formData.customerPhone.trim()],
+    ...(formData.notes.trim() ? [["planner.labels.notes", formData.notes.trim()]] : [])
+  ];
+
+  function field(name, label, options = {}) {
+    const error = errors[name];
+    const props = {
+      id: name,
+      name,
+      value: formData[name],
+      onChange: handleInputChange,
+      "aria-invalid": error ? true : undefined,
+      "aria-describedby": error ? name + "-error" : undefined,
+      ...options
+    };
+    return (
+      <div className="field">
+        <label htmlFor={name}>{t("planner.labels." + label)}</label>
+        {name === "passengers" ? (
+          <select {...props}>
+            {Array.from({ length: capacity }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
+          </select>
+        ) : name === "notes" ? <textarea {...props} /> : <input {...props} />}
+        {error && <span className="field-error" id={name + "-error"}>{t(error)}</span>}
+      </div>
+    );
   }
 
   return (
-    <div className="page-shell">
-      <div className="atmosphere atmosphere-left" aria-hidden="true"></div>
-      <div className="atmosphere atmosphere-right" aria-hidden="true"></div>
+    <main className="site-main">
+      <div hidden={screen !== "entry"}>
+        <h1 ref={screen === "entry" ? headingRef : null} tabIndex={-1}>{t("planner.title")}</h1>
+        <p className="intro">{t("planner.body")}</p>
+        <form onSubmit={handleReview} noValidate>
+          <div className="booking-grid">
+            <section className="panel stack" aria-labelledby="trip-heading">
+              <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
+              {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", maxLength: 300, required: true })}
+              {field("destination", "destination", { ref: destinationInputRef, maxLength: 300, required: true })}
+              <div className="time-pair">
+                {field("pickupDate", "date", { type: "date", required: true })}
+                {field("pickupTime", "time", { type: "time", required: true })}
+              </div>
+              {field("passengers", "passengers", { required: true })}
+              <label className="check">
+                <input name="roundTrip" type="checkbox" checked={formData.roundTrip} onChange={handleInputChange} />
+                {t("planner.labels.roundTrip")}
+              </label>
+              {formData.roundTrip && (
+                <div className="time-pair">
+                  {field("returnDate", "returnDate", { type: "date", required: true })}
+                  {field("returnTime", "returnTime", { type: "time", required: true })}
+                </div>
+              )}
+            </section>
+            <section className="panel stack" aria-labelledby="passenger-heading">
+              <h2 id="passenger-heading">{t("planner.contactTitle")}</h2>
+              {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
+              {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
+              {field("notes", "notes", { rows: 3, maxLength: 1500 })}
+            </section>
+          </div>
+          <button className="button primary form-submit" type="submit">{t("booking.review")}</button>
+        </form>
+      </div>
 
-      <header className="topbar">
-        <a className="brand" href="#home">
-          <span className="brand-mark">{brandMark}</span>
-          <span id="brand-name">{businessName}</span>
-        </a>
+      {screen === "review" && (
+        <>
+          <h1 ref={headingRef} tabIndex={-1}>{t("booking.review")}</h1>
+          <div className="booking-grid">
+            <div className="panel"><BookingDetails rows={details.map(([key, value]) => [t(key), value])} /></div>
+            <section className="panel stack" aria-labelledby="fare-heading">
+              <h2 id="fare-heading">{t("summary.fare")}</h2>
+              <div role="status">
+                {estimating ? t("booking.estimating") : totals ? (
+                  <>
+                    <strong className="fare">{formatFare(totals.fare, language)}</strong>
+                    <p>{formatDistance(totals.distanceKm, language)} · {formatDuration(totals.durationMinutes, language)}</p>
+                    {formData.roundTrip && <p>{t("planner.roundTripHint")}</p>}
+                  </>
+                ) : t("booking.fareUnavailable")}
+              </div>
+              <p>{t("booking.confirmationNote")}</p>
+            </section>
+          </div>
+          <div className="actions form-submit">
+            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || saveState === "failed"}>{t("booking.edit")}</button>
+            <button className="button primary" type="button" onClick={handleSave} disabled={estimating || saveState === "saving"}>
+              {t(saveState === "saving" ? "booking.saving" : saveState === "failed" ? "booking.retry" : "booking.send")}
+            </button>
+          </div>
+          {(saveState === "failed" || saveState === "rejected") && (
+            <p className="field-error" role="alert">{t(saveState === "failed" ? "booking.saveFailed" : "booking.saveRejected")}</p>
+          )}
+        </>
+      )}
 
-        <nav className="nav-links" aria-label="Primary">
-          <a href="#planner">{translate("nav.reserve")}</a>
-        </nav>
+      <div className="route-preview panel" hidden={screen !== "review" || !mapReady || (!totals && !estimating)}>
+        <h2>{t("map.label")}</h2>
+        <div ref={mapRef} className="map-surface"></div>
+      </div>
 
-        <div className="topbar-actions">
-          <div className="language-switch" aria-label={translate("nav.languageLabel")}>
+      {screen === "receipt" && (
+        <>
+          <h1 ref={headingRef} tabIndex={-1}>{t("booking.receipt")}</h1>
+          <div className="panel stack">
+            <p><strong>{t("booking.reference")} {receipt.reference}</strong></p>
+            <p role="status">{t("booking.state." + receipt.status)}</p>
+            <p>{t("booking.keepLink")}</p>
+            <a className="button primary" href={"?booking#key=" + receipt.key}>{t("booking.view")}</a>
+          </div>
+          <button className="button form-submit" type="button" onClick={startNewBooking}>{t("booking.another")}</button>
+        </>
+      )}
+      <footer className="site-footer actions">
+        <span>{t("booking.contact")}</span>
+        <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
+        <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
+        <a href={"mailto:" + appConfig.email}>{t("footer.email")}</a>
+      </footer>
+    </main>
+  );
+}
+
+function BookingDetails({ rows }) {
+  return (
+    <dl className="booking-details">
+      {rows.map(([key, value]) => (
+        <div key={key}>
+          <dt>{key}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function BookingStatus({ language }) {
+  const [result, setResult] = useState({ status: "loading" });
+  const [refresh, setRefresh] = useState(0);
+  const key = new URLSearchParams(window.location.hash.slice(1)).get("key");
+  const validKey = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key);
+  const t = (name) => getText(language, name);
+
+  useEffect(() => {
+    let active = true;
+    if (!validKey) return;
+    bookingRpc("get_ride", { p_request_key: key })
+      .then((ride) => { if (active) setResult({ status: ride ? "ready" : "missing", ride }); })
+      .catch(() => { if (active) setResult({ status: "error" }); });
+    return () => { active = false; };
+  }, [key, refresh, validKey]);
+
+  const ride = result.ride;
+  const feedback = validKey ? result.status : "missing";
+  return (
+    <main className="site-main">
+      <h1>{t("booking.view")}</h1>
+      <div className="panel stack">
+        {ride ? (
+          <>
+            <p><strong>{t("booking.reference")} {ride.reference}</strong></p>
+            <p role="status">{t("booking.state." + ride.status)}</p>
+            <BookingDetails rows={[
+              [t("planner.labels.pickup"), ride.pickup],
+              [t("planner.labels.destination"), ride.destination],
+              [t("booking.pickupAt"), formatParisTime(ride.pickup_at, language)],
+              ...(ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
+              [t("planner.labels.passengers"), ride.passengers]
+            ]} />
+          </>
+        ) : <p role="status">{t("booking.lookup." + feedback)}</p>}
+      </div>
+      <div className="actions form-submit">
+        <a className="button" href={window.location.pathname}>{t("booking.another")}</a>
+        <button className="button primary" type="button" onClick={() => {
+          setResult({ status: "loading" });
+          setRefresh((count) => count + 1);
+        }}>{t("booking.refresh")}</button>
+      </div>
+    </main>
+  );
+}
+
+function App() {
+  const [language, setLanguage] = useState(getInitialLanguage);
+  const [layout, setLayout] = useState(() => {
+    try {
+      return localStorage.getItem("muba-rider-layout") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dataset.layout = layout;
+  }, [language, layout]);
+
+  function selectLayout(next) {
+    setLayout(next);
+    try {
+      localStorage.setItem("muba-rider-layout", next);
+    } catch {
+      // The selected layout remains active until this page is closed.
+    }
+  }
+
+  const privateView = new URLSearchParams(window.location.search).has("booking");
+  return (
+    <>
+      <header className="site-header">
+        <div className="site-bar">
+          <strong>{getLocalizedConfigValue(appConfig.businessName, language)}</strong>
+          <div className="actions">
+            {["light", "dark"].map((option) => (
+              <button key={option} className="button toggle" type="button" aria-pressed={layout === option}
+                onClick={() => selectLayout(option)}>{getText(language, "booking." + option)}</button>
+            ))}
             {SUPPORTED_LANGUAGES.map((option) => (
-              <button
-                key={option}
-                className={`language-option${language === option ? " is-active" : ""}`}
-                type="button"
-                onClick={() => handleLanguageSelect(option)}
-                aria-pressed={language === option}
-              >
-                {option.toUpperCase()}
-              </button>
+              <button key={option} className="button toggle" type="button" lang={option} aria-pressed={language === option}
+                onClick={() => {
+                  setLanguage(option);
+                  storeLanguagePreference(option);
+                }}>{option.toUpperCase()}</button>
             ))}
           </div>
         </div>
       </header>
-
-      <main>
-        <section className="planner" id="planner">
-          <div className="planner-layout">
-            <div className="planner-main">
-              <section className="hero-card" id="home">
-                <div className="section-heading section-heading-compact">
-                  <p className="eyebrow">{translate("planner.eyebrow")}</p>
-                  <h1>{translate("planner.title")}</h1>
-                  <p>{translate("planner.body")}</p>
-                </div>
-
-                <div className="hero-card-footer">
-                  <div className="intro-flow" aria-label={translate("planner.introLabel")}>
-                    {translate("planner.steps").map((step) => (
-                      <span key={step} className="step-pill">
-                        {step}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="form-intro-contact">
-                    <a className="contact-shortcut-card" href={whatsAppLink} target="_blank" rel="noreferrer">
-                      <span className="contact-shortcut-label">{translate("nav.whatsApp")}</span>
-                      <strong>{appConfig.phoneDisplay}</strong>
-                    </a>
-
-                    <a className="contact-shortcut-card" href={`mailto:${appConfig.email}`}>
-                      <span className="contact-shortcut-label">{translate("footer.email")}</span>
-                      <strong>{appConfig.email}</strong>
-                    </a>
-                  </div>
-                </div>
-              </section>
-
-              <form className="booking-form" onSubmit={handlePrepareEmail}>
-                <section className="form-section form-section-trip" aria-labelledby="trip-details-heading">
-                  <div className="form-section-head">
-                    <h3 id="trip-details-heading">{translate("planner.tripTitle")}</h3>
-                    <p>{translate("planner.tripBody")}</p>
-                  </div>
-
-                  <label className="trip-toggle">
-                    <input
-                      id="round-trip"
-                      name="roundTrip"
-                      type="checkbox"
-                      checked={formData.roundTrip}
-                      onChange={handleInputChange}
-                    />
-                    <span>{translate("planner.labels.roundTrip")}</span>
-                  </label>
-
-                  <div className="form-grid form-grid-trip">
-                    <label className="field field-route">
-                      <span>{translate("planner.labels.pickup")}</span>
-                      <input
-                        ref={pickupInputRef}
-                        id="pickup"
-                        name="pickup"
-                        type="text"
-                        value={formData.pickup}
-                        onChange={handleInputChange}
-                        placeholder={translate("planner.placeholders.pickup")}
-                        autoComplete="street-address"
-                        enterKeyHint="next"
-                        required
-                      />
-                    </label>
-
-                    <label className="field field-route">
-                      <span>{translate("planner.labels.destination")}</span>
-                      <input
-                        ref={destinationInputRef}
-                        id="destination"
-                        name="destination"
-                        type="text"
-                        value={formData.destination}
-                        onChange={handleInputChange}
-                        placeholder={translate("planner.placeholders.destination")}
-                        autoComplete="street-address"
-                        enterKeyHint="next"
-                        required
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>{translate("planner.labels.date")}</span>
-                      <div className="input-shell input-shell-picker input-shell-date">
-                        <input
-                          id="pickup-date"
-                          name="pickupDate"
-                          type="date"
-                          value={formData.pickupDate}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </label>
-
-                    <label className="field">
-                      <span>{translate("planner.labels.time")}</span>
-                      <div className="input-shell input-shell-picker input-shell-time">
-                        <input
-                          id="pickup-time"
-                          name="pickupTime"
-                          type="time"
-                          value={formData.pickupTime}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </label>
-
-                    {formData.roundTrip && (
-                      <>
-                        <label className="field">
-                          <span>{translate("planner.labels.returnDate")}</span>
-                          <div className="input-shell input-shell-picker input-shell-date">
-                            <input
-                              id="return-date"
-                              name="returnDate"
-                              type="date"
-                              value={formData.returnDate}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </label>
-
-                        <label className="field">
-                          <span>{translate("planner.labels.returnTime")}</span>
-                          <div className="input-shell input-shell-picker input-shell-time">
-                            <input
-                              id="return-time"
-                              name="returnTime"
-                              type="time"
-                              value={formData.returnTime}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </label>
-
-                        <p className="field-hint field-full">{translate("planner.roundTripHint")}</p>
-                      </>
-                    )}
-                  </div>
-                </section>
-
-                <section className="form-section form-section-contact" aria-labelledby="contact-details-heading">
-                  <div className="form-section-head">
-                    <h3 id="contact-details-heading">{translate("planner.contactTitle")}</h3>
-                    <p>{translate("planner.contactBody")}</p>
-                  </div>
-
-                  <div className="form-grid form-grid-contact">
-                    <label className="field">
-                      <span>{translate("planner.labels.name")}</span>
-                      <input
-                        id="customer-name"
-                        name="customerName"
-                        type="text"
-                        value={formData.customerName}
-                        onChange={handleInputChange}
-                        placeholder={translate("planner.placeholders.name")}
-                        autoComplete="name"
-                        autoCapitalize="words"
-                        enterKeyHint="next"
-                        required
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>{translate("planner.labels.phone")}</span>
-                      <input
-                        id="customer-phone"
-                        name="customerPhone"
-                        type="tel"
-                        value={formData.customerPhone}
-                        onChange={handleInputChange}
-                        placeholder={translate("planner.placeholders.phone")}
-                        autoComplete="tel"
-                        inputMode="tel"
-                        enterKeyHint="next"
-                        required
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>{translate("planner.labels.passengers")}</span>
-                      <select id="passengers" name="passengers" value={formData.passengers} onChange={handleInputChange}>
-                        {passengerOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="field field-full">
-                      <span>{translate("planner.labels.notes")}</span>
-                      <textarea
-                        id="notes"
-                        name="notes"
-                        rows="3"
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        placeholder={translate("planner.placeholders.notes")}
-                        enterKeyHint="done"
-                      ></textarea>
-                    </label>
-                  </div>
-                </section>
-
-                <div className="form-actions">
-                  <button className="button button-primary" type="button" onClick={handleCalculateRoute}>
-                    {translate("planner.calculateTrip")}
-                  </button>
-                  <button className="button button-outline" type="submit">
-                    {translate("planner.prepareEmail")}
-                  </button>
-                </div>
-                <p className="form-intro-note">{translate("planner.footnote")}</p>
-              </form>
-            </div>
-
-            <div className="planner-sidebar">
-              <div className="map-card">
-                <div className="card-head">
-                  <p className="panel-label">{translate("map.label")}</p>
-                  <span className="map-badge">{translate(mapBadgeKey)}</span>
-                </div>
-                <div className="map-canvas">
-                  <div ref={mapRef} className="map-surface" aria-hidden={mapState !== "ready"}></div>
-                  {mapState !== "ready" && <div className="map-placeholder">{mapPlaceholderMessage}</div>}
-                </div>
-              </div>
-
-              <div className="summary-card" id="summary-card">
-                <div className="card-head">
-                  <p className="panel-label">{translate("summary.label")}</p>
-                  <span className="summary-tag">{translate("summary.tag")}</span>
-                </div>
-
-                <div className={`summary-hero${routeReady ? " is-ready" : ""}`}>
-                  <span className="summary-hero-label">{translate("summary.readyLabel")}</span>
-                  <strong className={`summary-amount${routeReady ? "" : " is-placeholder"}`}>
-                    {fareDisplay}
-                  </strong>
-                  <p className="summary-subcopy">{fareContext}</p>
-                </div>
-
-                <dl className="summary-grid">
-                  <div>
-                    <dt>{translate("summary.distance")}</dt>
-                    <dd>
-                      {routeReady
-                        ? formatDistance(routeTotals.distanceKm, language)
-                        : translate("summary.notCalculated")}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{translate("summary.duration")}</dt>
-                    <dd>
-                      {routeReady
-                        ? formatDuration(routeTotals.durationMinutes, language)
-                        : translate("summary.notCalculated")}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{translate("summary.tripType")}</dt>
-                    <dd>{getTripTypeLabel(language, formData.roundTrip)}</dd>
-                  </div>
-                  <div className="summary-wide">
-                    <dt>{translate("summary.client")}</dt>
-                    <dd>{clientSummary}</dd>
-                  </div>
-                </dl>
-
-                <div className="summary-actions">
-                  <a className="button button-primary" href={mailtoLink}>
-                    {translate("summary.emailTrip")}
-                  </a>
-                  <a className="button button-secondary" href={whatsAppLink} target="_blank" rel="noreferrer">
-                    {translate("summary.whatsAppTrip")}
-                  </a>
-                </div>
-
-                <p className={`status-message${statusTone ? ` ${statusTone}` : ""}`} aria-live="polite">
-                  {translate(statusKey)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      {privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
+    </>
   );
 }
 

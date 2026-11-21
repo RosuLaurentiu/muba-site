@@ -1,6 +1,8 @@
 # Muba Site React App
 
-This project is now a Vite + React app for a private taxi booking website.
+This Vite and React site accepts advance requests for a private taxi in Paris.
+A saved request has a booking reference and stays pending until the driver
+confirms it. The private status link shows the latest decision.
 
 ## Commands
 
@@ -48,9 +50,18 @@ Data API schemas.
   nonexistent spring clock times and resolves the repeated autumn hour to
   standard time.
 
-Application screens are delivered in later tasks. Use the local stack for
-development and verification. Ask the owner before creating or modifying a
-hosted project.
+To connect the rider form to the local stack, set these variables in the
+terminal that runs Vite. Only the publishable key belongs in browser code.
+
+```powershell
+$supabaseStatus = npx --yes supabase@3.2.0 status -o json 2>$null | ConvertFrom-Json
+$env:VITE_SUPABASE_URL = $supabaseStatus.API_URL
+$env:VITE_SUPABASE_PUBLISHABLE_KEY = $supabaseStatus.PUBLISHABLE_KEY
+npm run dev -- --host 127.0.0.1
+```
+
+Use the local stack for development and verification. Ask the owner before
+creating or modifying a hosted project.
 
 The owner approved a Supabase Free project in Paris at no subscription cost
 within Free limits. The release plan removes passenger data 90 days after the
@@ -61,8 +72,9 @@ be in place before release.
 
 ## Main files
 
-- `src/App.jsx` contains the page layout and booking logic.
-- `src/App.css` contains the dark minimalist UI styles.
+- `src/App.jsx` renders trip entry, review, receipt, and private status.
+- `src/booking.js` contains Paris time validation and the booking API client.
+- `src/App.css` contains the light and dark layouts.
 - `src/i18n.js` contains the English and French translations.
 - `src/config.js` contains your business details and integration settings.
 
@@ -74,7 +86,6 @@ Update `src/config.js` with your real:
 - phone number
 - email
 - service area
-- Calendly URL
 - Google Maps API key
 - pricing values
 
@@ -84,10 +95,12 @@ The app supports English and French.
 
 - On first load, it defaults to the device/browser language when available.
 - If the visitor manually switches language, that choice is saved locally.
+- Light and Dark are available in both languages. Changing language or layout
+  preserves the entered trip details.
 
 ## Integrations
 
-- Google Maps powers autocomplete, map display, and route calculation if you add an API key.
-- Calendly is embedded automatically if you add a `calendlyUrl`.
-
-If you want to avoid Google Maps costs later, the app can be switched to another routing provider.
+- Google Maps powers autocomplete, map display, and fare estimates. If Maps is
+  unavailable, type both addresses and send the request without a fare estimate.
+- The contact links are separate ways to reach the driver. They do not submit
+  the rider's form or include its passenger or trip details.
