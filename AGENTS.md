@@ -41,8 +41,8 @@ the browser in both languages. Run lint and build before committing.
   changes language.
 - **Google Maps** provides autocomplete and fare estimates on the rider form.
   Keep both addresses manually editable and allow requests without a fare
-  estimate. The Maps API upgrade is deferred.
-- **Fare estimate** (`calculateEstimate`) is computed client-side from route distance and duration using `appConfig.pricing` (short-trip vs long-trip rate, minimum fares, an hourly floor); round trips double the totals.
+  estimate. See [Google Maps setup](README.md#google-maps-setup) before changing the provider or its allowed origins.
+- **Fare estimate** (`routeEstimate` in `src/fare.js`) is computed client-side from route distance and duration using `appConfig.pricing` (short-trip vs long-trip rate, minimum fares, an hourly floor); round trips double the totals.
 
 ## Deployment
 

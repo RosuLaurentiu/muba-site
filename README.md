@@ -206,6 +206,19 @@ The app supports English and French.
 - **Reserve a ride** focuses the pickup field. The footer links to the driver
   workspace, where the next pickup includes a passenger phone link and directions.
 
+## Google Maps setup
+
+The site uses Maps JavaScript API with Places Autocomplete and Directions
+Service on its existing Google Cloud project. Use a browser key restricted
+to the approved website origins and only the Maps services this app uses.
+Manual addresses continue to work when suggestions fail. If no route is
+returned, riders can still send an advance request without a fare estimate.
+
+Run `node supabase/tests/fare.mjs` to verify the configured estimate rates.
+The published domain passed a real public-landmark route. The restricted key
+rejected localhost, so use simulated Maps responses for local browser checks.
+Ask before changing Google Cloud restrictions or using a billable API.
+
 ## Integrations
 
 - Google Maps powers autocomplete, map display, and fare estimates. If Maps is

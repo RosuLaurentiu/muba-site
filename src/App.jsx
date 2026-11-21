@@ -3,6 +3,7 @@ import "./App.css";
 import { appConfig } from "./config";
 import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validateBooking } from "./booking";
 import BookingDetails from "./BookingDetails";
+import { getRouteTotals, routeEstimate } from "./fare";
 import {
   getInitialLanguage,
   getLocalizedConfigValue,
@@ -62,21 +63,6 @@ function loadScript(source) {
   return promise;
 }
 
-function calculateEstimate(distanceKm, durationMinutes) {
-  const shortTripConfig = appConfig.pricing.shortTrip;
-  const longTripConfig = appConfig.pricing.longTrip;
-  const durationFloorConfig = appConfig.pricing.durationFloor;
-  const distancePrice =
-    distanceKm >= shortTripConfig.longTripThresholdKm
-      ? Math.max(longTripConfig.minimumFare, distanceKm * longTripConfig.perKilometer)
-      : Math.max(shortTripConfig.minimumFare, distanceKm * shortTripConfig.perKilometer);
-  const durationPrice = (durationMinutes / 60) * durationFloorConfig.minimumPerHour;
-
-  return {
-    price: Math.max(distancePrice, durationPrice)
-  };
-}
-
 function getLocalizedNumberFormatter(language, options = {}) {
   return new Intl.NumberFormat(
     getLocalizedConfigValue(appConfig.pricing.locale, language),
@@ -116,20 +102,6 @@ function formatDuration(durationMinutes, language) {
   }
 
   return `${minutes} ${minuteLabel}`;
-}
-
-function getRouteTotals(route, roundTrip) {
-  if (!route) {
-    return null;
-  }
-
-  const multiplier = roundTrip ? 2 : 1;
-
-  return {
-    distanceKm: route.distanceKm * multiplier,
-    durationMinutes: route.durationMinutes * multiplier,
-    fare: route.fareOneWay * multiplier
-  };
 }
 
 function getMapStyles() {
@@ -263,6 +235,7 @@ function RiderBooking({ language }) {
   const mapRef = useRef(null);
   const pickupInputRef = useRef(null);
   const destinationInputRef = useRef(null);
+  const selectedPlaces = useRef({});
   const directionsServiceRef = useRef(null);
   const directionsRendererRef = useRef(null);
   const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
@@ -308,6 +281,9 @@ function RiderBooking({ language }) {
     }
 
     let cancelled = false;
+    let authFailed = false;
+    const autocompleteListeners = [];
+    const inputListeners = new AbortController();
     const previousAuthFailure = window.gm_authFailure;
     const googleMapsUrl =
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(appConfig.googleMapsApiKey)}` +
@@ -325,6 +301,7 @@ function RiderBooking({ language }) {
     };
 
     window.gm_authFailure = () => {
+      authFailed = true;
       handleMapFailure();
 
       if (typeof previousAuthFailure === "function") {
@@ -335,7 +312,7 @@ function RiderBooking({ language }) {
     loadScript(googleMapsUrl)
       .then(() => {
         if (
-          cancelled ||
+          cancelled || authFailed ||
           !mapRef.current ||
           !pickupInputRef.current ||
           !destinationInputRef.current
@@ -349,11 +326,6 @@ function RiderBooking({ language }) {
         }
 
         const googleMaps = window.google.maps;
-
-        if (!googleMaps.places?.Autocomplete) {
-          handleMapFailure();
-          return;
-        }
 
         try {
           const mapInstance = new googleMaps.Map(mapRef.current, {
@@ -374,13 +346,20 @@ function RiderBooking({ language }) {
             }
           });
 
-          const attachAutocomplete = (inputElement, fieldName) => {
+          setMapReady(true);
+        } catch {
+          handleMapFailure();
+        }
+
+        function attachAutocomplete(inputElement, fieldName) {
+          try {
+            if (!googleMaps.places?.Autocomplete) return;
             const biasCircle = new googleMaps.Circle({
               center: appConfig.mapDefaultCenter,
               radius: appConfig.autocomplete?.biasRadiusMeters || 0
             });
             const autocomplete = new googleMaps.places.Autocomplete(inputElement, {
-              fields: ["formatted_address", "geometry", "name"],
+              fields: ["formatted_address", "place_id"],
               types: ["geocode"],
               componentRestrictions: appConfig.autocomplete?.country
                 ? { country: appConfig.autocomplete.country }
@@ -396,37 +375,33 @@ function RiderBooking({ language }) {
               syncPacContainer();
             };
 
-            inputElement.addEventListener("focus", handleAutocompleteFocus);
-            inputElement.addEventListener("input", handleAutocompleteFocus);
+            const options = { signal: inputListeners.signal };
+            inputElement.addEventListener("focus", handleAutocompleteFocus, options);
+            inputElement.addEventListener("input", handleAutocompleteFocus, options);
 
-            autocomplete.addListener("place_changed", () => {
+            autocompleteListeners.push(autocomplete.addListener("place_changed", () => {
               const place = autocomplete.getPlace();
 
               if (!place || !place.formatted_address) {
                 return;
               }
 
+              selectedPlaces.current[fieldName] = { address: place.formatted_address, id: place.place_id };
               setFormData((currentFormData) => ({
                 ...currentFormData,
                 [fieldName]: place.formatted_address
               }));
 
-              if (directionsRendererRef.current) {
-                directionsRendererRef.current.set("directions", null);
-              }
-
-              setRoute(null);
+              clearEstimate();
               clearPacContainers();
               inputElement.blur();
-            });
-          };
-
-          attachAutocomplete(pickupInputRef.current, "pickup");
-          attachAutocomplete(destinationInputRef.current, "destination");
-          setMapReady(true);
-        } catch {
-          handleMapFailure();
+            }));
+          } catch {
+            // Keep manual addresses and routing available if suggestions fail.
+          }
         }
+        attachAutocomplete(pickupInputRef.current, "pickup");
+        attachAutocomplete(destinationInputRef.current, "destination");
       })
       .catch(() => {
         handleMapFailure();
@@ -434,13 +409,26 @@ function RiderBooking({ language }) {
 
     return () => {
       cancelled = true;
+      inputListeners.abort();
+      autocompleteListeners.forEach((listener) => listener.remove());
       window.gm_authFailure = previousAuthFailure;
     };
   }, []);
 
 
+  function clearEstimate() {
+    estimateSequence.current++;
+    directionsRendererRef.current?.set("directions", null);
+    setEstimating(false);
+    setRoute(null);
+  }
+
   function handleInputChange(event) {
     const { name, type, value, checked } = event.target;
+    if (name === "pickup" || name === "destination") delete selectedPlaces.current[name];
+    if (["pickup", "destination", "pickupDate", "pickupTime", "roundTrip", "returnDate", "returnTime"].includes(name)) {
+      clearEstimate();
+    }
     setFormData((current) => ({
       ...current,
       [name]: type === "checkbox" ? checked : value,
@@ -466,17 +454,21 @@ function RiderBooking({ language }) {
 
     clearPacContainers();
     setScreen("review");
-    setRoute(null);
+    clearEstimate();
     if (!mapReady) return;
-    directionsRendererRef.current.set("directions", null);
     const sequence = ++estimateSequence.current;
     setEstimating(true);
+    const endpoint = (name) => {
+      const address = formData[name].trim();
+      const place = selectedPlaces.current[name];
+      return place?.address === address && place.id ? { placeId: place.id } : address;
+    };
     let timeout;
     try {
       const response = await Promise.race([
         directionsServiceRef.current.route({
-          origin: formData.pickup.trim(),
-          destination: formData.destination.trim(),
+          origin: endpoint("pickup"),
+          destination: endpoint("destination"),
           travelMode: window.google.maps.TravelMode.DRIVING,
           drivingOptions: {
             departureTime: getParisInstant(formData.pickupDate + "T" + formData.pickupTime),
@@ -486,11 +478,10 @@ function RiderBooking({ language }) {
         new Promise((resolve) => { timeout = window.setTimeout(() => resolve(null), 6000); })
       ]);
       if (!response || sequence !== estimateSequence.current) return;
-      const leg = response.routes[0].legs[0];
-      const distanceKm = leg.distance.value / 1000;
-      const durationMinutes = (leg.duration_in_traffic?.value ?? leg.duration.value) / 60;
+      const estimate = routeEstimate(response.routes?.[0]?.legs?.[0]);
+      if (!estimate) return;
       directionsRendererRef.current.setDirections(response);
-      setRoute({ distanceKm, durationMinutes, fareOneWay: calculateEstimate(distanceKm, durationMinutes).price });
+      setRoute(estimate);
     } catch {
       // A fare lookup can fail without preventing a booking.
     } finally {
@@ -501,8 +492,7 @@ function RiderBooking({ language }) {
 
   function editTrip() {
     if (attempt.current) return;
-    estimateSequence.current++;
-    setEstimating(false);
+    clearEstimate();
     setSaveState("");
     setScreen("entry");
   }
@@ -539,6 +529,8 @@ function RiderBooking({ language }) {
 
   function startNewBooking() {
     attempt.current = null;
+    selectedPlaces.current = {};
+    clearEstimate();
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
     setReceipt(null);
