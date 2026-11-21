@@ -90,6 +90,9 @@ each write. With no finish estimate, the schedule reserves the pickup minute
 and shows the unknown finish. Ride previews show the minutes available
 between successive legs after deducting intervening blocks. If the prior
 finish is unknown, the preview identifies that gap as unknown.
+The preview starts with a draft target of 60 minutes. Adjust the advisory
+target to the locations during review. A short gap or unknown finish shows a
+warning. The driver still has to approve the travel-buffer rule.
 
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.

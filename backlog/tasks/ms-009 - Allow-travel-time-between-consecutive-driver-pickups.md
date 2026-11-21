@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-21 15:23'
-updated_date: '2026-11-21 16:46'
+updated_date: '2026-11-21 16:55'
 labels: []
 dependencies: []
 references:
@@ -30,27 +30,27 @@ The driver can already enter a ride duration. The schedule checks ride overlaps,
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Verified bilingual mobile previews and tests for available time on both sides,
-  return legs, time blocks, a 14-minute gap, an exact 15-minute gap, and an
-  unknown finish.
+  Owner selected 60 minutes as a draft planning target, adjustable for the
+  locations. Verified the advisory at 59 and 60 minutes and when the prior
+  finish is unknown, on phone width in English and French.
 next: >-
-  Apply the owner and driver choice for required minutes, adjustment and warning
-  or blocking at save.
+  Review the draft with the driver. Confirm the target, adjustment and whether a
+  short gap should remain advisory or become a save restriction.
 latestChange: >-
-  Verified the neutral time-gap calculation and both-language phone previews.
-  Fixture: 10:30 prior drop-off, 10:44 next pickup, 14 minutes available.
-  Required buffer policy is pending.
-resultAt: '2026-11-21T16:46:56.397Z'
+  Owner approved a 60-minute draft, not final policy. Phone tests show that 59
+  minutes warns and 60 fits. Example: 10:30 drop-off and 11:29 pickup leave 59
+  minutes.
+resultAt: '2026-11-21T16:55:00.039Z'
 remainingChecks:
-  - Owner and driver policy agreement
-  - Apply and verify the agreed behavior on save
+  - Driver review of the one-hour target and warning or blocking rule
+  - Verify final save behavior after driver review
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The driver and owner agree how to set or adjust travel minutes, how to handle an unknown finish and what happens when the gap is too short. Record a worked example with the prior drop-off, next pickup and available minutes.
-- [ ] #2 When accepting, manually entering or rescheduling a ride, the driver can see the time available against the required buffer on either side. The interface distinguishes passenger ride duration from travel between jobs and identifies an unknown finish explicitly.
+- [x] #2 When accepting, manually entering or rescheduling a ride, the driver can see the time available against the required buffer on either side. The interface distinguishes passenger ride duration from travel between jobs and identifies an unknown finish explicitly.
 - [ ] #3 The agreed warning or blocking rule is consistent on preview and save, including return legs, existing rides without an estimate, time blocks and concurrent changes. Cancelling or moving a ride frees its former interval. The buffer does not change the passenger fare or pickup time.
 - [ ] #4 Verify a Paris-time schedule with a gap shorter than the buffer, an exact fit, and an unknown finish. Check the driver flow on a phone in English and French with Maps unavailable.
 <!-- AC:END -->
@@ -69,4 +69,8 @@ Compute available travel time on both sides of each draft leg, including time bl
 2026-11-21T16:46:56.398Z: Prior current facts: {"done":"Confirmed the current schedule reserves each ride leg and shows adjacent rides. Its overlap rule is enforced in PostgreSQL.","resultAt":"2026-11-21T16:44:47.873Z"}
 
 2026-11-21T16:46:56.398Z: Verified the neutral time-gap calculation and both-language phone previews. Fixture: 10:30 prior drop-off, 10:44 next pickup, 14 minutes available. Required buffer policy is pending.
+
+2026-11-21T16:55:00.040Z: Prior current facts: {"done":"Verified bilingual mobile previews and tests for available time on both sides, return legs, time blocks, a 14-minute gap, an exact 15-minute gap, and an unknown finish.","resultAt":"2026-11-21T16:46:56.397Z"}
+
+2026-11-21T16:55:00.040Z: Owner approved a 60-minute draft, not final policy. Phone tests show that 59 minutes warns and 60 fits. Example: 10:30 drop-off and 11:29 pickup leave 59 minutes.
 <!-- SECTION:NOTES:END -->

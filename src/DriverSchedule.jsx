@@ -25,7 +25,9 @@ function EntryText({ entry, language }) {
 }
 
 export function SchedulePreview({ context, language }) {
+  const [travelTarget, setTravelTarget] = useState("60");
   const t = (key) => getText(language, key);
+  const target = travelTarget === "" ? 60 : Number(travelTarget);
   if (!context.legsOverlap && !context.conflicts.length && !context.neighbors.length && !context.gaps.length) return null;
   return (
     <div className="panel stack schedule-preview">
@@ -39,13 +41,23 @@ export function SchedulePreview({ context, language }) {
       {context.gaps.length > 0 && (
         <>
           <h2>{t("schedule.travelBetween")}</h2>
+          <label className="field schedule-duration">
+            {t("schedule.travelTarget")}
+            <input type="number" min="0" max="1440" value={travelTarget} onChange={(event) => {
+              const value = event.target.value;
+              if (value === "" || (/^\d+$/.test(value) && Number(value) <= 1440)) setTravelTarget(value);
+            }} />
+          </label>
+          <p className="muted">{t("schedule.travelAdvisory")}</p>
           <ul className="stack">
             {context.gaps.map(({ prior, next, minutes }) => (
               <li key={prior.id + "-" + next.id}>
                 {prior.endKnown && <>{formatParisTime(prior.end, language)} → </>}
                 {formatParisTime(next.start, language)} ·{" "}
-                {minutes === null ? t("schedule.travelUnknown") :
-                  minutes + " " + t("units.minuteShort") + " " + t("schedule.travelAvailable")}
+                {minutes === null ? <span className="field-error">{t("schedule.travelUnknown")}</span> : <>
+                  {minutes} {t("units.minuteShort")} {t("schedule.travelAvailable")}
+                  {minutes < target && <> · <span className="field-error">{t("schedule.travelShort")}</span></>}
+                </>}
               </li>
             ))}
           </ul>
