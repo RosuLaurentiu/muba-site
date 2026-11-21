@@ -37,10 +37,9 @@ function eventBody(job, appUrl) {
   return {
     summary: "Private Taxi Paris · " + job.reference,
     location: job.pickup,
-    description: rideUrl.href,
+    description: job.estimated_minutes == null ? "Pickup only. Finish time unknown.\n" + rideUrl.href : rideUrl.href,
     start: { dateTime: new Date(start).toISOString(), timeZone: "Europe/Paris" },
     end: { dateTime: new Date(start + (job.estimated_minutes ?? 1) * 60000).toISOString(), timeZone: "Europe/Paris" },
-    endTimeUnspecified: job.estimated_minutes == null,
     visibility: "private"
   };
 }

@@ -136,6 +136,8 @@ Calendar settings. The app is the source of truth. Changes to a confirmed ride
 queue one event per leg. The event contains pickup, Paris time, an estimated
 finish if known, and a link to the signed-in ride. Calendar edits are outside
 the workflow.
+When the finish is unknown, Calendar shows a one-minute pickup and the event
+description says the finish time is unknown.
 
 The driver workspace attempts sync when it loads or saves a change. If a
 connection or delivery fails, the ride stays saved. Expand **Google Calendar**

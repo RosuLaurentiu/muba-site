@@ -180,7 +180,10 @@ try {
   assert.equal(outbound.start.dateTime, "2090-10-29T01:30:00.000Z");
   assert.equal(outbound.end.dateTime, "2090-10-29T02:15:00.000Z");
   assert.equal(outbound.start.timeZone, "Europe/Paris");
-  assert.equal(eventFor("Phone pickup").endTimeUnspecified, true);
+  const pickupOnly = eventFor("Phone pickup");
+  assert.match(pickupOnly.description, /Finish time unknown/);
+  assert.equal(Date.parse(pickupOnly.end.dateTime) - Date.parse(pickupOnly.start.dateTime), 60000);
+  assert.ok(!("endTimeUnspecified" in pickupOnly));
   assert.equal(new URL(outbound.description).searchParams.get("ride"), web.reference);
   assert.doesNotMatch(JSON.stringify([...events.values()]), /PRIVATE-|0600000000|Declined pickup/);
   console.log("PASS per-leg web, phone and WhatsApp events, DST, private payload, and ambiguous retry without duplication");
