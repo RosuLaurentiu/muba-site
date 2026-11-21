@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private Taxi Paris — Design preview</title>
+<style>
+  :root { color-scheme: light; --bg:#f8f5ed; --panel:#fffdf8; --text:#101932; --muted:#465670;
+    --line:#7b8594; --accent:#006763; --on-accent:#fff; --hint:#d9eeeb; --error:#9a2525;
+    font: 100%/1.5 system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  :root[data-layout=dark] { color-scheme:dark; --bg:#151e28; --panel:#202b37; --text:#f5f6fa;
+    --muted:#c3cdd8; --line:#8c99a5; --accent:#ffca57; --on-accent:#151e28; --hint:#40371d; --error:#ffb4ab; }
+  * { box-sizing:border-box; }
+  body { margin:0; }
+  header { border-bottom:1px solid var(--line); padding:1rem max(1rem,calc((100% - 64rem)/2)); }
+  nav, .actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  nav { margin-top:.5rem; }
+  main { max-width:64rem; margin:auto; padding:1.25rem 1rem 2rem; }
+  h1 { line-height:1.08; font-size:clamp(2rem,5vw,3.25rem); margin:0 0 .7rem; letter-spacing:-.045em; }
+  h2 { font-size:1.25rem; margin:0 0 .75rem; }
+  p { margin:.4rem 0 1rem; }
+  small, .muted { color:var(--muted); }
+  .grid { display:grid; gap:1rem 1.5rem; }
+  @media (min-width: 750px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; } }
+  .panel { padding:1rem; border:1px solid var(--line); background:var(--panel); border-radius:.65rem; }
+  .next { background:var(--hint); border-left:.3rem solid var(--accent); }
+  .stack > * + * { margin-top:.8rem; }
+  .pair { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:.6rem; }
+  [data-layout=dark] .pair { grid-template-columns:1fr; }
+  label { display:block; font-weight:650; }
+  input, select, button { font:inherit; color:inherit; min-height:2.75rem; padding:.4rem .7rem;
+    border-radius:.4rem; border:1px solid var(--line); background:var(--panel); }
+  input, select { display:block; width:100%; min-width:0; margin-top:.2rem; }
+  input[type=checkbox] { display:inline; width:auto; min-height:auto; }
+  button { cursor:pointer; font-weight:650; }
+  button.primary, button[aria-pressed=true] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+  [aria-invalid=true] { border:2px solid var(--error); }
+  .error { display:block; color:var(--error); font-weight:600; }
+  dt { font-weight:650; }
+  dd { margin:0 0 .5rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+  [hidden] { display:none !important; }
+</style>
+<body>
+<header>
+  <strong>Private Taxi Paris</strong> <small id="disclaimer"></small>
+  <nav id="controls"></nav>
+</header>
+<main id="page"></main>
+<script>
+  const copy = {
+    en: {
+      disclaimer:'Design preview · Demo data only', rider:'Rider', driver:'Driver', light:'Light', dark:'Dark',
+      title:'Book a private taxi in Paris', lead:'Request an advance ride in Paris. Your driver will confirm whether they can take the trip.',
+      trip:'Trip details', pickup:'Pickup address', dropoff:'Destination', date:'Pickup date', time:'Pickup time in Paris',
+      passengers:'Passengers', name:'Passenger name', phone:'Phone number', note:'Notes (optional)', contact:'Passenger details',
+      round:'Add a return trip', backDate:'Return date', backTime:'Return time in Paris', review:'Review request',
+      fare:'Fare estimate unavailable. You can still request this ride.', send:'Send demo request', edit:'Edit details',
+      receipt:'Request received', pending:'Pending driver confirmation', reference:'Booking reference', again:'Start another request',
+      required:'Enter a value for this field.', invalid:'Check the value in this field.', phoneError:'Enter a phone number with 7 to 15 digits.',
+      future:'Choose a later pickup in Paris.', returnError:'Choose a return after pickup.', draft:'Fill in the trip and passenger details to review your request.',
+      day:'Driver day view', add:'Add ride', previous:'Previous day', next:'Next day', nextPickup:'Next pickup',
+      schedule:'Confirmed rides', requests:'Pending requests', empty:'No confirmed rides for this day.', noRequests:'No pending requests.',
+      call:'Call passenger', whatsapp:'Open WhatsApp', directions:'Pickup directions', demoContact:'Contact actions are disabled in this preview.',
+      source:'Booking source', manual:'Record a ride', save:'Save demo ride', saved:'Confirmed demo ride saved', returnDay:'Back to day view',
+      detail:'Ride details', accept:'Accept demo request', decline:'Decline demo request', declined:'Demo request declined',
+      accepted:'Demo request confirmed', remaining:'Remaining rides', simulate:'Simulate save failure', retry:'The demo save failed. Your details are still here. Try again.',
+    },
+    fr: {
+      disclaimer:'Apercu · Donnees fictives', rider:'Passager', driver:'Chauffeur', light:'Clair', dark:'Sombre',
+      title:'Reservez un taxi prive a Paris', lead:'Demandez une course a Paris a l’avance. Votre chauffeur vous indiquera s’il peut assurer la course.',
+      trip:'Trajet', pickup:'Adresse de depart', dropoff:'Destination', date:'Date de depart', time:'Heure de depart a Paris',
+      passengers:'Passagers', name:'Nom du passager', phone:'Numero de telephone', note:'Notes (facultatif)', contact:'Coordonnees du passager',
+      round:'Ajouter un trajet retour', backDate:'Date de retour', backTime:'Heure de retour a Paris', review:'Verifier la demande',
+      fare:'Estimation indisponible. Vous pouvez envoyer votre demande.', send:'Envoyer la demande fictive', edit:'Modifier',
+      receipt:'Demande recue', pending:'En attente du chauffeur', reference:'Reference de reservation', again:'Nouvelle demande',
+      required:'Renseignez ce champ.', invalid:'Verifiez cette valeur.', phoneError:'Saisissez un numero de 7 a 15 chiffres.',
+      future:'Choisissez un depart ulterieur a Paris.', returnError:'Choisissez un retour apres le depart.', draft:'Renseignez le trajet et les coordonnees pour verifier votre demande.',
+      day:'Planning du chauffeur', add:'Ajouter une course', previous:'Jour precedent', next:'Jour suivant', nextPickup:'Prochain depart',
+      schedule:'Courses confirmees', requests:'Demandes en attente', empty:'Aucune course confirmee pour ce jour.', noRequests:'Aucune demande en attente.',
+      call:'Appeler le passager', whatsapp:'Ouvrir WhatsApp', directions:'Itineraire vers le depart', demoContact:'Les actions de contact sont desactivees dans cet apercu.',
+      source:'Origine de la course', manual:'Enregistrer une course', save:'Enregistrer la course fictive', saved:'Course fictive confirmee et enregistree', returnDay:'Retour au planning',
+      detail:'Details de la course', accept:'Accepter la demande fictive', decline:'Refuser la demande fictive', declined:'Demande fictive refusee',
+      accepted:'Demande fictive confirmee', remaining:'Courses restantes', simulate:'Simuler un echec', retry:'Echec de l’enregistrement fictif. Vos donnees sont conservees. Reessayez.',
+    },
+  };
+  const page = document.querySelector('#page');
+  const controls = document.querySelector('#controls');
+  const sample = { pickup:'Gare de Lyon', dropoff:'Paris-Orly', date:'2030-05-21', time:'10:30',
+    passengers:'2', name:'Camille Exemple', phone:'+33 0 00 00 00 00', note:'Hall 2' };
+  const schedule = [sample, { ...sample, time:'14:00', pickup:'Gare du Nord', dropoff:'La Defense', name:'Jules Exemple' }];
+  let request = { ...sample, time:'17:00' };
+  let lang = 'en', role = 'rider', screen = 'entry', trip = {}, manual = {}, ride, day = sample.date, notice = '';
+  const layouts = { rider:'light', driver:'light' };
+  const t = key => copy[lang][key];
+  function button(key, action, mode = '') {
+    return `<button type="button" data-action="${action}" ${mode}>${t(key)}</button>`;
+  }
+  function field(key, type = 'text', attrs = '') {
+    return `<div><label for="${key}">${t(key)}</label><input id="${key}" name="${key}" type="${type}"
+      ${key === 'note' ? '' : 'required'} ${attrs} aria-describedby="${key}-error">
+      <span class="error" id="${key}-error"></span></div>`;
+  }
+  function form(isManual) {
+    return `<form class="stack" novalidate>
+      <div class="grid">
+        <section class="panel stack"><h2>${t('trip')}</h2>
+          ${field('pickup')}${field('dropoff')}
+          <div class="pair">${field('date','date')}${field('time','time')}</div>
+          ${field('passengers','number','min="1" max="8"')}
+          <label><input type="checkbox" name="round"> ${t('round')}</label>
+          <div id="return-fields" class="pair" hidden>${field('backDate','date')}${field('backTime','time')}</div>
+        </section>
+        <section class="panel stack"><h2>${t('contact')}</h2>
+          ${field('name')}${field('phone','tel')}${field('note')}
+          ${isManual ? `<label>${t('source')}<select name="source"><option>${lang === 'en' ? 'Phone' : 'Telephone'}</option><option>WhatsApp</option></select></label>` : ''}
+        </section>
+      </div>
+      <button class="primary">${t(isManual ? 'save' : 'review')}</button>
+      ${isManual ? button('returnDay','day') : ''}
+      <div class="error" id="form-error" role="alert"></div>
+    </form>`;
+  }
+  function details(data) {
+    const list = document.createElement('dl');
+    for (const key of ['pickup','dropoff','date','time','backDate','backTime','passengers','name','phone','note']) {
+      if (!data[key] || ((key === 'backDate' || key === 'backTime') && !data.round)) continue;
+      const label = document.createElement('dt'), value = document.createElement('dd');
+      label.textContent = t(key);
+      value.textContent = data[key];
+      list.append(label, value);
+    }
+    return list.outerHTML;
+  }
+  function rider() {
+    if (screen === 'entry') return `<h1>${t('title')}</h1><p>${t('lead')}</p>${form(false)}`;
+    if (screen === 'receipt') return `<h1>${t('receipt')}</h1><p role="status">${t('pending')}</p>
+      <p>${t('reference')} <strong>DEMO-0042</strong></p>${button('again','again','class="primary"')}`;
+    return `<h1>${t('review')}</h1><div class="panel">${details(trip)}</div><p>${t('fare')}</p>
+      <div class="actions">${button('edit','entry')}${button('send','receipt','class="primary"')}${button('simulate','simulate')}</div>
+      <p class="error" id="save-error" role="alert"></p>`;
+  }
+  function driver() {
+    if (screen === 'manual') return `<h1>${t('manual')}</h1>${form(true)}`;
+    if (screen === 'detail') return `<h1>${t('detail')}</h1><div class="panel">${details(ride)}</div>
+      <p>${t('demoContact')}</p><div class="actions">${button('call','','disabled')}${button('whatsapp','','disabled')}${button('directions','','disabled')}</div>
+      <p class="actions">${button('returnDay','day')}${ride === request ? button('accept','accept','class="primary"') + button('decline','decline') : ''}</p>`;
+    const entries = schedule.filter(record => record.date === day).sort((a,b) => a.time.localeCompare(b.time));
+    const card = (record, action, next = false) => `<article class="panel ${next ? 'next' : ''}">
+      ${next ? `<strong>${t('nextPickup')}</strong>` : ''}
+      <p><b data-ride-time></b> <span data-route></span></p>
+      <button type="button" data-action="${action}">${t('detail')}</button></article>`;
+    return `<h1>${t('day')}</h1><p>${button('add','manual','class="primary"')}</p>
+      <div class="actions">${button('previous','previous')} <time>${day} · Paris</time> ${button('next','next')}</div>
+      <p id="notice" role="status">${notice ? t(notice) : ''}</p>
+      <div class="grid"><section class="stack">
+        <h2>${t('schedule')}</h2>
+        ${entries.length ? card(entries[0], 'ride-' + schedule.indexOf(entries[0]), true) : `<p>${t('empty')}</p>`}
+        ${entries.length > 1 && layouts.driver === 'dark' ? `<h2>${t('remaining')}</h2>` : ''}
+        ${entries.slice(1).map(record => card(record, 'ride-' + schedule.indexOf(record))).join('')}
+      </section><section class="stack"><h2>${t('requests')}</h2>
+        ${request ? card(request,'request') : `<p>${t('noRequests')}</p>`}
+      </section></div>`;
+  }
+  function syncReturn(form) {
+    const show = form.elements.round.checked;
+    document.querySelector('#return-fields').hidden = !show;
+    form.elements.backDate.disabled = form.elements.backTime.disabled = !show;
+  }
+  function render(focus = false) {
+    document.documentElement.lang = lang;
+    document.documentElement.dataset.layout = layouts[role];
+    document.querySelector('#disclaimer').textContent = t('disclaimer');
+    controls.innerHTML = ['rider','driver','light','dark'].map(key =>
+      button(key,key,`aria-pressed="${key === role || key === layouts[role]}"`)).join('') +
+      `<button type="button" lang="en" data-action="en" aria-pressed="${lang === 'en'}">EN</button>
+      <button type="button" lang="fr" data-action="fr" aria-pressed="${lang === 'fr'}">FR</button>`;
+    page.innerHTML = role === 'rider' ? rider() : driver();
+    const currentForm = page.querySelector('form');
+    if (currentForm) {
+      const data = role === 'rider' ? trip : manual;
+      for (const key of Object.keys(data)) {
+        if (key !== 'round' && currentForm.elements[key]) currentForm.elements[key].value = data[key];
+      }
+      currentForm.elements.round.checked = !!data.round;
+      syncReturn(currentForm);
+    }
+    for (const slot of page.querySelectorAll('[data-ride-time]')) {
+      const action = slot.closest('article').querySelector('button').dataset.action;
+      const record = action === 'request' ? request : schedule[Number(action.slice(5))];
+      slot.textContent = record.time;
+      slot.nextElementSibling.textContent = record.pickup + ' → ' + record.dropoff;
+    }
+    if (focus) {
+      const heading = page.querySelector('h1');
+      heading.tabIndex = -1;
+      heading.focus();
+    }
+  }
+  function remember() {
+    const activeForm = page.querySelector('form');
+    if (!activeForm) return;
+    const data = { ...Object.fromEntries(new FormData(activeForm)), round:activeForm.elements.round.checked };
+    if (role === 'rider') trip = data;
+    else manual = data;
+  }
+  document.addEventListener('change', event => {
+    if (event.target.name === 'round') syncReturn(event.target.form);
+  });
+  page.addEventListener('submit', event => {
+    event.preventDefault();
+    remember();
+    const data = role === 'rider' ? trip : manual;
+    const parisNow = new Intl.DateTimeFormat('sv-SE', { timeZone:'Europe/Paris', dateStyle:'short', timeStyle:'short' }).format(new Date()).replace(' ', 'T');
+    const outbound = data.date + 'T' + data.time;
+    let firstError;
+    for (const input of event.target.querySelectorAll('input[required]')) {
+      let error = '';
+      if (!input.disabled) {
+        if (!input.value.trim()) error = 'required';
+        else if (!input.validity.valid) error = 'invalid';
+        else if (input.name === 'phone' && (!/^\+?[\d ().-]+$/.test(input.value) || !/^\d{7,15}$/.test(input.value.replace(/\D/g,'')))) error = 'phoneError';
+        else if (input.name === 'time' && data.date && outbound <= parisNow) error = 'future';
+        else if (input.name === 'backTime' && data.backDate && data.backDate + 'T' + data.backTime <= outbound) error = 'returnError';
+      }
+      input.setAttribute('aria-invalid', !!error);
+      document.querySelector('#' + input.id + '-error').textContent = error ? t(error) : '';
+      if (error && !firstError) firstError = input;
+    }
+    if (firstError) {
+      firstError.focus();
+      return;
+    }
+    if (role === 'rider') screen = 'review';
+    else {
+      schedule.push(manual);
+      day = manual.date;
+      manual = {};
+      notice = 'saved';
+      screen = 'day';
+    }
+    render(true);
+  });
+  document.addEventListener('click', event => {
+    const action = event.target.dataset.action;
+    if (!action) return;
+    if (action === 'simulate') {
+      document.querySelector('#save-error').textContent = t('retry');
+      return;
+    }
+    remember();
+    if (action === 'en' || action === 'fr') lang = action;
+    else if (action === 'light' || action === 'dark') layouts[role] = action;
+    else if (action === 'rider' || action === 'driver') {
+      role = action;
+      screen = role === 'rider' ? 'entry' : 'day';
+    } else if (action === 'again') {
+      trip = {};
+      screen = 'entry';
+    } else if (action === 'previous' || action === 'next') {
+      const current = new Date(day + 'T00:00Z');
+      current.setUTCDate(current.getUTCDate() + (action === 'next' ? 1 : -1));
+      day = current.toISOString().slice(0,10);
+      notice = '';
+    } else if (action === 'request' || action.startsWith('ride-')) {
+      ride = action === 'request' ? request : schedule[Number(action.slice(5))];
+      screen = 'detail';
+    } else if (action === 'accept' || action === 'decline') {
+      if (action === 'accept') schedule.push(request);
+      notice = action === 'accept' ? 'accepted' : 'declined';
+      request = null;
+      screen = 'day';
+    } else screen = action;
+    const fromToolbar = controls.contains(event.target);
+    render(!fromToolbar);
+    if (fromToolbar) controls.querySelector(`[data-action="${action}"]`).focus();
+  });
+  render();
+</script>
+</body>
+</html>
