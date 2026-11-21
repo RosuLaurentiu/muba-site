@@ -26,7 +26,7 @@ function EntryText({ entry, language }) {
 
 export function SchedulePreview({ context, language }) {
   const t = (key) => getText(language, key);
-  if (!context.legsOverlap && !context.conflicts.length && !context.neighbors.length) return null;
+  if (!context.legsOverlap && !context.conflicts.length && !context.neighbors.length && !context.gaps.length) return null;
   return (
     <div className="panel stack schedule-preview">
       {(context.legsOverlap || context.conflicts.length > 0) && (
@@ -36,7 +36,22 @@ export function SchedulePreview({ context, language }) {
           {context.conflicts.map((entry) => <EntryText key={entry.id} entry={entry} language={language} />)}
         </>
       )}
-      {context.neighbors.length > 0 && (
+      {context.gaps.length > 0 && (
+        <>
+          <h2>{t("schedule.travelBetween")}</h2>
+          <ul className="stack">
+            {context.gaps.map(({ prior, next, minutes }) => (
+              <li key={prior.id + "-" + next.id}>
+                {prior.endKnown && <>{formatParisTime(prior.end, language)} → </>}
+                {formatParisTime(next.start, language)} ·{" "}
+                {minutes === null ? t("schedule.travelUnknown") :
+                  minutes + " " + t("units.minuteShort") + " " + t("schedule.travelAvailable")}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {!context.gaps.length && context.neighbors.length > 0 && (
         <>
           <h2>{t("schedule.neighbors")}</h2>
           <p className="muted">{t("schedule.checkTravel")}</p>

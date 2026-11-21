@@ -38,7 +38,10 @@ export function draftLegs(pickupTime, returnTime, minutes) {
   const pickup = getParisInstant(pickupTime);
   const returning = returnTime && getParisInstant(returnTime);
   if (!pickup || (returnTime && !returning)) return [];
-  return [leg("draft-out", pickup, minutes), ...(returning ? [leg("draft-return", returning, minutes)] : [])];
+  return [
+    leg("draft-out", pickup, minutes, { rideDraft: true }),
+    ...(returning ? [leg("draft-return", returning, minutes, { rideDraft: true, returning: true })] : [])
+  ];
 }
 
 export function draftBlock(startTime, endTime) {
@@ -62,9 +65,22 @@ export function scheduleContext(drafts, schedule, excludedReference) {
       if (entry) neighbors.set(entry.id, entry);
     }
   }
+  const rideDrafts = drafts.filter((entry) => entry.ride || entry.rideDraft);
+  const rides = [...other.filter((entry) => entry.ride), ...rideDrafts].sort((a, b) => a.start - b.start);
+  const blocks = other.filter((entry) => !entry.ride);
+  const gaps = rides.slice(1).flatMap((next, index) => {
+    const prior = rides[index];
+    if (!rideDrafts.includes(prior) && !rideDrafts.includes(next)) return [];
+    if (!prior.endKnown) return [{ prior, next, minutes: null }];
+    const unavailable = blocks.reduce((time, block) =>
+      time + Math.max(0, Math.min(next.start, block.end) - Math.max(prior.end, block.start)), 0);
+    const minutes = Math.max(0, Math.floor((next.start - prior.end - unavailable) / 60000));
+    return [{ prior, next, minutes }];
+  });
   return {
     conflicts: [...conflicts.values()],
     neighbors: [...neighbors.values()],
+    gaps,
     legsOverlap: drafts.length === 2 && overlaps(drafts[0], drafts[1])
   };
 }

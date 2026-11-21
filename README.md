@@ -87,7 +87,9 @@ can browse upcoming days, block time, record phone or WhatsApp bookings,
 reschedule a confirmed ride, and cancel it. The save controls show overlaps
 with rides and blocks before writing, and the database checks again during
 each write. With no finish estimate, the schedule reserves the pickup minute
-and shows the unknown finish. Check travel time between adjacent rides.
+and shows the unknown finish. Ride previews show the minutes available
+between successive legs after deducting intervening blocks. If the prior
+finish is unknown, the preview identifies that gap as unknown.
 
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.
