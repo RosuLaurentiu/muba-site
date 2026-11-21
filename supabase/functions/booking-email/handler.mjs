@@ -1,25 +1,32 @@
 const subjects = {
   en: { receipt: "Ride request received", confirmed: "Ride confirmed", changed: "Ride time changed",
-    declined: "Ride request declined", cancelled: "Ride cancelled" },
+    declined: "Ride request declined", cancelled: "Ride cancelled", driver_new: "New booking request" },
   fr: { receipt: "Demande de trajet recue", confirmed: "Trajet confirme", changed: "Horaire du trajet modifie",
-    declined: "Demande de trajet refusee", cancelled: "Trajet annule" }
+    declined: "Demande de trajet refusee", cancelled: "Trajet annule", driver_new: "Nouvelle demande de reservation" }
 };
 
-function message(job, from) {
+function message(job, config) {
   const french = job.language === "fr";
   const time = new Intl.DateTimeFormat(french ? "fr-FR" : "en-GB", {
     timeZone: "Europe/Paris", dateStyle: "medium", timeStyle: "short"
   });
   const subject = subjects[job.language][job.kind];
+  let rideLink;
+  if (job.kind === "driver_new" && config.appUrl) {
+    const url = new URL(config.appUrl);
+    url.search = new URLSearchParams({ driver: "", ride: job.reference }).toString();
+    rideLink = url.href;
+  }
   return {
-    from,
+    from: config.from,
     to: [job.recipient],
     subject: `${subject} #${job.reference}`,
     text: [
       subject,
       `Reference #${job.reference}`,
       `${french ? "Depart" : "Pickup"}: ${time.format(new Date(job.pickup_at))} (Paris)`,
-      job.return_at && `${french ? "Retour" : "Return"}: ${time.format(new Date(job.return_at))} (Paris)`
+      job.return_at && `${french ? "Retour" : "Return"}: ${time.format(new Date(job.return_at))} (Paris)`,
+      rideLink
     ].filter(Boolean).join("\n")
   };
 }
@@ -52,7 +59,7 @@ export function bookingEmailHandler(config, fetcher = fetch) {
           const response = await fetcher(config.emailApiUrl ?? "https://api.resend.com/emails", {
             method: "POST",
             headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": job.id },
-            body: JSON.stringify(message(job, config.from)),
+            body: JSON.stringify(message(job, config)),
             redirect: "error",
             signal: AbortSignal.timeout(10000)
           });

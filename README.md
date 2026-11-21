@@ -154,14 +154,27 @@ limits before setup. The server-side function accepts a POST at
 `/functions/v1/booking-email` with `Authorization: Bearer <worker token>`.
 Configure `MUBA_EMAIL_WORKER_TOKEN`, `MUBA_EMAIL_FROM` and
 `MUBA_EMAIL_API_KEY` in the function runtime. Schedule the POST at a regular
-interval. The function uses the Resend email endpoint by default. The local
-test sets `MUBA_EMAIL_API_URL` through the handler configuration to point to
-its mail capture. Keep the worker token and mail API key off the frontend.
+interval. The function uses the Resend email endpoint by default. Set
+`MUBA_EMAIL_API_URL` to use a local capture endpoint when serving the function
+locally. Keep the worker token and mail API key off the frontend.
 
 The driver workspace shows failed deliveries. **Retry booking emails** queues
 another attempt for the worker and leaves the ride unchanged. The worker
 reuses the same delivery ID for up to 23 hours after its first attempt.
 Deliveries outside that window stay visible for manual follow-up.
+
+## Driver booking alerts
+
+The open driver workspace checks for pending web requests every 15 seconds.
+The alert shows the pending count and links to the latest request. The driver
+must still be assigned to see it. New web requests also queue one email to the
+verified Google email linked to the assigned driver's Supabase account.
+Phone and WhatsApp rides entered by the driver do not queue alerts. Google
+Calendar uses its own consent.
+
+Set `MUBA_APP_URL` in the email worker runtime to include a link to the
+driver-only ride screen. The local booking email test also checks driver
+recipient selection, manual ride exclusion, and assignment removal.
 
 ## Main files
 

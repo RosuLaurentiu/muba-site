@@ -222,6 +222,7 @@ function DriverRides({ session, language, layout }) {
   const [load, setLoad] = useState({ status: "loading", snapshot: false, rides: [], blocks: [] });
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
+  const [alerts, setAlerts] = useState(null);
   const t = (key) => getText(language, key);
   const [today] = useState(() => parisDay(new Date()));
   const query = new URLSearchParams(window.location.search);
@@ -251,6 +252,37 @@ function DriverRides({ session, language, layout }) {
     return () => controller.abort();
   }, [revision, token]);
 
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    let timer;
+    let previous;
+    async function check() {
+      try {
+        const current = await driverRpc("driver_booking_alerts");
+        if (!active) return;
+        if (previous === false || (previous && (current.count !== previous.count || current.latest !== previous.latest))) {
+          setRevision((value) => value + 1);
+        }
+        previous = current;
+        setAlerts(current);
+      } catch (error) {
+        if (active && error.code === "42501") {
+          previous = false;
+          setAlerts(false);
+          setLoad({ status: "denied", snapshot: false, rides: [], blocks: [] });
+        }
+      } finally {
+        if (active) timer = setTimeout(check, 15000);
+      }
+    }
+    check();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [token]);
+
   function refresh() {
     setLoad((current) => ({ ...current, status: "loading" }));
     setRevision((current) => current + 1);
@@ -279,13 +311,19 @@ function DriverRides({ session, language, layout }) {
   }
 
   const ready = load.status === "ready";
-  const haveData = load.snapshot;
+  const haveData = load.snapshot && alerts !== false;
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
   return (
     <>
       <div className="actions driver-nav">
         {subpage && <a className="button" href={driverLink(day)}>{t("driver.back")}</a>}
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
+      </div>
+      <div role="status">
+        {haveData && alerts?.count > 0 && <p>
+          {t("driver.bookingAlerts")} {alerts.count}{" "}
+          <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>
+        </p>}
       </div>
       {load.status === "loadFailed" && haveData && <p role="status">{t("driver.loadFailed")}</p>}
       {haveData && <BookingEmailStatus language={language} />}
@@ -294,9 +332,9 @@ function DriverRides({ session, language, layout }) {
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
         <ScheduleEditor {...editor} />
-      ) : selected && editing && selected.status === "confirmed" ? (
+      ) : haveData && selected && editing && selected.status === "confirmed" ? (
         <ScheduleEditor {...editor} ride={selected} />
-      ) : selected ? (
+      ) : haveData && selected ? (
         <RideDetail ride={selected} language={language} onChanged={onChanged} setNotice={setNotice}
           notice={notice || (query.has("saved") ? "schedule.saved" : "")} refreshing={!ready} schedule={schedule} day={day} />
       ) : (

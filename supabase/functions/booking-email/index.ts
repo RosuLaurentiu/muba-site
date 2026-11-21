@@ -5,6 +5,7 @@ Deno.serve(bookingEmailHandler({
   serviceKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
   workerToken: Deno.env.get("MUBA_EMAIL_WORKER_TOKEN"),
   from: Deno.env.get("MUBA_EMAIL_FROM"),
+  appUrl: Deno.env.get("MUBA_APP_URL"),
   apiKey: Deno.env.get("MUBA_EMAIL_API_KEY"),
   emailApiUrl: Deno.env.get("MUBA_EMAIL_API_URL")
 }));

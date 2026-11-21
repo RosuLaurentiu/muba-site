@@ -30,7 +30,7 @@ function rpc(name, body, token, status) {
   return request("/rest/v1/rpc/" + name, body, { token, status });
 }
 
-const keys = Array.from({ length: 6 }, () => randomUUID());
+const keys = Array.from({ length: 9 }, () => randomUUID());
 const users = [];
 const password = randomUUID();
 async function account() {
@@ -73,7 +73,8 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 
 const transport = bookingEmailHandler({
   supabaseUrl: apiUrl, serviceKey, workerToken: "fixture-worker", apiKey: "local-test",
-  from: "test@example.test", emailApiUrl: "http://127.0.0.1:" + server.address().port + "/emails"
+  from: "test@example.test", emailApiUrl: "http://127.0.0.1:" + server.address().port + "/emails",
+  appUrl: "http://127.0.0.1:5173/"
 });
 async function runWorker(auth = "fixture-worker") {
   return transport(new Request("http://127.0.0.1/booking-email", {
@@ -146,6 +147,48 @@ try {
   assert.ok(texts.some(({ subject, text }) => subject.startsWith("Ride time changed") && text.includes("12:30")));
   assert.ok(texts.every(({ to }) => to[0].endsWith("@example.test")));
   console.log("PASS optional guest email, five localized messages, private status, and duplicate-safe delivery retry");
+
+  function googleIdentity(user, address, verified) {
+    const subject = randomUUID();
+    const data = JSON.stringify({ sub: subject, email: address, email_verified: verified });
+    sql(`insert into auth.identities (provider_id, user_id, provider, identity_data, created_at, updated_at)
+      values ('${subject}', '${user.id}', 'google', '${data}'::jsonb, now(), now());`);
+  }
+  googleIdentity(driver, "unverified@example.test", false);
+  googleIdentity(other, "unassigned@example.test", true);
+  await rpc("driver_booking_alerts", {}, null, 401);
+  await rpc("driver_booking_alerts", {}, other.token, 403);
+  const baseline = await rpc("driver_booking_alerts", {}, driver.token);
+  assert.equal((await (await runWorker()).json()).sent, 0);
+
+  googleIdentity(driver, "assigned-google@example.test", true);
+  const [newRide, sameRide] = await Promise.all([save(6), save(6)]);
+  assert.deepEqual(newRide, sameRide);
+  assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
+    count: baseline.count + 1, latest: newRide.reference
+  });
+  await rpc("save_ride", { p_request_key: keys[7], p_source: "phone", p_trip: trip }, driver.token);
+  assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
+    count: baseline.count + 1, latest: newRide.reference
+  });
+  loseResponse = true;
+  assert.equal((await (await runWorker()).json()).failed, 1);
+  assert.equal((await rpc("booking_email_failures", {}, driver.token)).retryable, 1);
+  await rpc("retry_booking_email", {}, driver.token, 204);
+  assert.equal((await (await runWorker()).json()).sent, 1);
+  const driverMail = [...delivered.entries()].filter(([, mail]) => mail.subject.startsWith("New booking request"));
+  assert.equal(driverMail.length, 1);
+  const [[deliveryId, email]] = driverMail;
+  assert.equal(attempts.get(deliveryId), 2);
+  assert.deepEqual(email.to, ["assigned-google@example.test"]);
+  assert.ok(email.text.includes("ride=" + newRide.reference));
+  assert.ok(!email.text.includes("Local Test"));
+
+  await save(8);
+  sql(`delete from booking_private.driver where user_id = '${driver.id}';`);
+  await rpc("driver_booking_alerts", {}, driver.token, 403);
+  assert.equal((await (await runWorker()).json()).sent, 0);
+  console.log("PASS driver-only alerts, verified Google recipient, no manual ride alert, revocation and duplicate-safe delivery");
 } finally {
   const hashes = keys.map(value => `sha256(uuid_send('${value}'::uuid))`).join(",");
   sql(`delete from booking_private.calendar_job where ride_reference in
