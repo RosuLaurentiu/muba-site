@@ -77,9 +77,9 @@ export default function CalendarPanel({ client, language, day, updateKey }) {
       </summary>
       <div className="stack calendar-content">
         {calendar?.calendar_id && <p>{t("calendar.connected")} {calendar.calendar_id}</p>}
-        {calendar && (
+        {(calendar || notice === "calendar.syncFailed") && (
           <form className="stack" onSubmit={connect}>
-            {!calendar.calendar_id && (
+            {calendar && !calendar.calendar_id && (
               <div className="field">
                 <label htmlFor="calendar-id">{t("calendar.calendarId")}</label>
                 <input id="calendar-id" type="text" required maxLength={300} value={identifier}
@@ -87,10 +87,10 @@ export default function CalendarPanel({ client, language, day, updateKey }) {
               </div>
             )}
             <div className="actions">
-              <button className="button" type="submit" disabled={busy}>
+              {calendar && <button className="button" type="submit" disabled={busy}>
                 {t(calendar.calendar_id ? "calendar.reconnect" : "calendar.connect")}
-              </button>
-              {calendar.calendar_id && <button className="button primary" type="button" disabled={busy} onClick={() => {
+              </button>}
+              {(calendar?.calendar_id || notice === "calendar.syncFailed") && <button className="button primary" type="button" disabled={busy} onClick={() => {
                 setBusy(true);
                 setRevision((current) => current + 1);
               }}>{t("calendar.retry")}</button>}

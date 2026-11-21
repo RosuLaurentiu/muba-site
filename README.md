@@ -82,12 +82,15 @@ links the Google identity to the existing account. The sign-in flow requests
 basic Google identity only. Connect Google Calendar separately in the driver
 workspace if the driver wants calendar sync.
 
-The driver calendar shows a month of reservations and time blocks. Select
-a day to open its agenda, including pending, confirmed, cancelled and declined
-rides, or browse earlier months to review retained bookings.
-The day schedule uses Paris time and lists each leg separately. The driver
-can browse upcoming days, block time, record phone or WhatsApp bookings,
-reschedule a confirmed ride, and cancel it. The save controls show overlaps
+The driver workspace starts with the next pickup and a shortcut to pending
+requests. The selected Paris day, Add ride, Block time and daily agenda
+come before the month calendar. Select a calendar day to open its agenda,
+including pending, confirmed, cancelled and declined rides. Earlier months show
+retained bookings.
+The agenda lists each leg separately. The driver can record phone or WhatsApp
+bookings, reschedule a confirmed ride, and cancel it. Return from a ride or block
+save to the same selected day. If a refresh fails, the workspace identifies the
+last loaded schedule and offers another refresh. The save controls show overlaps
 with rides and blocks before writing, and the database checks again during
 each write. With no finish estimate, the schedule reserves the pickup minute
 and shows the unknown finish. Ride previews show the minutes available
@@ -196,8 +199,9 @@ interval. The function uses the Resend email endpoint by default. Set
 `MUBA_EMAIL_API_URL` to use a local capture endpoint when serving the function
 locally. Keep the worker token and mail API key off the frontend.
 
-The driver workspace shows failed deliveries. **Retry booking emails** queues
-another attempt for the worker and leaves the ride unchanged. The worker
+The driver workspace shows failed deliveries. If the delivery status is
+unavailable, select **Check email status** to load it again.
+**Retry booking emails** queues another attempt and leaves the ride unchanged. The worker
 reuses the same delivery ID for up to 23 hours after its first attempt.
 Deliveries outside that window stay visible for manual follow-up.
 

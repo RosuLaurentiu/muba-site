@@ -56,6 +56,7 @@ function toWhatsAppNumber(phone) {
 
 function BookingEmailStatus({ language }) {
   const [failures, setFailures] = useState(null);
+  const [revision, setRevision] = useState(0);
   const [retrying, setRetrying] = useState(false);
   const [notice, setNotice] = useState("");
   const t = (key) => getText(language, "driver." + key);
@@ -67,7 +68,7 @@ function BookingEmailStatus({ language }) {
         const result = await driverRpc("booking_email_failures");
         if (active) setFailures(result);
       } catch {
-        if (active) setFailures(null);
+        if (active) setFailures(false);
       }
     }
     check();
@@ -76,13 +77,14 @@ function BookingEmailStatus({ language }) {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [revision]);
 
   async function retry() {
     setRetrying(true);
     try {
       await driverRpc("retry_booking_email");
       setNotice("emailRetryQueued");
+      setRevision((current) => current + 1);
     } catch {
       setNotice("emailRetryFailed");
     } finally {
@@ -93,10 +95,14 @@ function BookingEmailStatus({ language }) {
   return (
     <div className="stack">
       <div role="status">
+        {failures === false && <p>{t("emailStatusUnavailable")}</p>}
         {failures?.retryable > 0 && <p>{t("emailFailed")} {failures.retryable}</p>}
         {failures?.expired > 0 && <p>{t("emailRetryExpired")} {failures.expired}</p>}
         {notice && <p>{t(notice)}</p>}
       </div>
+      {failures === false && <button className="button" type="button" onClick={() => setRevision((current) => current + 1)}>
+        {t("checkEmailStatus")}
+      </button>}
       {failures?.retryable > 0 && <button className="button" type="button" onClick={retry} disabled={retrying}>
         {t("retryEmail")}
       </button>}
@@ -332,11 +338,10 @@ function DriverRides({ session, language }) {
       </div>
       {load.status === "loadFailed" && haveData && (
         <div className="actions driver-feedback">
-          <p role="status">{t("driver.loadFailed")}</p>
+          <p role="status">{t("driver.scheduleStale")}</p>
           <button className="button" type="button" onClick={refresh}>{t("booking.refresh")}</button>
         </div>
       )}
-      {haveData && <BookingEmailStatus language={language} />}
       {haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
@@ -360,6 +365,7 @@ function DriverRides({ session, language }) {
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
+      {haveData && <BookingEmailStatus language={language} />}
       {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>

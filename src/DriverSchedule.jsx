@@ -161,25 +161,6 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
 
   return (
     <section className="driver-list" aria-labelledby="day-heading">
-      <section id="reservation-calendar" className="panel month-panel" aria-label={t("schedule.calendar")}>
-        <h2>{t("schedule.calendar")}</h2>
-        <div className="month-nav">
-          <strong>{dateLabel(day, { month: "long", year: "numeric" })}</strong>
-          <a className="button" href={driverLink(today) + "#reservation-calendar"}>{t("schedule.today")}</a>
-          {first > "0001-01-01" && <a className="button" aria-label={t("schedule.prevMonth")} href={driverLink(moveDay(first, -1).slice(0, 7) + "-01") + "#reservation-calendar"}>‹</a>}
-          {last < "9999-12-31" && <a className="button" aria-label={t("schedule.nextMonth")} href={driverLink(moveDay(last, 1)) + "#reservation-calendar"}>›</a>}
-        </div>
-        <div className="month-grid">
-          {Array.from({ length: 7 }, (_, i) => <span className="weekday" key={i}>{dateLabel(moveDay("2024-01-01", i), { weekday: "short" })}</span>)}
-          {Array.from({ length: weekdayOffset }, (_, i) => <span aria-hidden="true" key={"blank" + i} />)}
-          {[...byDay].map(([date, items]) => (
-            <a className="month-day" key={date} aria-current={date === day ? "date" : undefined}
-              href={driverLink(date) + "#day-heading"} aria-label={dateLabel(date, { dateStyle: "full" }) + " · " + t("schedule.entries") + " " + items.length}>
-              {Number(date.slice(-2))}{items.length > 0 && <small>{items.length}</small>}
-            </a>
-          ))}
-        </div>
-      </section>
       <h2 id="day-heading">{dateLabel(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h2>
       <div className="schedule-date schedule-controls">
         {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
@@ -199,6 +180,25 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
       </div>}
       {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
       {entries.length === 0 && <p>{t("schedule.dayEmpty")}</p>}
+      <section id="reservation-calendar" className="panel month-panel" aria-label={t("schedule.calendar")}>
+        <h2>{t("schedule.calendar")}</h2>
+        <div className="month-nav">
+          <strong>{dateLabel(day, { month: "long", year: "numeric" })}</strong>
+          <a className="button" href={driverLink(today) + "#reservation-calendar"}>{t("schedule.today")}</a>
+          {first > "0001-01-01" && <a className="button" aria-label={t("schedule.prevMonth")} href={driverLink(moveDay(first, -1).slice(0, 7) + "-01") + "#reservation-calendar"}>‹</a>}
+          {last < "9999-12-31" && <a className="button" aria-label={t("schedule.nextMonth")} href={driverLink(moveDay(last, 1)) + "#reservation-calendar"}>›</a>}
+        </div>
+        <div className="month-grid">
+          {Array.from({ length: 7 }, (_, i) => <span className="weekday" key={i}>{dateLabel(moveDay("2024-01-01", i), { weekday: "short" })}</span>)}
+          {Array.from({ length: weekdayOffset }, (_, i) => <span aria-hidden="true" key={"blank" + i} />)}
+          {[...byDay].map(([date, items]) => (
+            <a className="month-day" key={date} aria-current={date === day ? "date" : undefined}
+              href={driverLink(date) + "#day-heading"} aria-label={dateLabel(date, { dateStyle: "full" }) + " · " + t("schedule.entries") + " " + items.length}>
+              {Number(date.slice(-2))}{items.length > 0 && <small>{items.length}</small>}
+            </a>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }
