@@ -70,6 +70,7 @@ export const translations = {
       connectionFailed: "Could not connect the calendar. Check access and try again."
     },
     schedule: {
+      noUpcoming: "No upcoming pickup.",
       dayView: "Day schedule", parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
       nextPickup: "Next pickup", openDay: "Open day", dayEmpty: "No confirmed rides or time blocks on this day.",
       returnLeg: "Return leg", finish: "Estimated finish", finishUnknown: "Finish time unavailable",
@@ -95,7 +96,7 @@ export const translations = {
       googleSignIn: "Sign in with Google", googleSignInFailed: "Google sign-in did not finish. Try again or use your password.",
       emailFailed: "Booking emails awaiting retry:", emailRetryExpired: "Booking emails past the safe retry window:",
       retryEmail: "Retry booking emails", emailRetryQueued: "Email retry queued.", emailRetryFailed: "Could not queue an email retry.",
-      bookingAlerts: "Booking requests awaiting review:", latestRequest: "Open latest request",
+      latestRequest: "Open latest request",
       signOutFailed: "Could not sign out. Try again.",
       loading: "Loading the driver workspace...", unavailable: "Driver access is unavailable.",
       denied: "This account does not have driver access.", loadFailed: "Could not load rides. Try refreshing.",
@@ -340,6 +341,7 @@ export const translations = {
       connectionFailed: "Connexion a l'agenda impossible. Verifiez l'acces et reessayez."
     },
     schedule: {
+      noUpcoming: "Aucun depart a venir.",
       dayView: "Planning du jour", parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
       nextPickup: "Prochain depart", openDay: "Ouvrir ce jour", dayEmpty: "Aucune course confirmee ni plage bloquee ce jour.",
       returnLeg: "Trajet retour", finish: "Fin estimee", finishUnknown: "Heure de fin indisponible",
@@ -365,7 +367,7 @@ export const translations = {
       googleSignIn: "Se connecter avec Google", googleSignInFailed: "La connexion Google a echoue. Reessayez ou utilisez votre mot de passe.",
       emailFailed: "E-mails de reservation en attente de nouvel essai :", emailRetryExpired: "E-mails hors delai de nouvel essai :",
       retryEmail: "Reessayer les e-mails", emailRetryQueued: "Nouvel essai en attente.", emailRetryFailed: "Impossible de relancer les e-mails.",
-      bookingAlerts: "Demandes de reservation en attente :", latestRequest: "Ouvrir la derniere demande",
+      latestRequest: "Ouvrir la derniere demande",
       signOutFailed: "Deconnexion impossible. Reessayez.",
       loading: "Chargement de l'espace chauffeur...", unavailable: "L'acces chauffeur est indisponible.",
       denied: "Ce compte ne dispose pas d'un acces chauffeur.", loadFailed: "Impossible de charger les courses. Actualisez le statut.",

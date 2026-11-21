@@ -130,7 +130,8 @@ h3 { font-size: 1.05rem; }
 .driver-list { min-width: 0; overflow-wrap: anywhere; }
 .driver-list > h2 { display: flex; align-items: baseline; gap: .7rem; margin-bottom: 1rem; }
 .request-count { font-size: 1rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.request-alert { display: flex; flex-wrap: wrap; gap: .25rem .65rem; margin-bottom: 1rem; padding: .65rem 1rem; border-left: 3px solid var(--accent); background: var(--hint); }
+.request-alert { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem .65rem; margin-block: .75rem 1rem; padding: .45rem 1rem; border-left: 3px solid var(--accent); background: var(--hint); }
+.request-alert a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 .driver-feedback:not(:empty) { margin-block: .8rem; }
 .schedule-date { display: flex; align-items: end; gap: .5rem; }
 .schedule-date .field { flex: 1; max-width: 13.5rem; }
@@ -142,7 +143,7 @@ h3 { font-size: 1.05rem; }
 .ride-list { display: grid; gap: .65rem; list-style: none; padding: 0; margin: 0; }
 .ride-list .stack { gap: .65rem; }
 .next-ride { background: var(--hint); border-left: 3px solid var(--accent); }
-.next-ride > strong { text-transform: uppercase; font-size: .77rem; letter-spacing: .12em; }
+.next-ride > h2 { font-size: 1rem; }
 .next-ride .schedule-entry strong { font: 500 clamp(1.4rem, 2.4vw, 2rem)/1.15 var(--display); }
 .muted { color: var(--muted); }
 .calendar-panel { margin-block: 1.75rem 1rem; padding: .8rem 1.15rem; }

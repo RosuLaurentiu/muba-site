@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
 import CalendarPanel from "./CalendarPanel";
-import { BlockEditor, DriverDay, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
+import { BlockEditor, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
 import { getText } from "./i18n";
 import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
@@ -126,7 +126,7 @@ function PendingList({ rides, language, day }) {
   );
 }
 
-function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, schedule, day }) {
+function RideDetail({ ride, returning, language, onChanged, notice, setNotice, refreshing, schedule, day }) {
   const [busy, setBusy] = useState(false);
   const [estimate, setEstimate] = useState(ride.estimated_minutes ?? "");
   const changing = useRef(false);
@@ -136,6 +136,8 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
   const durationValid = minutes === null || (Number.isInteger(minutes) && minutes >= 1 && minutes <= 1440);
   const context = scheduleContext(rideLegs(ride, durationValid ? minutes : null), schedule, ride.reference);
   const hasConflict = context.legsOverlap || context.conflicts.length > 0;
+  const pickup = returning ? ride.destination : ride.pickup;
+  const destination = returning ? ride.pickup : ride.destination;
 
   useEffect(() => {
     if (ride.status !== "pending" && notice) heading.current?.focus();
@@ -170,11 +172,12 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
       <h1 ref={heading} tabIndex={-1}>{t("driver.detail")} {ride.reference}</h1>
       <div className="panel stack">
         <strong>{t("booking.state." + ride.status)}</strong>
+        {returning && <span>{t("schedule.returnLeg")}</span>}
         <BookingDetails rows={[
-          [t("planner.labels.pickup"), ride.pickup],
-          [t("planner.labels.destination"), ride.destination],
-          [t("booking.pickupAt"), formatParisTime(ride.pickup_at, language)],
-          ...(ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
+          [t("planner.labels.pickup"), pickup],
+          [t("planner.labels.destination"), destination],
+          [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
+          ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
           [t("planner.labels.passengers"), ride.passengers],
           [t("planner.labels.name"), ride.passenger_name],
           [t("planner.labels.phone"), ride.passenger_phone],
@@ -186,7 +189,7 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
           <a className="button" href={"https://wa.me/" + toWhatsAppNumber(ride.passenger_phone)} target="_blank" rel="noreferrer">
             {t("nav.whatsApp")}
           </a>
-          <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ride.pickup)}
+          <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
             target="_blank" rel="noreferrer">{t("driver.directions")}</a>
         </div>
       </div>
@@ -209,7 +212,7 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
       )}
       {ride.status === "confirmed" && (
         <div className="actions form-submit">
-          <a className="button" href={driverLink(day, { ride: ride.reference, edit: "" })}>{t("schedule.reschedule")}</a>
+          <a className="button" href={driverLink(day, { ride: ride.reference, edit: "", ...(returning ? { leg: "return" } : {}) })}>{t("schedule.reschedule")}</a>
           <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("cancelled")}>{t("schedule.cancelRide")}</button>
         </div>
       )}
@@ -218,7 +221,7 @@ function RideDetail({ ride, language, onChanged, notice, setNotice, refreshing, 
   );
 }
 
-function DriverRides({ session, language, layout }) {
+function DriverRides({ session, language }) {
   const [load, setLoad] = useState({ status: "loading", snapshot: false, rides: [], blocks: [] });
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
@@ -234,6 +237,7 @@ function DriverRides({ session, language, layout }) {
   const blocking = query.has("block");
   const subpage = Boolean(selectedReference || adding || blocking);
   const selected = load.rides.find((ride) => String(ride.reference) === selectedReference);
+  const returning = query.get("leg") === "return" && Boolean(selected?.return_at);
   const schedule = plannedSchedule(load.rides, load.blocks);
   const token = session.access_token;
 
@@ -312,28 +316,36 @@ function DriverRides({ session, language, layout }) {
 
   const ready = load.status === "ready";
   const haveData = load.snapshot && alerts !== false;
+  const pending = load.rides.filter((ride) => ride.status === "pending");
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
   return (
     <>
       {subpage
         ? <a className="driver-back" href={driverLink(day)}>← {t("driver.back")}</a>
         : <h1>{t("driver.title")}</h1>}
+      {haveData && !subpage && <NextPickup schedule={schedule} day={day} language={language} />}
       <div role="status">
-        {haveData && alerts?.count > 0 && <p className="request-alert">
-          {t("driver.bookingAlerts")} {alerts.count}{" "}
-          <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>
+        {haveData && (!subpage || alerts?.count > 0) && <p className="request-alert">
+          <a href={subpage ? driverLink(day) + "#pending" : "#pending"}>{t("driver.pending")} {alerts?.count ?? pending.length}</a>
+          {alerts?.count > 0 && <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>}
         </p>}
       </div>
-      {load.status === "loadFailed" && haveData && <p role="status">{t("driver.loadFailed")}</p>}
+      {load.status === "loadFailed" && haveData && (
+        <div className="actions driver-feedback">
+          <p role="status">{t("driver.loadFailed")}</p>
+          <button className="button" type="button" onClick={refresh}>{t("booking.refresh")}</button>
+        </div>
+      )}
       {haveData && <BookingEmailStatus language={language} />}
+      {haveData && !subpage && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
         <ScheduleEditor {...editor} />
       ) : haveData && selected && editing && selected.status === "confirmed" ? (
-        <ScheduleEditor {...editor} ride={selected} />
+        <ScheduleEditor {...editor} ride={selected} returning={returning} />
       ) : haveData && selected ? (
-        <RideDetail ride={selected} language={language} onChanged={onChanged} setNotice={setNotice}
+        <RideDetail ride={selected} returning={returning} language={language} onChanged={onChanged} setNotice={setNotice}
           notice={notice || (query.has("saved") ? "schedule.saved" : "")} refreshing={!ready} schedule={schedule} day={day} />
       ) : (
         <>
@@ -342,22 +354,22 @@ function DriverRides({ session, language, layout }) {
             <>
               <p className="driver-feedback" role="status">{notice ? t(notice) : query.has("saved") ? t("schedule.saved") : ""}</p>
               <div className="booking-grid">
-                <DriverDay schedule={schedule} day={day} today={today} language={language} layout={layout} onRemove={removeBlock} />
-                <PendingList rides={load.rides.filter((ride) => ride.status === "pending")} language={language} day={day} />
+                <DriverDay schedule={schedule} day={day} today={today} language={language} onRemove={removeBlock} />
+                <PendingList rides={pending} language={language} day={day} />
               </div>
             </>
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
-      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
-      <div className="driver-nav">
+      {haveData && subpage && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
+      {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
-      </div>
+      </div>}
     </>
   );
 }
 
-export default function DriverWorkspace({ language, layout }) {
+export default function DriverWorkspace({ language }) {
   const [session, setSession] = useState(undefined);
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState("");
@@ -459,7 +471,7 @@ export default function DriverWorkspace({ language, layout }) {
         </>
       ) : session ? (
         <>
-          <DriverRides key={session.user.id} session={session} language={language} layout={layout} />
+          <DriverRides key={session.user.id} session={session} language={language} />
           <button className="button driver-sign-out" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
         </>
       ) : (

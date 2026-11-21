@@ -802,7 +802,7 @@ function App() {
       </header>
       {driverView ? (
         <Suspense fallback={<main className="site-main"><p role="status">{getText(language, "driver.loading")}</p></main>}>
-          <DriverWorkspace language={language} layout={layout} />
+          <DriverWorkspace language={language} />
         </Suspense>
       ) : privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
     </>

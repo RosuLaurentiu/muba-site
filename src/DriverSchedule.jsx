@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { bookingPayload, formatParisTime, parisMinute, validateBooking } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
-import { draftBlock, draftLegs, driverLink, entriesOnDay, moveDay, parisDay, scheduleContext } from "./schedule";
+import { draftBlock, draftLegs, driverLink, entriesOnDay, moveDay, scheduleContext } from "./schedule";
 
 const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
 
@@ -62,20 +62,40 @@ export function SchedulePreview({ context, language }) {
   );
 }
 
-export function DriverDay({ schedule, day, today, language, layout, onRemove }) {
+export function NextPickup({ schedule, day, language }) {
   const [now, setNow] = useState(() => Date.now());
-  const [removing, setRemoving] = useState("");
   const t = (key) => getText(language, key);
-
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60000);
     return () => window.clearInterval(timer);
   }, []);
-
-  const entries = entriesOnDay(schedule, day);
   const next = schedule.find((entry) => entry.ride && entry.start >= now);
-  const separateNext = layout === "dark" && entries.includes(next);
-  const remaining = separateNext ? entries.filter((entry) => entry !== next) : entries;
+
+  return (
+    <section className="panel stack next-ride" aria-labelledby="next-pickup">
+      <h2 id="next-pickup">{t("schedule.nextPickup")}</h2>
+      {next ? (
+        <>
+          <EntryText entry={next} language={language} />
+          <div className="actions">
+            <a className="button" href={"tel:" + next.ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
+            <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(next.pickup)}
+              target="_blank" rel="noreferrer">{t("driver.directions")}</a>
+            <a className="button" href={driverLink(day, { ride: next.ride.reference, ...(next.returning ? { leg: "return" } : {}) })}>
+              {t("driver.detail")} {next.ride.reference}
+            </a>
+          </div>
+        </>
+      ) : <p>{t("schedule.noUpcoming")}</p>}
+    </section>
+  );
+}
+
+export function DriverDay({ schedule, day, today, language, onRemove }) {
+  const [removing, setRemoving] = useState("");
+  const t = (key) => getText(language, key);
+  const entries = entriesOnDay(schedule, day);
+
   async function remove(id) {
     if (!window.confirm(t("schedule.confirmRemove"))) return;
     setRemoving(id);
@@ -86,22 +106,21 @@ export function DriverDay({ schedule, day, today, language, layout, onRemove }) 
     }
   }
 
-  function card(entry, highlighted) {
+  function card(entry) {
     return (
-      <li className={"panel stack" + (highlighted ? " next-ride" : "")} key={entry.id}>
-        {highlighted && <strong>{t("schedule.nextPickup")}</strong>}
+      <li className="panel stack" key={entry.id}>
         <EntryText entry={entry} language={language} />
         {entry.ride ? (
           <>
             <span>{entry.ride.passenger_name} · <a href={"tel:" + entry.ride.passenger_phone.replace(/[^+\d]/g, "")}>{entry.ride.passenger_phone}</a></span>
             <div className="actions">
-              <a className="button" href={driverLink(day, { ride: entry.ride.reference })}>{t("driver.detail")} {entry.ride.reference}</a>
-              {highlighted && <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(entry.pickup)}
-                target="_blank" rel="noreferrer">{t("driver.directions")}</a>}
+              <a className="button" href={driverLink(day, { ride: entry.ride.reference, ...(entry.returning ? { leg: "return" } : {}) })}>
+                {t("driver.detail")} {entry.ride.reference}
+              </a>
             </div>
           </>
         ) : (
-          <button className="button" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>
+          <button className="button destructive" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>
         )}
       </li>
     );
@@ -126,16 +145,7 @@ export function DriverDay({ schedule, day, today, language, layout, onRemove }) 
         <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
         <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
       </div>
-      {next && !entries.includes(next) && (
-        <div className="panel stack next-ride schedule-controls">
-          <strong>{t("schedule.nextPickup")}</strong>
-          <EntryText entry={next} language={language} />
-          <a className="button" href={driverLink(parisDay(next.start))}>{t("schedule.openDay")}</a>
-        </div>
-      )}
-      {separateNext && <ul className="ride-list">{card(next, true)}</ul>}
-      {separateNext && remaining.length > 0 && <h3 className="schedule-controls">{t("schedule.otherEntries")}</h3>}
-      {remaining.length > 0 && <ul className="ride-list">{remaining.map((entry) => card(entry, entry === next))}</ul>}
+      {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
       {entries.length === 0 && <p>{t("schedule.dayEmpty")}</p>}
     </section>
   );
@@ -164,7 +174,7 @@ function DraftField({ name, label, error, children, ...options }) {
   );
 }
 
-export function ScheduleEditor({ ride, schedule, day, language, rpc, refresh, refreshed }) {
+export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, refresh, refreshed }) {
   const [draft, setDraft] = useState(() => initialDraft(day, ride));
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState("");
@@ -211,11 +221,11 @@ export function ScheduleEditor({ ride, schedule, day, language, rpc, refresh, re
             pickup: payload.pickup, destination: payload.destination
           }
         });
-        window.location.assign(driverLink(payload.pickup_time.slice(0, 10), { ride: ride.reference, saved: "" }));
+        window.location.assign(driverLink(day, { ride: ride.reference, saved: "", ...(returning && payload.return_time ? { leg: "return" } : {}) }));
       } else {
         attempt.current ??= { p_request_key: crypto.randomUUID(), p_source: draft.source, p_trip: { ...payload, estimated_minutes: minutes } };
         const saved = await rpc("save_ride", attempt.current);
-        window.location.assign(driverLink(payload.pickup_time.slice(0, 10), { ride: saved.reference, saved: "" }));
+        window.location.assign(driverLink(day, { ride: saved.reference, saved: "" }));
       }
     } catch (error) {
       if (error.code === "PT409") {
@@ -311,7 +321,7 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
     try {
       attempt.current ??= { p_id: crypto.randomUUID(), p_start: times.start, p_end: times.end };
       await rpc("save_block", attempt.current);
-      window.location.assign(driverLink(times.start.slice(0, 10), { saved: "" }));
+      window.location.assign(driverLink(day, { saved: "" }));
     } catch (err) {
       if (err.code === "PT409" || /^(22\d{3}|23514)$/.test(err.code)) {
         attempt.current = null;

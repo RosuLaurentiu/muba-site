@@ -176,6 +176,9 @@ The open driver workspace checks for pending web requests every 15 seconds.
 The alert shows the pending count and links to the latest request. The driver
 must still be assigned to see it. New web requests also queue one email to the
 verified Google email linked to the assigned driver's Supabase account.
+The agenda shows the next pickup, call and directions before the day list.
+Opening a return leg shows directions to its pickup. After a ride or time
+block save, the selected day stays available when returning to the agenda.
 Phone and WhatsApp rides entered by the driver do not queue alerts. Google
 Calendar uses its own consent.
 
