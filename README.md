@@ -106,6 +106,25 @@ for seven days and verify a restore locally before release. These are approved
 operating terms. Purge automation and the backup and restore procedure must
 be in place before release.
 
+The retention migration records the final decision for declines and
+cancellations. Other rides use the final scheduled leg. A privileged
+database job can run `booking_private.purge_expired_rides()` after release
+approval. The purge also removes the rider email and its delivery records,
+and queues removals of the ride's mirrored Calendar events.
+
+Run the recovery rehearsal in PowerShell 7.4 or later with local Supabase
+running.
+
+```powershell
+.\supabase\tests\pilot-retention.ps1
+```
+
+It uses two disposable databases, fictional data, and a one-time encryption
+key. It checks the 90-day cutoff, seven dated encrypted copies and a private
+booking lookup after restore. Before opening the pilot, verify the scheduled
+purge and export on the approved environment and store the export key
+separately from the archives.
+
 ## Google Calendar mirror
 
 The driver can connect an owned calendar by its exact Calendar ID from Google
