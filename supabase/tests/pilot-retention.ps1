@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
-if ($PSVersionTable.PSVersion -lt [version]'7.4') { throw 'PowerShell 7.4 or newer is required for AES-GCM.' }
+. (Join-Path (Split-Path -Parent $PSScriptRoot) "booking-archive.ps1")
 
 $container = 'supabase_db_muba-site'
 $root = Split-Path -Parent $PSScriptRoot
@@ -11,7 +11,6 @@ $recovery = "muba_restore_$case"
 $work = Join-Path $testRoot "pilot-$case"
 $null = New-Item -ItemType Directory -Path $work
 $key = [Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
-$cipher = [Security.Cryptography.AesGcm]::new($key, 16)
 $created = @()
 
 function Invoke-PilotSql($database, $statement) {
@@ -20,15 +19,6 @@ function Invoke-PilotSql($database, $statement) {
 function Assert-Pilot($condition, $message) {
     if (!$condition) { throw $message }
 }
-function Start-PilotProcess($arguments, [switch]$capture) {
-    $info = [Diagnostics.ProcessStartInfo]::new('docker')
-    $info.UseShellExecute = $false
-    $info.RedirectStandardOutput = $capture
-    $info.RedirectStandardInput = !$capture
-    foreach ($argument in $arguments) { $info.ArgumentList.Add($argument) }
-    return [Diagnostics.Process]::Start($info)
-}
-
 try {
     Invoke-PilotSql postgres "create database $source template template0;"
     $created += $source
@@ -149,37 +139,15 @@ commit;
     Assert-Pilot ($actual -eq '2|Fictional station,recent-decision,recent-return|0|0|1|0') 'Retention boundary, cascade, Calendar removal queue or idempotency failed.'
 
     $today = [TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTimeOffset]::Now, 'Europe/Paris').Date
-    $archive = Join-Path $work ("muba-{0:yyyy-MM-dd}.dump.enc" -f $today)
-    $dump = Start-PilotProcess @('exec', $container, 'pg_dump', '-U', 'postgres', '-Fc', $source) -capture
-    $memory = [IO.MemoryStream]::new()
+    $archive = Export-BookingArchive -Directory $work -Key $key -Date $today -Program docker -Arguments @('exec', $container, 'pg_dump', '-U', 'postgres', '-Fc', $source)
+    $wrongKey = [byte[]]::new(32)
     try {
-        $dump.StandardOutput.BaseStream.CopyTo($memory)
-        $dump.WaitForExit()
-        Assert-Pilot ($dump.ExitCode -eq 0) 'Fictional database export failed.'
-        $plain = $memory.ToArray()
-    } finally {
-        $dump.Dispose()
-        $memory.Dispose()
+        Restore-BookingArchive -Path $archive -Key $wrongKey -Program 'restore-must-not-run' -Arguments @('--single-transaction')
+        throw 'The archive accepted the wrong key.'
+    } catch [Security.Cryptography.AuthenticationTagMismatchException] {
+        # An archive must authenticate before pg_restore runs.
     }
-    $nonce = [Security.Cryptography.RandomNumberGenerator]::GetBytes(12)
-    $tag = [byte[]]::new(16)
-    $encrypted = [byte[]]::new($plain.Length)
-    $cipher.Encrypt($nonce, $plain, $encrypted, $tag)
-    [Array]::Clear($plain)
-    [IO.File]::WriteAllBytes($archive, $nonce + $tag + $encrypted)
-
-    $stored = [IO.File]::ReadAllBytes($archive)
-    $cipher.Decrypt([byte[]]$stored[0..11], [byte[]]$stored[28..($stored.Length-1)], [byte[]]$stored[12..27], $plain)
-    $restore = Start-PilotProcess @('exec', '-i', $container, 'pg_restore', '-U', 'postgres', '--exit-on-error', '-d', $recovery)
-    try {
-        $restore.StandardInput.BaseStream.Write($plain, 0, $plain.Length)
-        $restore.StandardInput.Close()
-        $restore.WaitForExit()
-        Assert-Pilot ($restore.ExitCode -eq 0) 'Fictional database restore failed.'
-    } finally {
-        [Array]::Clear($plain)
-        $restore.Dispose()
-    }
+    Restore-BookingArchive -Path $archive -Key $key -Program docker -Arguments @('exec', '-i', $container, 'pg_restore', '-U', 'postgres', '--single-transaction', '-d', $recovery)
 
     $restored = Invoke-PilotSql $recovery "set role anon; select public.get_ride('$requestKey')->>'reference';"
     Assert-Pilot ($restored -eq $active) 'Private booking lookup failed after restore.'
@@ -190,15 +158,19 @@ commit;
         $sample = Join-Path $work ("muba-{0:yyyy-MM-dd}.dump.enc" -f $today.AddDays(-$daysAgo))
         Copy-Item -LiteralPath $archive -Destination $sample
     }
-    $archives = @(Get-ChildItem -LiteralPath $work -File -Filter 'muba-*.dump.enc')
-    foreach ($file in $archives) {
-        $date = [DateTime]::ParseExact($file.Name.Substring(5,10), 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
-        if ($date -lt $today.AddDays(-6)) { Remove-Item -LiteralPath $file.FullName }
+    $goodArchive = (Get-FileHash -LiteralPath $archive).Hash
+    try {
+        Export-BookingArchive -Directory $work -Key $key -Date $today -Program node -Arguments @('-e', 'process.exit(1)')
+        throw 'A failed dump was accepted.'
+    } catch {
+        if ($_.Exception.Message -ne 'Booking database export failed.') { throw }
     }
+    Assert-Pilot ((Get-FileHash -LiteralPath $archive).Hash -eq $goodArchive) 'A failed dump replaced the good archive.'
+    Assert-Pilot (@(Get-ChildItem -LiteralPath $work -File -Filter 'muba-*.dump.enc').Count -eq 9) 'A failed dump pruned the existing archive window.'
+    $null = Export-BookingArchive -Directory $work -Key $key -Date $today -Program docker -Arguments @('exec', $container, 'pg_dump', '-U', 'postgres', '-Fc', $source)
     Assert-Pilot (@(Get-ChildItem -LiteralPath $work -File -Filter 'muba-*.dump.enc').Count -eq 7) 'Seven-day archive window failed.'
     'PASS 90-day rider purge, encrypted daily archive window, and restored private booking.'
 } finally {
-    $cipher.Dispose()
     [Array]::Clear($key)
     foreach ($database in $created) {
         Invoke-PilotSql postgres "drop database $database;"

@@ -136,6 +136,36 @@ and a private booking lookup after restore. Before public release, verify the
 scheduled purge and export on the approved environment. Store the export key
 separately from the archives.
 
+### Run the retention and recovery jobs
+
+Use an owner-approved scheduler and a dedicated archive directory. Run the
+purge daily through a privileged database connection. Run the encrypted export
+once per operating day. Use a PostgreSQL client compatible with the target
+server. Set `PGSERVICE` through the approved connection configuration and
+load the 32-byte `$archiveKey` from secret storage before running the export.
+
+```powershell
+psql -X --no-password -v ON_ERROR_STOP=1 -c 'select booking_private.purge_expired_rides();'
+# Run the export under its approved PostgreSQL service.
+. .\supabase\booking-archive.ps1
+Export-BookingArchive -Directory $archiveDirectory -Key $archiveKey
+```
+
+Export names use the Paris date. The script replaces a same-day archive and
+expires copies older than six days only after the new encrypted file is
+written. The export and restore hold the dump in memory. Verify that the
+scheduler has enough memory for the hosted dump and alert the operator if
+either job fails or an expected archive is missing.
+
+For a restore rehearsal, set `PGSERVICE` to an empty, isolated recovery
+database and use the separately stored key. Verify a fictional booking by
+its private status link after restoring.
+
+```powershell
+. .\supabase\booking-archive.ps1
+Restore-BookingArchive -Path $archivePath -Key $archiveKey -Arguments @('--single-transaction', '--no-password', '--dbname', 'service=muba-restore')
+```
+
 ### Web request limits
 
 `save_ride` accepts at most 10 web requests per hour and 30 per day across
@@ -145,8 +175,8 @@ with an already saved key still returns that booking. Driver phone and WhatsApp
 rides are not limited. Each rider email address gets at most 3 automatic
 receipts per day. The booking still saves and later decision emails still go
 out. These defaults keep a scripted flood within a small daily email volume.
-The owner must approve the numbers before public release. Change them in a new
-migration.
+The owner approved these numbers under MS-017. Verify them on the hosted
+release candidate. Change them in a new migration.
 
 A confirmed round trip can keep an outbound pickup that already happened while
 the driver moves the return. Every moved leg must be in the future.
