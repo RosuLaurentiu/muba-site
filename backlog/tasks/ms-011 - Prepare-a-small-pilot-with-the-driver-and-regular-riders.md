@@ -1,11 +1,11 @@
 ---
 id: MS-011
-title: Prepare a small pilot with the driver and regular riders
+title: Verify hosted booking email delivery and recovery
 status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-21 15:23'
-updated_date: '2026-11-21 17:00'
+updated_date: '2026-11-21 21:48'
 labels: []
 dependencies: []
 references:
@@ -25,7 +25,7 @@ ordinal: 18000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Rider emails and driver alerts have local coverage. Pilot readiness needs delivery evidence on controlled accounts, proof of the agreed data recovery and retention procedure, and a decision on whether to invite regular clients. Reuse the owner and driver walkthrough evidence from MS-002. Pilot preparation does not authorize invitations or production changes.
+Use the existing hosted test site with fictional bookings and controlled inboxes before the separate public release decision. Retain the local retention and recovery evidence.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Current Checkpoint
@@ -36,27 +36,78 @@ done: >-
   Passed an isolated fictional-data test for the 90-day purge, Calendar removal
   queue, seven dated encrypted archives and private booking recovery.
 next: >-
-  After an approved test deployment, verify closed-workspace driver phone
-  delivery and rider updates, then obtain support, sender and go-or-hold
-  decisions.
+  Verify real phone alert, rider update and delivery recovery with controlled
+  inboxes after sender approval.
 latestChange: >-
-  Verified the 90-day retention boundary, seven dated encrypted copies and
-  private link restore with fictional data. Ride, email and Calendar regressions
-  passed. Live pilot approval is still pending.
+  Replaced the regular-rider pilot with the owner-selected controlled hosted
+  test. Existing local retention and restore evidence still applies.
 resultAt: '2026-11-21T17:00:25.543Z'
 remainingChecks:
-  - 'Approved pilot environment, sender and support ownership'
-  - Fictional phone and rider mail test on approved delivery setup
-  - 'Driver rehearsal and rules, travel review and owner go-or-hold'
+  - 'Approval for test sender, provider and cost ceiling'
+  - Driver alert with workspace closed and opted-in rider update
+  - Visible failed delivery and verified recovery
+  - Link the release-candidate rehearsal and hand over to MS-016
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
+## Time & Usage
+
+<!-- SECTION:TIME_USAGE:BEGIN -->
+```json
+{
+  "sessions": [
+    {
+      "id": "codex-01a2000a-86d0-7722-9349-886d24da4f86-activity",
+      "actor": "agent",
+      "label": "Codex (estimate)",
+      "state": "stopped",
+      "intervals": [
+        {
+          "start": "2026-11-21T21:46:57.109Z",
+          "end": "2026-11-21T21:48:06.321Z"
+        }
+      ]
+    }
+  ],
+  "usage": [
+    {
+      "source": "codex-task-estimate",
+      "runId": "01a2000a-86d0-7722-9349-886d24da4f86",
+      "segmentId": "auto-1795297625600",
+      "mode": "cumulative",
+      "shared": true,
+      "model": "gpt-6.2-sol",
+      "scope": "task",
+      "attribution": {
+        "taskId": "MS-011",
+        "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
+        "start": "2026-11-21T21:47:05.600Z",
+        "end": "2026-11-21T21:48:06.321Z"
+      },
+      "tokens": {
+        "input": 404950,
+        "output": 2151,
+        "cachedInput": 397952,
+        "reasoningOutput": 753,
+        "total": 407101
+      },
+      "evidence": [
+        "codex-session:01a2000a-86d0-7722-9349-886d24da4f86"
+      ],
+      "recordedAt": "2026-11-21T21:48:06.321Z"
+    }
+  ],
+  "corrections": []
+}
+```
+<!-- SECTION:TIME_USAGE:END -->
+
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Record the pilot environment, participants by role, approved sender and delivery cost limit, who monitors missed requests, and the phone or WhatsApp fallback. Keep real passenger details out of pilot evidence.
-- [ ] #2 With the approved test setup, show that one fictional web booking alerts the driver on his phone while the workspace is closed and that an opted-in rider receives an update after the ride changes. Verify that a failed delivery is visible and can be recovered without duplicating the ride.
-- [x] #3 Demonstrate the approved data safeguards with test records: passenger data is removed after the 90-day retention period, daily encrypted exports are kept for seven days, and a local restore recovers a usable test booking.
-- [ ] #4 Link the MS-002 rehearsal result, the booking rules and the travel-buffer disposition. Record outstanding blockers, who handles support, when to pause and the owner's decision to proceed or hold before inviting regular riders.
+- [ ] #1 With the approved test setup, show that one fictional web booking alerts the driver on his phone while the workspace is closed and that an opted-in rider receives an update after the ride changes. Verify that a failed delivery is visible and can be recovered without duplicating the ride.
+- [x] #2 Demonstrate the approved data safeguards with test records: passenger data is removed after the 90-day retention period, daily encrypted exports are kept for seven days, and a local restore recovers a usable test booking.
+- [ ] #3 Record test environment, sender, provider and delivery cost limit, controlled recipients, and the missed-alert fallback.
+- [ ] #4 Link the release-candidate walkthrough and report go-or-hold evidence for all delivery checks to MS-016.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,4 +124,6 @@ Prove retention and encrypted recovery using fictional data locally. Record pilo
 2026-11-21T17:00:25.544Z: Prior current facts: {"done":"The rider and driver flows are locally verified. Owner approval is still required for deployment and live sender setup.","resultAt":"2026-11-21T16:55:17.857Z"}
 
 2026-11-21T17:00:25.544Z: Verified the 90-day retention boundary, seven dated encrypted copies and private link restore with fictional data. Ride, email and Calendar regressions passed. Live pilot approval is still pending.
+
+2026-11-21T21:48:11.388Z: Replaced the regular-rider pilot with the owner-selected controlled hosted test. Existing local retention and restore evidence still applies.
 <!-- SECTION:NOTES:END -->
