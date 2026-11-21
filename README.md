@@ -98,6 +98,10 @@ Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.
 The hosted build needs the hosted Supabase URL and publishable key before
 release. Avoid publishing a build configured for the local stack.
+For GitHub Pages, set `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` as configuration variables on the
+`github-pages` environment. Use the backend intended for the public site.
+For a test build, pass the test project's values to Vite separately.
 
 The owner approved a Supabase Free project in Paris at no subscription cost
 within Free limits. The release plan removes passenger data 90 days after the

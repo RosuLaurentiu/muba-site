@@ -34,7 +34,12 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          node -e "if (new URL(process.env.VITE_SUPABASE_URL).protocol !== 'https:' || !/^sb_publishable_.+/.test(process.env.VITE_SUPABASE_PUBLISHABLE_KEY)) throw new Error('Set the hosted Supabase URL and publishable key in the github-pages environment')"
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
