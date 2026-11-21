@@ -24,4 +24,4 @@ The driver workspace puts pending requests and the day's schedule above account 
 - A passenger could enter addresses manually, switch language while preserving input, review the trip, submit a synthetic request and refresh its private status. A link without a valid key offered a new request. Driver checks covered sign-in rendering, the populated schedule, pickup directions, ride details, manual entry and blocked-time entry.
 - Lint, production build, rider input checks and schedule checks passed. The browser used synthetic rides and local responses with external requests blocked, including Google Maps and web fonts.
 
-The owner has selected the fleet and camera angle. Visual acceptance of the implemented rider and driver screens is pending.
+The owner selected the fleet and camera angle, reviewed the phone and desktop captures, and approved the implemented rider and driver screens on 21 November 2026.

@@ -1,11 +1,12 @@
 ---
 id: MS-004
 title: Give Private Taxi Paris a professional booking page
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-21 14:42'
-updated_date: '2026-11-21 16:15'
+updated_date: '2026-11-21 16:34'
+completed_date: '2026-11-21T16:34:54.724Z'
 labels: []
 dependencies: []
 references:
@@ -28,17 +29,13 @@ The owner wants the service to feel more professional. The current header gives 
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Implemented the black-led rider and driver screens using the selected low rear
-  three-quarter fleet image. Local bilingual and responsive checks passed.
-next: >-
-  Owner reviews the phone and desktop comparison in
-  backlog/evidence/MS-004/review.md.
+  Implemented and browser-checked the bilingual rider and driver redesign. Owner
+  reviewed phone and desktop captures and approved the implemented design.
+next: Use the accepted design in the rider journey and driver agenda tasks.
 latestChange: >-
-  Implemented and browser-checked the rider and driver redesign with both fleet
-  vehicles. Owner visual review remains.
-resultAt: '2026-11-21T16:15:40.064Z'
-remainingChecks:
-  - Owner visual acceptance of the implemented rider and driver screens.
+  Owner approved the implemented phone and desktop rider and driver screens
+  after review.
+resultAt: '2026-11-21T16:34:54.711Z'
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -79,7 +76,7 @@ remainingChecks:
 <!-- AC:BEGIN -->
 - [x] #1 The implemented first screen identifies the Paris transfer service, explains how confirmation works and gives booking clear visual priority over preferences and contact links. The pickup field or a direct action focusing it is visible at 390 x 740.
 - [x] #2 Use a consistent type hierarchy, spacing, surfaces, form and button states across the rider entry and driver home. Keep the rider and driver theme preferences independent. Use only verified business details and make no unsupported service or fare promises.
-- [ ] #3 Review before-and-after captures of the actual app with the owner at phone and desktop sizes. Check English and French, Light and Dark, visible keyboard focus, readable contrast and no horizontal scrolling. Record the selected treatment and evidence.
+- [x] #3 Review before-and-after captures of the actual app with the owner at phone and desktop sizes. Check English and French, Light and Dark, visible keyboard focus, readable contrast and no horizontal scrolling. Record the selected treatment and evidence.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -96,4 +93,14 @@ remainingChecks:
 2026-11-21T16:15:40.065Z: Prior current facts: {"done":"Confirmed the existing Light and Dark designs, booking screens and driver workspace. The owner requested a black-led visual redesign.","resultAt":"2026-11-21T16:00:40.164Z"}
 
 2026-11-21T16:15:40.065Z: Implemented and browser-checked the rider and driver redesign with both fleet vehicles. Owner visual review remains.
+
+2026-11-21T16:34:54.711Z: Prior current facts: {"done":"Implemented the black-led rider and driver screens using the selected low rear three-quarter fleet image. Local bilingual and responsive checks passed.","resultAt":"2026-11-21T16:15:40.064Z"}
+
+2026-11-21T16:34:54.711Z: Owner approved the implemented phone and desktop rider and driver screens after review.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented and locally verified the approved bilingual booking and driver design. Owner reviewed and accepted the captures.
+<!-- SECTION:FINAL_SUMMARY:END -->
