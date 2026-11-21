@@ -23,6 +23,7 @@ const INITIAL_FORM_DATA = {
   returnTime: "",
   customerName: "",
   customerPhone: "",
+  customerEmail: "",
   passengers: "1",
   notes: ""
 };
@@ -554,6 +555,7 @@ function RiderBooking({ language }) {
     ["planner.labels.passengers", formData.passengers],
     ["planner.labels.name", formData.customerName.trim()],
     ["planner.labels.phone", formData.customerPhone.trim()],
+    ...(formData.customerEmail.trim() ? [["planner.labels.email", formData.customerEmail.trim()]] : []),
     ...(formData.notes.trim() ? [["planner.labels.notes", formData.notes.trim()]] : [])
   ];
 
@@ -612,6 +614,7 @@ function RiderBooking({ language }) {
               <h2 id="passenger-heading">{t("planner.contactTitle")}</h2>
               {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
               {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
+              {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
               {field("notes", "notes", { rows: 3, maxLength: 1500 })}
             </section>
           </div>

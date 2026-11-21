@@ -26,3 +26,6 @@ skip_nonce_check = false
 
 [functions.calendar-sync]
 verify_jwt = false
+
+[functions.booking-email]
+verify_jwt = false

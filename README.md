@@ -134,6 +134,35 @@ test-calendar check requires the owner's approval before any external action.
 When serving the function locally, use the same Docker network as the stack:
 `npx --yes supabase@3.2.0 functions serve calendar-sync --network-id muba-site-local --env-file <local-secret-file>`.
 
+## Booking emails
+
+Guest riders can enter an email to receive a receipt, confirmation, change of
+time, decline, or cancellation. The receipt page still provides the private
+status link. The app stores the email in the private schema and creates the
+delivery record in the same transaction as the booking change.
+
+Run the local delivery test on an unassigned stack with an empty email queue.
+The test starts a loopback mail capture server and uses fictional addresses.
+
+```powershell
+npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/booking-email.mjs
+deno check --no-config supabase/functions/booking-email/index.ts
+```
+
+For live delivery, obtain owner approval for the sender, provider and email
+limits before setup. The server-side function accepts a POST at
+`/functions/v1/booking-email` with `Authorization: Bearer <worker token>`.
+Configure `MUBA_EMAIL_WORKER_TOKEN`, `MUBA_EMAIL_FROM` and
+`MUBA_EMAIL_API_KEY` in the function runtime. Schedule the POST at a regular
+interval. The function uses the Resend email endpoint by default. The local
+test sets `MUBA_EMAIL_API_URL` through the handler configuration to point to
+its mail capture. Keep the worker token and mail API key off the frontend.
+
+The driver workspace shows failed deliveries. **Retry booking emails** queues
+another attempt for the worker and leaves the ride unchanged. The worker
+reuses the same delivery ID for up to 23 hours after its first attempt.
+Deliveries outside that window stay visible for manual follow-up.
+
 ## Main files
 
 - `src/App.jsx` renders trip entry, review, receipt, and private status.

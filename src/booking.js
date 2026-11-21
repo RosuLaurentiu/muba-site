@@ -49,6 +49,10 @@ export function validateBooking(form, capacity, now = new Date()) {
   if (!/^[+]?[\d ().-]+$/.test(phone) || !/^\d{7,15}$/.test(phone.replace(/\D/g, ""))) {
     errors.customerPhone = "booking.validPhoneRequired";
   }
+  const email = form.customerEmail?.trim();
+  if (email && (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(email))) {
+    errors.customerEmail = "booking.invalidEmail";
+  }
   return errors;
 }
 
@@ -62,7 +66,8 @@ export function bookingPayload(form, language) {
     passengers: Number(form.passengers),
     passenger_name: form.customerName.trim(),
     passenger_phone: form.customerPhone.trim(),
-    passenger_notes: form.notes.trim()
+    passenger_notes: form.notes.trim(),
+    ...(form.customerEmail?.trim() ? { passenger_email: form.customerEmail.trim() } : {})
   };
 }
 
