@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { bookingPayload, formatParisTime, parisMinute, validateBooking } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
-import { draftBlock, draftLegs, driverLink, entriesOnDay, moveDay, scheduleContext } from "./schedule";
+import { draftBlock, draftLegs, driverLink, monthDays, moveDay, parisDay, rideLegs, scheduleContext } from "./schedule";
 
 const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
 
@@ -103,10 +103,30 @@ export function NextPickup({ schedule, day, language }) {
   );
 }
 
-export function DriverDay({ schedule, day, today, language, onRemove }) {
+export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
   const [removing, setRemoving] = useState("");
   const t = (key) => getText(language, key);
-  const entries = entriesOnDay(schedule, day);
+  const calendar = [...schedule, ...rides.filter(ride => ride.status !== "confirmed").flatMap(ride => rideLegs(ride))]
+    .sort((a, b) => a.start - b.start);
+  const dates = monthDays(day);
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  const weekdayOffset = (new Date(first + "T12:00:00Z").getUTCDay() + 6) % 7;
+  const byDay = new Map(dates.filter(date => date <= "9999-12-30").map(date => [date, []]));
+  for (const entry of calendar) {
+    const start = parisDay(entry.start);
+    if (entry.ride) {
+      byDay.get(start)?.push(entry);
+    } else {
+      const end = parisDay(entry.end - 1);
+      for (const [date, items] of byDay) {
+        if (date >= start && date <= end) items.push(entry);
+      }
+    }
+  }
+  const entries = byDay.get(day);
+  const locale = language === "fr" ? "fr-FR" : "en-GB";
+  const dateLabel = (value, options) => new Date(value + "T12:00:00Z").toLocaleDateString(locale, { ...options, timeZone: "UTC" });
 
   async function remove(id) {
     if (!window.confirm(t("schedule.confirmRemove"))) return;
@@ -121,6 +141,7 @@ export function DriverDay({ schedule, day, today, language, onRemove }) {
   function card(entry) {
     return (
       <li className="panel stack" key={entry.id}>
+        {entry.ride && <span className="calendar-status">{t("booking.state." + entry.ride.status)}</span>}
         <EntryText entry={entry} language={language} />
         {entry.ride ? (
           <>
@@ -140,23 +161,42 @@ export function DriverDay({ schedule, day, today, language, onRemove }) {
 
   return (
     <section className="driver-list" aria-labelledby="day-heading">
-      <h2 id="day-heading">{t("schedule.dayView")}</h2>
+      <section id="reservation-calendar" className="panel month-panel" aria-label={t("schedule.calendar")}>
+        <h2>{t("schedule.calendar")}</h2>
+        <div className="month-nav">
+          <strong>{dateLabel(day, { month: "long", year: "numeric" })}</strong>
+          <a className="button" href={driverLink(today) + "#reservation-calendar"}>{t("schedule.today")}</a>
+          {first > "0001-01-01" && <a className="button" aria-label={t("schedule.prevMonth")} href={driverLink(moveDay(first, -1).slice(0, 7) + "-01") + "#reservation-calendar"}>‹</a>}
+          {last < "9999-12-31" && <a className="button" aria-label={t("schedule.nextMonth")} href={driverLink(moveDay(last, 1)) + "#reservation-calendar"}>›</a>}
+        </div>
+        <div className="month-grid">
+          {Array.from({ length: 7 }, (_, i) => <span className="weekday" key={i}>{dateLabel(moveDay("2024-01-01", i), { weekday: "short" })}</span>)}
+          {Array.from({ length: weekdayOffset }, (_, i) => <span aria-hidden="true" key={"blank" + i} />)}
+          {[...byDay].map(([date, items]) => (
+            <a className="month-day" key={date} aria-current={date === day ? "date" : undefined}
+              href={driverLink(date) + "#day-heading"} aria-label={dateLabel(date, { dateStyle: "full" }) + " · " + t("schedule.entries") + " " + items.length}>
+              {Number(date.slice(-2))}{items.length > 0 && <small>{items.length}</small>}
+            </a>
+          ))}
+        </div>
+      </section>
+      <h2 id="day-heading">{dateLabel(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h2>
       <div className="schedule-date schedule-controls">
-        {day > today && <a className="button" href={driverLink(moveDay(day, -1))} aria-label={t("schedule.previous")}>‹</a>}
+        {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
         <label className="field">
           {t("schedule.parisDay")}
-          <input type="date" value={day} min={today} max="9999-12-30" onChange={(event) => {
+          <input type="date" value={day} max="9999-12-30" onChange={(event) => {
             if (event.currentTarget.validity.valid && event.currentTarget.value) {
-              window.location.assign(driverLink(event.currentTarget.value));
+              window.location.assign(driverLink(event.currentTarget.value) + "#day-heading");
             }
           }} />
         </label>
-        {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1))} aria-label={t("schedule.nextDay")}>›</a>}
+        {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
       </div>
-      <div className="actions schedule-controls">
+      {day >= today && <div className="actions schedule-controls">
         <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
         <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
-      </div>
+      </div>}
       {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
       {entries.length === 0 && <p>{t("schedule.dayEmpty")}</p>}
     </section>

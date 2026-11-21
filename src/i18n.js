@@ -72,6 +72,7 @@ export const translations = {
     schedule: {
       noUpcoming: "No upcoming pickup.",
       dayView: "Day schedule", parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
+      calendar: "Reservation calendar", today: "Today", prevMonth: "Previous month", nextMonth: "Next month", entries: "Calendar entries",
       nextPickup: "Next pickup", openDay: "Open day", dayEmpty: "No confirmed rides or time blocks on this day.",
       returnLeg: "Return leg", finish: "Estimated finish", finishUnknown: "Finish time unavailable",
       travelBetween: "Travel time between rides", travelUnknown: "Prior finish unknown",
@@ -345,6 +346,7 @@ export const translations = {
     schedule: {
       noUpcoming: "Aucun depart a venir.",
       dayView: "Planning du jour", parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
+      calendar: "Calendrier des reservations", today: "Aujourd'hui", prevMonth: "Mois precedent", nextMonth: "Mois suivant", entries: "Entrees du calendrier",
       nextPickup: "Prochain depart", openDay: "Ouvrir ce jour", dayEmpty: "Aucune course confirmee ni plage bloquee ce jour.",
       returnLeg: "Trajet retour", finish: "Fin estimee", finishUnknown: "Heure de fin indisponible",
       travelBetween: "Temps de trajet entre les courses", travelUnknown: "Fin de la course precedente inconnue",

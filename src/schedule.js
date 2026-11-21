@@ -10,6 +10,13 @@ export function moveDay(day, difference) {
   return date.toISOString().slice(0, 10);
 }
 
+export function monthDays(day) {
+  const first = day.slice(0, 7) + "-01";
+  const date = new Date(first + "T12:00:00Z");
+  date.setUTCMonth(date.getUTCMonth() + 1, 0);
+  return Array.from({ length: date.getUTCDate() }, (_, index) => first.slice(0, 8) + String(index + 1).padStart(2, "0"));
+}
+
 function leg(id, startValue, minutes, extra = {}) {
   const start = new Date(startValue).getTime();
   const end = start + (minutes ?? 1) * 60000;

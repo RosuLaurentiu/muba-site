@@ -82,6 +82,9 @@ links the Google identity to the existing account. The sign-in flow requests
 basic Google identity only. Connect Google Calendar separately in the driver
 workspace if the driver wants calendar sync.
 
+The driver calendar shows a month of reservations and time blocks. Select
+a day to open its agenda, including pending, confirmed, cancelled and declined
+rides, or browse earlier months to review retained bookings.
 The day schedule uses Paris time and lists each leg separately. The driver
 can browse upcoming days, block time, record phone or WhatsApp bookings,
 reschedule a confirmed ride, and cancel it. The save controls show overlaps

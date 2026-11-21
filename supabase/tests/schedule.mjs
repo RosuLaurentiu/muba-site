@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { draftBlock, draftLegs, entriesOnDay, plannedSchedule, scheduleContext } from "../../src/schedule.js";
+import { draftBlock, draftLegs, entriesOnDay, monthDays, plannedSchedule, scheduleContext } from "../../src/schedule.js";
+
+assert.equal(monthDays("2028-02-01").at(-1), "2028-02-29");
+assert.equal(monthDays("2027-02-28").length, 28);
+assert.equal(monthDays("2026-12-31")[0], "2026-12-01");
 
 const ride = {
   reference: 1, status: "confirmed", pickup: "Gare de Lyon", destination: "Paris-Orly",

@@ -230,7 +230,7 @@ function DriverRides({ session, language }) {
   const [today] = useState(() => parisDay(new Date()));
   const query = new URLSearchParams(window.location.search);
   const date = query.get("day");
-  const day = date && date >= today && date <= "9999-12-30" && getParisInstant(date + "T00:00") ? date : today;
+  const day = date && date <= "9999-12-30" && getParisInstant(date + "T00:00") ? date : today;
   const selectedReference = query.get("ride");
   const editing = query.has("edit");
   const adding = query.has("new");
@@ -337,7 +337,6 @@ function DriverRides({ session, language }) {
         </div>
       )}
       {haveData && <BookingEmailStatus language={language} />}
-      {haveData && !subpage && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
@@ -354,14 +353,14 @@ function DriverRides({ session, language }) {
             <>
               <p className="driver-feedback" role="status">{notice ? t(notice) : query.has("saved") ? t("schedule.saved") : ""}</p>
               <div className="booking-grid">
-                <DriverDay schedule={schedule} day={day} today={today} language={language} onRemove={removeBlock} />
+                <DriverDay schedule={schedule} rides={load.rides} day={day} today={today} language={language} onRemove={removeBlock} />
                 <PendingList rides={pending} language={language} day={day} />
               </div>
             </>
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
-      {haveData && subpage && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
+      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("booking.refresh")}</button>
       </div>}
