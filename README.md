@@ -67,6 +67,21 @@ email and password. Pending requests and confirmed work have separate lists.
 The driver can open a ride, use its passenger contact or pickup directions,
 and accept or decline a pending request. Refresh to load new requests.
 
+To enable Google sign-in locally, use a separate Google Web application OAuth
+client with the authorized redirect URI `http://127.0.0.1:54321/auth/v1/callback`.
+While the Google project is in Testing, add the driver's Google account as a
+test user. In the ignored project-root `.env`, set
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED=true` and set
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`
+to the test client's credentials. Keep the secret on the server side. Restart
+local Supabase and open `http://127.0.0.1:5173/?driver`.
+
+Create the driver's Auth account with the same verified email as their Google
+account, then assign that Auth user ID in `booking_private.driver`. Supabase
+links the Google identity to the existing account. The sign-in flow requests
+basic Google identity only. Connect Google Calendar separately in the driver
+workspace if the driver wants calendar sync.
+
 The day schedule uses Paris time and lists each leg separately. The driver
 can browse upcoming days, block time, record phone or WhatsApp bookings,
 reschedule a confirmed ride, and cancel it. The save controls show overlaps

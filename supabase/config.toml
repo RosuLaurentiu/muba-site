@@ -14,8 +14,15 @@ enabled = false
 
 [auth]
 site_url = "http://127.0.0.1:5173"
+additional_redirect_urls = ["http://127.0.0.1:5173/**"]
 enable_signup = false
 enable_anonymous_sign_ins = false
+
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
 
 [functions.calendar-sync]
 verify_jwt = false

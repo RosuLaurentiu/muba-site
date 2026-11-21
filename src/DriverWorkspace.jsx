@@ -9,9 +9,27 @@ import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from
 
 const config = getBookingConfig();
 const client = config && createClient(config.url, config.key, {
-  auth: { storageKey: "muba-driver-session", detectSessionInUrl: false }
+  auth: { storageKey: "muba-driver-session", flowType: "pkce", detectSessionInUrl: false }
 });
 const pageSize = 100;
+const signInReturn = new URL(window.location.href);
+const returningFromGoogle = signInReturn.searchParams.has("google-sign-in");
+let googleCallback;
+
+function completeGoogleSignIn() {
+  if (!googleCallback) {
+    const code = signInReturn.searchParams.get("code");
+    const returnUrl = new URL(signInReturn);
+    returnUrl.search = "?driver";
+    returnUrl.hash = "";
+    window.history.replaceState(window.history.state, "", returnUrl);
+    googleCallback = code && !signInReturn.searchParams.has("error")
+      ? client.auth.exchangeCodeForSession(code, { flowId: signInReturn.searchParams.get("sb_flow_id") })
+        .then(({ data, error }) => !error && Boolean(data.session), () => false)
+      : Promise.resolve(false);
+  }
+  return googleCallback;
+}
 
 async function driverRpc(name, args) {
   const { data, error } = await client.rpc(name, args);
@@ -252,6 +270,8 @@ export default function DriverWorkspace({ language, layout }) {
   const [session, setSession] = useState(undefined);
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState("");
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [completingSignIn, setCompletingSignIn] = useState(returningFromGoogle);
   const t = (key) => getText(language, key);
 
   useEffect(() => {
@@ -259,6 +279,53 @@ export default function DriverWorkspace({ language, layout }) {
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!client || !returningFromGoogle) return;
+    let active = true;
+    completeGoogleSignIn().then((success) => {
+      if (!active) return;
+      if (!success) setErrorKey("driver.googleSignInFailed");
+      setCompletingSignIn(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!config || session !== null) return;
+    const controller = new AbortController();
+    fetch(config.url + "/auth/v1/settings", {
+      headers: { apikey: config.key },
+      signal: controller.signal
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((settings) => {
+        if (!controller.signal.aborted) setGoogleEnabled(settings?.external?.google === true);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [session]);
+
+  async function signInWithGoogle() {
+    setBusy(true);
+    setErrorKey("");
+    const redirect = new URL(window.location.pathname, window.location.origin);
+    redirect.search = "?driver&google-sign-in";
+    try {
+      const { error } = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirect.href,
+          scopes: "openid email profile",
+          queryParams: { include_granted_scopes: "false", prompt: "select_account" }
+        }
+      });
+      if (error) throw error;
+    } catch {
+      setErrorKey("driver.googleSignInFailed");
+      setBusy(false);
+    }
+  }
 
   async function signIn(event) {
     event.preventDefault();
@@ -294,7 +361,7 @@ export default function DriverWorkspace({ language, layout }) {
 
   return (
     <main className="site-main">
-      {!client || session === undefined ? (
+      {!client || session === undefined || completingSignIn ? (
         <>
           <h1>{t("driver.title")}</h1>
           <p role="status">{t(client ? "driver.loading" : "driver.unavailable")}</p>
@@ -315,6 +382,11 @@ export default function DriverWorkspace({ language, layout }) {
               <input id="driver-password" name="password" type="password" autoComplete="current-password" required />
             </div>
             <button className="button primary" type="submit" disabled={busy}>{t("driver.signIn")}</button>
+            {googleEnabled && (
+              <button className="button" type="button" disabled={busy} onClick={signInWithGoogle}>
+                {t("driver.googleSignIn")}
+              </button>
+            )}
           </form>
         </>
       )}
