@@ -672,7 +672,7 @@ function RiderBooking({ language }) {
             <legend><h2>{t("planner.contactTitle")}</h2></legend>
             {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
             {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
-            {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
+            {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
             {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
             <p className="muted">{t("booking.contactPrivacy")}</p>
           </fieldset>

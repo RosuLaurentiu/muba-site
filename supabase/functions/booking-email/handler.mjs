@@ -12,10 +12,19 @@ function message(job, config) {
   });
   const subject = subjects[job.language][job.kind];
   let rideLink;
+  let trackingLink;
   if (job.kind === "driver_new" && config.appUrl) {
     const url = new URL(config.appUrl);
     url.search = new URLSearchParams({ driver: "", ride: job.reference }).toString();
     rideLink = url.href;
+  }
+  if (job.kind === "receipt" && job.receipt_key) {
+    const url = new URL(config.appUrl);
+    const local = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (url.protocol !== "https:" && !local) throw new Error("Invalid booking app URL");
+    url.search = "?booking";
+    url.hash = new URLSearchParams({ key: job.receipt_key }).toString();
+    trackingLink = `${french ? "Lien prive de suivi" : "Private tracking link"}: ${url.href}`;
   }
   return {
     from: config.from,
@@ -26,7 +35,8 @@ function message(job, config) {
       `Reference #${job.reference}`,
       `${french ? "Depart" : "Pickup"}: ${time.format(new Date(job.pickup_at))} (Paris)`,
       job.return_at && `${french ? "Retour" : "Return"}: ${time.format(new Date(job.return_at))} (Paris)`,
-      rideLink
+      rideLink,
+      trackingLink
     ].filter(Boolean).join("\n")
   };
 }

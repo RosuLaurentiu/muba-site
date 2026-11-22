@@ -82,7 +82,8 @@ async function runWorker(auth = "fixture-worker") {
   }));
 }
 const trip = { language: "en", pickup: "Gare de Lyon", destination: "Paris-Orly",
-  pickup_time: "2091-05-21T10:00", passengers: 2, passenger_name: "Local Test", passenger_phone: "+33 0 00 00 00 00" };
+  pickup_time: "2091-05-21T10:00", passengers: 2, passenger_name: "Local Test", passenger_phone: "+33 0 00 00 00 00",
+  passenger_email: "default-rider@example.test" };
 
 async function save(index, overrides = {}, status = 200) {
   return rpc("save_ride", { p_request_key: keys[index], p_trip: { ...trip, ...overrides } }, null, status);
@@ -111,10 +112,15 @@ try {
   assert.equal((await (await runWorker()).json()).sent, 1);
   assert.equal(delivered.size, 1);
   assert.equal([...attempts.values()][0], 2);
+  assert.ok([...delivered.values()][0].text.includes("http://127.0.0.1:5173/?booking#key=" + keys[0]), "Receipt includes the private tracking link");
+  assert.equal(sql(`select (receipt_key is null)::text from booking_private.booking_email where reference = ${booking.reference}`), "true");
   assert.deepEqual(await rpc("get_ride", { p_request_key: keys[0] }), pending);
   assert.deepEqual(await rpc("booking_email_failures", {}, driver.token), { retryable: 0, expired: 0 });
 
-  await save(4);
+  assert.equal((await save(4, { passenger_email: "" }, 400)).message, "BOOKING_EMAIL_REQUIRED");
+  assert.equal((await rpc("save_ride", {
+    p_request_key: keys[4], p_source: "phone", p_trip: { ...trip, passenger_email: null }
+  }, driver.token, 400)).message, "BOOKING_EMAIL_REQUIRED");
   await save(5, { passenger_email: "bad@example.test\nBcc: attacker@example.test" }, 400);
   for (const [language, index, declineIndex] of [["en", 0, 1], ["fr", 2, 3]]) {
     const primary = index ? await save(index, { language, passenger_email: "fr@example.test" }) : booking;
@@ -146,7 +152,7 @@ try {
   }
   assert.ok(texts.some(({ subject, text }) => subject.startsWith("Ride time changed") && text.includes("12:30")));
   assert.ok(texts.every(({ to }) => to[0].endsWith("@example.test")));
-  console.log("PASS optional guest email, five localized messages, private status, and duplicate-safe delivery retry");
+  console.log("PASS required email, private tracking receipt, five localized messages and duplicate-safe delivery retry");
 
   function googleIdentity(user, address, verified) {
     const subject = randomUUID();
@@ -167,7 +173,9 @@ try {
   assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
     count: baseline.count + 1, latest: newRide.reference
   });
-  await rpc("save_ride", { p_request_key: keys[7], p_source: "phone", p_trip: trip }, driver.token);
+  const manual = await rpc("save_ride", {
+    p_request_key: keys[7], p_source: "phone", p_trip: { ...trip, passenger_email: "manual-rider@example.test" }
+  }, driver.token);
   assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
     count: baseline.count + 1, latest: newRide.reference
   });
@@ -183,12 +191,22 @@ try {
   assert.deepEqual(email.to, ["assigned-google@example.test"]);
   assert.ok(email.text.includes("ride=" + newRide.reference));
   assert.ok(!email.text.includes("Local Test"));
+  const receipt = [...delivered.values()].find(({ to }) => to[0] === "manual-rider@example.test");
+  assert.equal(receipt.subject, "Ride request received #" + manual.reference);
+  const link = new URL(receipt.text.split("\n").at(-1).replace(/^Private tracking link: /, ""));
+  assert.equal(link.search, "?booking");
+  assert.equal(new URLSearchParams(link.hash.slice(1)).get("key"), keys[7]);
+  assert.deepEqual(await rpc("get_ride", { p_request_key: keys[7] }), manual);
+  await rpc("change_ride", { p_reference: manual.reference, p_version: 1, p_status: "cancelled" }, driver.token);
+  assert.equal((await (await runWorker()).json()).sent, 1);
+  assert.ok([...delivered.values()].some(({ subject }) => subject === "Ride cancelled #" + manual.reference));
 
   await save(8);
   sql(`delete from booking_private.driver where user_id = '${driver.id}';`);
   await rpc("driver_booking_alerts", {}, driver.token, 403);
-  assert.equal((await (await runWorker()).json()).sent, 0);
-  console.log("PASS driver-only alerts, verified Google recipient, no manual ride alert, revocation and duplicate-safe delivery");
+  assert.equal((await (await runWorker()).json()).sent, 1);
+  assert.equal([...delivered.values()].filter(({ subject }) => subject.startsWith("New booking request")).length, 1);
+  console.log("PASS driver-entered tracking, rider updates, verified alerts, revocation and duplicate-safe delivery");
 } finally {
   const hashes = keys.map(value => `sha256(uuid_send('${value}'::uuid))`).join(",");
   sql(`delete from booking_private.calendar_job where ride_reference in

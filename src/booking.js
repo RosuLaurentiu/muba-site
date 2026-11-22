@@ -59,14 +59,16 @@ export function validatePassenger(form) {
     errors.customerPhone = "booking.validPhoneRequired";
   }
   const email = form.customerEmail?.trim();
-  if (email && (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(email))) {
+  if (!email) {
+    errors.customerEmail = "booking.emailRequired";
+  } else if (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(email)) {
     errors.customerEmail = "booking.invalidEmail";
   }
   return errors;
 }
 
-export function validateBooking(form, capacity, now = new Date(), kept = {}) {
-  return { ...validateTrip(form, capacity, now, kept), ...validatePassenger(form) };
+export function validateBooking(form, capacity, now = new Date()) {
+  return { ...validateTrip(form, capacity, now), ...validatePassenger(form) };
 }
 
 export function bookingPayload(form, language) {

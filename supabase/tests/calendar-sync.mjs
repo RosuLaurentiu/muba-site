@@ -127,7 +127,7 @@ function createRide(token, source, pickup, starts, returning = null, minutes = n
     p_trip: {
       language: "en", pickup, destination: "Paris-Orly", pickup_time: starts, return_time: returning,
       passengers: 2, passenger_name: "PRIVATE-FIXTURE-NAME", passenger_phone: "0600000000",
-      passenger_notes: "PRIVATE-FIXTURE-NOTE", estimated_minutes: minutes
+      passenger_notes: "PRIVATE-FIXTURE-NOTE", passenger_email: "calendar-rider@example.test", estimated_minutes: minutes
     }
   }, token);
 }

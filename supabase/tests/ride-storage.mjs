@@ -42,7 +42,7 @@ const trip = {
   language: "fr", pickup: "Gare de Lyon", destination: "Paris-Orly",
   pickup_time: "2090-05-21T10:00", return_time: "2090-05-21T17:00",
   passengers: 2, passenger_name: "Local Test", passenger_phone: "+33 0 00 00 00 00",
-  passenger_notes: "Hall 2",
+  passenger_notes: "Hall 2", passenger_email: "storage-rider@example.test",
 };
 const key = randomUUID();
 const secondKey = randomUUID();
@@ -154,7 +154,9 @@ try {
   const manual = await rpc("save_ride", { p_request_key: manualKey, p_trip: trip, p_source: "whatsapp" }, newToken);
   references.add(manual.reference);
   assert.equal(manual.status, "confirmed");
-  assert.equal(await rpc("get_ride", { p_request_key: manualKey }), null);
+  assert.deepEqual(await rpc("get_ride", { p_request_key: manualKey }), manual);
+  assert.equal(manual.passenger_email, undefined);
+  assert.equal(manual.passenger_phone, undefined);
   const privateRows = (await rpc("list_rides", {}, newToken)).filter(ride => references.has(String(ride.reference)));
   assert.equal(privateRows.length, 3);
   assert.equal(privateRows.find(ride => String(ride.reference) === manual.reference).source, "whatsapp");

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { bookingPayload, formatParisTime, parisMinute, validateBooking } from "./booking";
+import { bookingPayload, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
 import { draftBlock, draftLegs, driverLink, monthDays, moveDay, parisDay, rideLegs, scheduleContext } from "./schedule";
@@ -210,7 +210,7 @@ function initialDraft(day, ride) {
     pickup: ride?.pickup ?? "", destination: ride?.destination ?? "",
     pickupDate, pickupTime, returnDate, returnTime, roundTrip: Boolean(ride?.return_at),
     passengers: String(ride?.passengers ?? 1), customerName: ride?.passenger_name ?? "",
-    customerPhone: ride?.passenger_phone ?? "", notes: ride?.passenger_notes ?? "",
+    customerPhone: ride?.passenger_phone ?? "", customerEmail: "", notes: ride?.passenger_notes ?? "",
     estimatedMinutes: ride?.estimated_minutes ?? "", source: "phone"
   };
 }
@@ -254,9 +254,9 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   async function save(event) {
     event.preventDefault();
     if (prevented || writing.current) return;
-    const validation = validateBooking(draft, capacity, new Date(), ride ? {
+    const validation = ride ? validateTrip(draft, capacity, new Date(), {
       pickup: parisMinute(ride.pickup_at), return: ride.return_at && parisMinute(ride.return_at)
-    } : {});
+    }) : validateBooking(draft, capacity);
     if (!durationValid) validation.estimatedMinutes = "schedule.durationInvalid";
     setErrors(validation);
     const invalid = [...event.currentTarget.elements].find((field) => validation[field.name]);
@@ -332,6 +332,7 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
             <div className="panel stack">
               {field("customerName", "planner.labels.name", { maxLength: 150 })}
               {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40 })}
+              {field("customerEmail", "planner.labels.email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
               {field("passengers", "planner.labels.passengers", { type: "number", min: 1, max: capacity })}
               {field("notes", "planner.labels.notes", { maxLength: 1500 })}
               <DraftField name="source" label={t("schedule.source")}>

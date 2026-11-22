@@ -38,7 +38,7 @@ const address = `limit-${randomUUID()}@example.test`;
 const trip = {
   language: "en", pickup: "Gare du Nord", destination: "Paris-Orly", pickup_time: "2090-06-10T09:00",
   return_time: null, passengers: 1, passenger_name: "Limit Test", passenger_phone: "+33 0 00 00 00 00",
-  passenger_notes: "",
+  passenger_notes: "", passenger_email: address,
 };
 const newKey = () => {
   const key = randomUUID();
@@ -92,13 +92,22 @@ try {
     firstKey ??= key;
     await rpc("save_ride", {
       p_request_key: key,
-      p_trip: { ...trip, pickup_time: `2090-06-${String(11 + index).padStart(2, "0")}T09:00`, passenger_email: address },
+      p_trip: { ...trip, pickup_time: `2090-06-${String(11 + index).padStart(2, "0")}T09:00`,
+        passenger_email: index < 3 ? address : `rider-${key}@example.test` },
     });
+    if (index === 2) {
+      const addressLimit = await rpc("save_ride", {
+        p_request_key: newKey(), p_trip: { ...trip, passenger_email: address.toUpperCase() }
+      }, null, 401);
+      assert.equal(addressLimit.message, "WEB_INTAKE_LIMIT");
+    }
   }
-  assert.equal(sql(`select count(*) from booking_private.booking_email
-    where kind = 'receipt' and recipient = '${address}';`), "3");
-  assert.equal(sql(`select count(*) from booking_private.rider_email where address = '${address}';`), String(room));
-  const refused = await rpc("save_ride", { p_request_key: newKey(), p_trip: { ...trip, pickup_time: "2090-07-01T09:00" } }, null, 401);
+  assert.equal(sql(`select count(*) from booking_private.booking_email as email
+    join booking_private.ride as ride using (reference)
+    where email.kind = 'receipt' and email.recipient = '${address}' and ride.source = 'web';`), "3");
+  assert.equal(sql(`select count(*) from booking_private.rider_email where address = '${address}';`), "4");
+  const refused = await rpc("save_ride", { p_request_key: newKey(),
+    p_trip: { ...trip, pickup_time: "2090-07-01T09:00", passenger_email: "global-limit@example.test" } }, null, 401);
   assert.equal(refused.message, "WEB_INTAKE_LIMIT");
   await rpc("save_ride", {
     p_request_key: firstKey, p_trip: { ...trip, pickup_time: "2090-06-11T09:00", passenger_email: address },

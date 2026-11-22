@@ -53,7 +53,8 @@ select set_config('muba.fixture_key', '__REQUEST_KEY__', true);
 select set_config('muba.fixture_trip', jsonb_build_object(
   'language', 'en', 'pickup', 'Fictional checkpoint', 'destination', 'Fictional airport',
   'pickup_time', to_char(now() at time zone 'Europe/Paris' + interval '3 days', 'YYYY-MM-DD"T"HH24:MI'),
-  'passengers', 1, 'passenger_name', 'Fictional Rider', 'passenger_phone', '+33000000000'
+  'passengers', 1, 'passenger_name', 'Fictional Rider', 'passenger_phone', '+33000000000',
+  'passenger_email', 'pause-rider@example.test'
 )::text, true);
 insert into auth.users (id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');
 insert into booking_private.driver (user_id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');

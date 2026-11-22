@@ -38,10 +38,11 @@ user to `booking_private.driver`. The table allows one driver and has no
 client write access. Keep the `booking_private` schema outside the exposed
 Data API schemas.
 
-- `save_ride` takes `p_trip` and a new UUID v4 `p_request_key`. Use the same
+- `save_ride` takes `p_trip` with `passenger_email` and a new UUID v4 `p_request_key`. Use the same
   key and payload on retry. The key also acts as the rider's private access
   credential. Keep it out of logs and use it only with the rider's booking.
-  The database stores its hash. Anonymous saves create pending web rides.
+  The ride stores its hash. The private receipt queue keeps the key until
+  delivery or the end of the retry window. Anonymous saves create pending web rides.
   The driver can also save a confirmed phone or WhatsApp ride via `p_source`.
 - `get_ride` takes the private key and returns a limited rider view. The
   reference identifies the ride but does not grant access.
@@ -180,10 +181,11 @@ Restore-BookingArchive -Path $archivePath -Key $archiveKey -Arguments @('--singl
 `save_ride` accepts at most 10 web requests per hour and 30 per day across
 all riders. Above either limit it refuses new web requests with
 `WEB_INTAKE_LIMIT`, and the rider sees the phone and WhatsApp fallback. A retry
-with an already saved key still returns that booking. Driver phone and WhatsApp
-rides are not limited. Each rider email address gets at most 3 automatic
-receipts per day. The booking still saves and later decision emails still go
-out. These defaults keep a scripted flood within a small daily email volume.
+with an already saved key still returns that booking. The web form accepts at
+most 3 new bookings per rider email address in a rolling day so every accepted
+booking can receive a receipt. Driver-entered phone and WhatsApp rides can be
+saved for the same address and also receive receipts. These limits keep
+scripted requests within a small daily email volume.
 The owner approved these numbers under MS-017. Verify them on the hosted
 release candidate. Change them in a new migration.
 
@@ -253,10 +255,11 @@ When serving the function locally, use the same Docker network as the stack:
 
 ## Booking emails
 
-Guest riders can enter an email to receive a receipt, confirmation, change of
-time, decline, or cancellation. The receipt page still provides the private
-status link. The app stores the email in the private schema and creates the
-delivery record in the same transaction as the booking change.
+Every new booking needs an email address. The driver enters it when saving a
+phone or WhatsApp ride. Both entry points send a receipt with the reservation
+number and the private tracking link and email later changes. The web receipt
+page also shows the same link. The private email queue commits with the
+booking. Existing bookings keep their current access and email settings.
 
 Riders review their trip and estimate before entering passenger details. They
 can edit the trip without losing those details. If a rider cannot verify a
@@ -274,8 +277,10 @@ deno check --no-config supabase/functions/booking-email/index.ts
 For live delivery, obtain owner approval for the sender, provider and email
 limits before setup. The server-side function accepts a POST at
 `/functions/v1/booking-email` with `Authorization: Bearer <worker token>`.
-Configure `MUBA_EMAIL_WORKER_TOKEN`, `MUBA_EMAIL_FROM` and
-`MUBA_EMAIL_API_KEY` in the function runtime. Schedule the POST at a regular
+Configure `MUBA_EMAIL_WORKER_TOKEN`, `MUBA_EMAIL_FROM`,
+`MUBA_EMAIL_API_KEY` and `MUBA_APP_URL` in the function runtime. Use the
+approved app URL for that environment and keep link click tracking disabled
+on the sending domain. Schedule the POST at a regular
 interval. The function uses the Resend email endpoint by default. Set
 `MUBA_EMAIL_API_URL` to use a local capture endpoint when serving the function
 locally. Keep the worker token and mail API key off the frontend.
