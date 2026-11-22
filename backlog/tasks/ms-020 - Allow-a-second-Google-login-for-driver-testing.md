@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-22 01:20'
-updated_date: '2026-11-22 02:14'
+updated_date: '2026-11-22 02:19'
 labels: []
 dependencies: []
 references:
@@ -34,22 +34,22 @@ Let the primary driver and one named tester use the same workspace. Preserve the
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Local authorization, Calendar restrictions, and driver workspace checks
-  passed. Saved the exact driver OAuth redirect and installed hosted migration
-  20261122015111 from commit 4d3a3ff. Verified the public driver build uses the
-  saved redirect and hosted Supabase returns 302 to Google. The primary driver
-  and Calendar assignment were preserved.
+  Hosted Supabase redirects to Google and recorded a successful Google sign-in
+  for the primary driver. Read-only hosted authorization checks passed for ride
+  list, time-block list and primary Calendar access. The business Auth user
+  exists and the second driver slot is ready.
 next: >-
-  Provision and assign the business Auth account, then complete Google sign-in
-  and driver workspace checks for both approved accounts.
+  Complete Google sign-in with the business account to verify ownership. Assign
+  the verified Auth user to the vacant tester slot and check that the business
+  account can open the driver workspace.
 latestChange: >-
-  Google provider is enabled and redirects to Google. The primary account
-  exists. The business Auth user and tester assignment are pending, and no
-  primary Google sign-in is recorded yet.
-resultAt: '2026-11-22T02:14:58.012Z'
+  Verified primary Google sign-in and hosted workspace access. Business Auth
+  user exists and awaits its first Google sign-in before the tester slot is
+  assigned.
+resultAt: '2026-11-22T02:19:46.782Z'
 remainingChecks:
-  - Business account provisioned and assigned
-  - Both Google accounts open the hosted driver workspace
+  - Verify business Google sign-in and assign the second driver slot
+  - Verify business workspace access and primary-only Calendar controls
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -72,6 +72,10 @@ remainingChecks:
         {
           "start": "2026-11-22T02:13:56.537Z",
           "end": "2026-11-22T02:14:54.936Z"
+        },
+        {
+          "start": "2026-11-22T02:18:19.094Z",
+          "end": "2026-11-22T02:19:43.430Z"
         }
       ]
     }
@@ -128,6 +132,32 @@ remainingChecks:
         "codex-session:01a2000a-86d0-7722-9349-886d24da4f86"
       ],
       "recordedAt": "2026-11-22T02:14:48.002Z"
+    },
+    {
+      "source": "codex-task-estimate",
+      "runId": "01a2000a-86d0-7722-9349-886d24da4f86",
+      "segmentId": "auto-1795313902579",
+      "mode": "cumulative",
+      "shared": true,
+      "model": "gpt-6.2-sol",
+      "scope": "task",
+      "attribution": {
+        "taskId": "MS-020",
+        "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
+        "start": "2026-11-22T02:18:22.579Z",
+        "end": "2026-11-22T02:19:35.968Z"
+      },
+      "tokens": {
+        "input": 632409,
+        "output": 1033,
+        "cachedInput": 619008,
+        "reasoningOutput": 196,
+        "total": 633442
+      },
+      "evidence": [
+        "codex-session:01a2000a-86d0-7722-9349-886d24da4f86"
+      ],
+      "recordedAt": "2026-11-22T02:19:35.968Z"
     }
   ],
   "corrections": []
@@ -152,4 +182,8 @@ Distinct outcome: MS-003 delivered Google sign-in for one driver; this adds a se
 2026-11-22T01:52:53.540Z: Prior current facts: {"done":"Added a separately assigned tester login. Local checks proved shared ride access, tester writes, active-session revocation, primary-only alerts and Calendar restriction. Both roles passed the EN/FR mobile workspace checks. Lint, build, Calendar type check and database regressions passed.","resultAt":"2026-11-22T01:24:18.700Z"}
 
 2026-11-22T02:14:58.013Z: Prior current facts: {"latestChange":"Hosted second-login slot is ready. Google is disabled with a blank OAuth secret. The business Auth account is absent and the tester slot is empty.","done":"Local authorization, Calendar restrictions, and driver workspace checks passed. Saved the exact driver OAuth redirect and installed hosted migration 20261122015111 from commit 4d3a3ff. Verified the primary driver and Calendar connection remain assigned to the existing owner.","resultAt":"2026-11-22T01:52:53.539Z"}
+
+2026-11-22T02:19:46.783Z: Prior current facts: {"latestChange":"Google provider is enabled and redirects to Google. The primary account exists. The business Auth user and tester assignment are pending, and no primary Google sign-in is recorded yet.","done":"Local authorization, Calendar restrictions, and driver workspace checks passed. Saved the exact driver OAuth redirect and installed hosted migration 20261122015111 from commit 4d3a3ff. Verified the public driver build uses the saved redirect and hosted Supabase returns 302 to Google. The primary driver and Calendar assignment were preserved.","resultAt":"2026-11-22T02:14:58.012Z"}
+
+2026-11-22T02:19:46.783Z: Verified primary Google sign-in and hosted workspace access. Business Auth user exists and awaits its first Google sign-in before the tester slot is assigned.
 <!-- SECTION:NOTES:END -->
