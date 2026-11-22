@@ -10,6 +10,10 @@ confirms it. The private status link shows the latest decision.
 - `npm run dev`
 - `npm run build`
 - `npm run preview`
+- `npm test` runs the rider input, fare, schedule and working-hours checks.
+- `npm run lint` checks the frontend source. The Pages workflow runs lint, the
+  rule checks, all four database integration suites, working-hours SQL and
+  database advisors before building and deploying.
 
 ## Local booking database
 
@@ -148,61 +152,45 @@ For GitHub Pages, set `VITE_SUPABASE_URL` and
 `github-pages` environment. Use the backend intended for the public site.
 For a test build, pass the test project's values to Vite separately.
 
-The owner approved a Supabase Free project in Paris at no subscription cost
-within Free limits. The release plan removes passenger data 90 days after the
-ride or final decision. Keep one encrypted database export per operating day
-for seven days and verify a restore locally before release. These are approved
-operating terms. Purge automation and the backup and restore procedure must
-be in place before release.
+### Booking retention and Calendar cleanup
 
-The retention migration records the final decision for declines and
-cancellations. Other rides use the final scheduled leg. A privileged
-database job can run `booking_private.purge_expired_rides()` after release
-approval. The purge also removes the rider email and its delivery records,
-and queues removals of the ride's mirrored Calendar events.
+The operating retention period is 90 days after the final scheduled leg ends,
+or after the driver declines or cancels the booking. The owner chose temporary
+booking storage without a separate project-managed backup. Do not schedule
+database exports or require an archive before release. Provider-managed
+recovery, if available, is outside this operating procedure.
 
-Run the recovery rehearsal in PowerShell 7.4 or later with local Supabase
-running.
+After deployment approval, schedule the purge daily through the approved
+privileged database connection. Check the exit status and alert the operator
+on failure. The purge removes the ride, rider email and delivery records in
+PostgreSQL and queues removal of the mirrored Calendar events.
 
-```powershell
-.\supabase\tests\pilot-retention.ps1
-```
-
-It uses two disposable databases, fictional data, and a one-time encryption
-key. It checks the intake pause, 90-day cutoff, seven dated encrypted copies
-and a private booking lookup after restore. Before public release, verify the
-scheduled purge and export on the approved environment. Store the export key
-separately from the archives.
-
-### Run the retention and recovery jobs
-
-Use an owner-approved scheduler and a dedicated archive directory. Run the
-purge daily through a privileged database connection. Run the encrypted export
-once per operating day. Use a PostgreSQL client compatible with the target
-server. Set `PGSERVICE` through the approved connection configuration and
-load the 32-byte `$archiveKey` from secret storage before running the export.
-
-```powershell
+```sh
 psql -X --no-password -v ON_ERROR_STOP=1 -c 'select booking_private.purge_expired_rides();'
-# Run the export under its approved PostgreSQL service.
-. .\supabase\booking-archive.ps1
-Export-BookingArchive -Directory $archiveDirectory -Key $archiveKey
 ```
 
-Export names use the Paris date. The script replaces a same-day archive and
-expires copies older than six days only after the new encrypted file is
-written. The export and restore hold the dump in memory. Verify that the
-scheduler has enough memory for the hosted dump and alert the operator if
-either job fails or an expected archive is missing.
+If the service uses or previously used the Google Calendar mirror, run this
+check after every purge, including days with zero new removals. A nonzero exit
+needs operator attention. The error reports a count without passenger data.
 
-For a restore rehearsal, set `PGSERVICE` to an empty, isolated recovery
-database and use the separately stored key. Verify a fictional booking by
-its private status link after restoring.
-
-```powershell
-. .\supabase\booking-archive.ps1
-Restore-BookingArchive -Path $archivePath -Key $archiveKey -Arguments @('--single-transaction', '--no-password', '--dbname', 'service=muba-restore')
+```sh
+psql -X --no-password -v ON_ERROR_STOP=1 -f supabase/check-calendar-purge.sql
 ```
+
+On a pending-deletion alert, the primary driver opens the workspace, expands
+**Google Calendar**, and selects **Retry sync**. Reconnect to the same Calendar
+ID if prompted. Run the database check again. Repeat for any remaining batches.
+If Google or the account is unavailable, keep the alert open, restore access
+to the original calendar and retry. Never clear queue rows to acknowledge an
+alert. Completion requires Google's deletion or already-absent response for
+every purged leg. An unattended workspace is not required for detection.
+Before retiring the Calendar connection, drain pending deletions and reconcile
+existing mirrored events with the calendar owner.
+
+Use `supabase/tests/pilot-retention.ps1` for the disposable local retention
+and intake rehearsal. It also tests the legacy archive utility with fictional
+records. The Calendar simulation checks both legs after a real local purge,
+a failed provider call, a retry, and the post-purge check.
 
 ### Web request limits
 
@@ -266,7 +254,8 @@ connection or delivery fails, the ride stays saved. Expand **Google Calendar**
 to see unsynced rides, reconnect if needed, and retry. Reconnect to the same
 calendar to preserve existing event identities.
 
-Run the simulation against the local Supabase stack described above:
+Run the simulation first on a fresh, unassigned local stack with no rides or
+Calendar jobs. It runs the actual retention purge on its fictional bookings.
 
 ```powershell
 npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/calendar-sync.mjs
@@ -314,9 +303,22 @@ Configure `MUBA_EMAIL_WORKER_TOKEN`, `MUBA_EMAIL_FROM`,
 `MUBA_EMAIL_API_KEY` and `MUBA_APP_URL` in the function runtime. Use the
 approved app URL for that environment and keep link click tracking disabled
 on the sending domain. Schedule the POST at a regular
-interval. The function uses the Resend email endpoint by default. Set
+interval. When the notification ordering change is approved for deployment,
+pause dispatch and let the active worker finish. Install the compatible email
+worker and database migration before resuming dispatch. This preserves the
+message contents for previously attempted deliveries. The function uses the
+Resend email endpoint by default. Set
 `MUBA_EMAIL_API_URL` to use a local capture endpoint when serving the function
 locally. Keep the worker token and mail API key off the frontend.
+
+Dispatch runs every minute. If mail waits two minutes for its first attempt,
+the driver workspace shows the count and age of the oldest waiting message.
+Check the driver inbox directly for new or urgent rides. Contact affected
+riders through the saved booking if needed. The operator checks the
+`muba-booking-email.timer` schedule, its service exit status and the worker's
+sent and failed counts. Restore dispatch and verify that the overdue count
+returns to zero. Use **Retry booking emails** for eligible failures and
+reconcile expired deliveries before contacting the rider again.
 
 The driver workspace shows failed deliveries. If the delivery status is
 unavailable, select **Check email status** to load it again.
@@ -326,7 +328,11 @@ Deliveries outside that window stay visible for manual follow-up.
 
 ## Driver booking alerts
 
-The open driver workspace checks for pending web requests every 15 seconds.
+The open driver workspace checks for new requests and schedule changes every
+15 seconds. Changes to rides or time blocks refresh the agenda across devices.
+At Paris midnight the default agenda moves to the new day. A date the driver
+selected stays selected. If a manual save loses its reply, **Retry save**
+checks the original request even after pickup time passes.
 The alert shows the pending count and links to the latest request. The driver
 must still be assigned to see it. New web requests also queue one email to the
 verified Google email linked to the assigned driver's Supabase account.

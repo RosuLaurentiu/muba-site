@@ -1,7 +1,7 @@
 const subjects = {
-  en: { receipt: "Ride request received", confirmed: "Ride confirmed", changed: "Ride time changed",
+  en: { receipt: "Ride request received", confirmed: "Ride confirmed", changed: "Ride time changed", trip_changed: "Ride details updated",
     declined: "Ride request declined", cancelled: "Ride cancelled", driver_new: "New booking request" },
-  fr: { receipt: "Demande de trajet recue", confirmed: "Trajet confirme", changed: "Horaire du trajet modifie",
+  fr: { receipt: "Demande de trajet recue", confirmed: "Trajet confirme", changed: "Horaire du trajet modifie", trip_changed: "Trajet mis a jour",
     declined: "Demande de trajet refusee", cancelled: "Trajet annule", driver_new: "Nouvelle demande de reservation" }
 };
 
@@ -10,7 +10,8 @@ function message(job, config) {
   const time = new Intl.DateTimeFormat(french ? "fr-FR" : "en-GB", {
     timeZone: "Europe/Paris", dateStyle: "medium", timeStyle: "short"
   });
-  const subject = subjects[job.language][job.kind];
+  const template = job.template === "confirmed_receipt" ? "confirmed" : (job.template ?? job.kind);
+  const subject = subjects[job.language][template];
   let rideLink;
   let trackingLink;
   if (job.kind === "driver_new" && config.appUrl) {
@@ -35,6 +36,9 @@ function message(job, config) {
       `Reference #${job.reference}`,
       `${french ? "Depart" : "Pickup"}: ${time.format(new Date(job.pickup_at))} (Paris)`,
       job.return_at && `${french ? "Retour" : "Return"}: ${time.format(new Date(job.return_at))} (Paris)`,
+      template === "trip_changed" && (french
+        ? "Utilisez le lien prive de votre premier e-mail pour verifier les adresses et les horaires de votre trajet confirme."
+        : "Use the private link in your first email to check the addresses and times for your confirmed ride."),
       rideLink,
       trackingLink
     ].filter(Boolean).join("\n")
@@ -64,6 +68,8 @@ export function bookingEmailHandler(config, fetcher = fetch) {
       const jobs = await rpc("claim_booking_email", {});
       let sent = 0;
       for (const job of jobs) {
+        // A delayed worker must leave time for the provider request before another worker takes over.
+        if (Date.parse(job.next_attempt) <= Date.now() + 10000) continue;
         let delivered = false;
         try {
           const response = await fetcher(config.emailApiUrl ?? "https://api.resend.com/emails", {

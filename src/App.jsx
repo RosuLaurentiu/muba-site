@@ -323,7 +323,6 @@ function RiderBooking({ language }) {
     let authFailed = false;
     let addressGuard = null;
     const autocompleteListeners = [];
-    const inputListeners = new AbortController();
     const previousAuthFailure = window.gm_authFailure;
     const googleMapsUrl =
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(appConfig.googleMapsApiKey)}` +
@@ -465,7 +464,6 @@ function RiderBooking({ language }) {
     return () => {
       cancelled = true;
       addressGuard?.disconnect();
-      inputListeners.abort();
       autocompleteListeners.forEach((listener) => listener.remove());
       window.gm_authFailure = previousAuthFailure;
     };

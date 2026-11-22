@@ -176,8 +176,13 @@ try {
   const block = { p_id: blockId, p_start: "2090-05-22T09:00", p_end: "2090-05-22T10:00" };
   await rpc("list_blocks", {}, null, 401);
   assert.equal((await rpc("save_block", block, otherToken, 403)).message, "DRIVER_REQUIRED");
+  const scheduleRevision = async () => (await rpc("driver_booking_alerts", {}, newToken)).revision;
+  const beforeBlock = await scheduleRevision();
   const savedBlock = await rpc("save_block", block, newToken);
+  const afterBlock = await scheduleRevision();
+  assert.notEqual(afterBlock, beforeBlock);
   assert.deepEqual(await rpc("save_block", block, newToken), savedBlock);
+  assert.equal(await scheduleRevision(), afterBlock);
   assert.equal((await rpc("list_blocks", {}, newToken)).filter(entry => entry.id === blockId).length, 1);
 
   const blockedTime = { ...trip, pickup_time: "2090-05-22T09:30", return_time: null, estimated_minutes: 35 };
@@ -190,7 +195,9 @@ try {
   assert.equal((await rpc("change_ride", {
     p_reference: manual.reference, p_version: 1, p_status: "confirmed", p_schedule: blockedTime,
   }, newToken, 409)).message, "SCHEDULE_CONFLICT");
+  const beforeRemoval = await scheduleRevision();
   await rpc("remove_block", { p_id: blockId }, newToken, 204);
+  assert.notEqual(await scheduleRevision(), beforeRemoval);
   assert.equal((await rpc("list_blocks", {}, newToken)).some(entry => entry.id === blockId), false);
 
   const overlapping = await Promise.all(raceKeys.map(p_request_key => rpc("save_ride", {

@@ -22,7 +22,7 @@ let afterPatch;
 
 function sql(statement) {
   return execFileSync("docker", ["exec", "-i", "supabase_db_muba-site", "psql", "-U", "postgres", "-d", "postgres",
-    "-At", "-v", "ON_ERROR_STOP=1"], { input: statement, encoding: "utf8" }).trim();
+    "-At", "-v", "ON_ERROR_STOP=1"], { input: statement, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
 }
 
 async function simulatedFetch(input, options = {}) {
@@ -139,7 +139,9 @@ const change = (token, ride, version, state, schedule = null) => rpc("change_rid
 const eventFor = (location) => [...events.values()].find((event) => event.location === location);
 
 try {
-  assert.equal(sql("select (select count(*) from booking_private.driver) + (select count(*) from booking_private.calendar_job);"), "0");
+  assert.equal(sql(`select (select count(*) from booking_private.driver) + (select count(*) from booking_private.driver_tester)
+    + (select count(*) from booking_private.ride) + (select count(*) from booking_private.calendar_job)`),
+    "0", "Run the purge rehearsal on a fresh, unassigned local stack with no rides or Calendar jobs");
   const driver = await account(), other = await account();
   assert.match(driver.id, /^[\da-f-]{36}$/);
   sql(`insert into booking_private.driver(user_id) values ('${driver.id}');`);
@@ -219,6 +221,29 @@ try {
   assert.equal(events.size, 0);
   assert.deepEqual((await rpc("calendar_status", {}, driver.token)).outstanding, []);
   console.log("PASS latest revision after concurrent change, pickup update, return replacement, and cancellation");
+
+  const purgeCheck = readFileSync(new URL("../check-calendar-purge.sql", import.meta.url), "utf8");
+  const expired = await createRide(driver.token, "phone", "Expired pickup", "2091-01-20T09:00", "2091-01-20T12:00");
+  assert.match(expired.reference, /^\d+$/);
+  // Age only this fixture so the real retention job removes both legs.
+  sql(`update booking_private.ride set pickup_at=now()-interval '92 days', return_at=now()-interval '91 days'
+    where reference=${expired.reference}`);
+  await action(driver.token, { action: "sync" });
+  assert.equal(events.size, 2);
+  assert.equal(sql("select booking_private.purge_expired_rides()"), "1");
+  try {
+    assert.throws(() => sql(purgeCheck), /Calendar deletions awaiting confirmation after booking purge: 2/);
+    refreshAvailable = false;
+    await action(driver.token, { action: "sync" }, 502);
+    assert.equal(events.size, 2);
+    refreshAvailable = true;
+    await action(driver.token, { action: "sync" });
+    assert.equal(events.size, 0);
+    sql(purgeCheck);
+    console.log("PASS post-purge alert, interrupted cleanup, both external deletions and verified retry");
+  } finally {
+    sql(`delete from booking_private.calendar_job where ride_reference=${expired.reference}`);
+  }
 } finally {
   if (keys.length) {
     const hashes = keys.map((key) => `sha256(uuid_send('${key}'::uuid))`).join(",");

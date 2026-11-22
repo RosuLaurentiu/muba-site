@@ -8,7 +8,8 @@ import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
 import { appConfig } from "./config";
 import { formatFareCents, parseAgreedFare } from "./fare";
 import { getLocalizedConfigValue, getText } from "./i18n";
-import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
+import { driverLink, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
+import { useParisDay } from "./useParisDay";
 import { isOutsideWorkHours } from "./workingHours";
 
 const config = getBookingConfig();
@@ -125,6 +126,8 @@ function BookingEmailStatus({ language }) {
     <div className="stack">
       <div role="status">
         {failures === false && <p>{t("emailStatusUnavailable")}</p>}
+        {failures?.overdue > 0 && <p>{t("emailOverdue")
+          .replace("{count}", failures.overdue).replace("{minutes}", failures.oldest_overdue_minutes)}</p>}
         {failures?.retryable > 0 && <p>{t("emailFailed")} {failures.retryable}</p>}
         {failures?.expired > 0 && <p>{t("emailRetryExpired")} {failures.expired}</p>}
         {notice && <p>{t(notice)}</p>}
@@ -365,7 +368,7 @@ function DriverRides({ session, language, children }) {
   const [alerts, setAlerts] = useState(null);
   const [workHours, setWorkHours] = useState(undefined);
   const t = (key) => getText(language, key);
-  const [today] = useState(() => parisDay(new Date()));
+  const today = useParisDay();
   const query = new URLSearchParams(window.location.search);
   const date = query.get("day");
   const day = date && date <= "9999-12-30" && getParisInstant(date + "T00:00") ? date : today;
@@ -383,57 +386,48 @@ function DriverRides({ session, language, children }) {
   useEffect(() => {
     if (!token) return;
     const controller = new AbortController();
-    client.rpc("get_work_hours").abortSignal(controller.signal).then(({ data, error }) => {
-      if (!controller.signal.aborted) setWorkHours((current) => error ? current ?? false : data);
-    });
-    return () => controller.abort();
-  }, [revision, token]);
-
-  useEffect(() => {
-    if (!token) return;
-    const controller = new AbortController();
-    Promise.all(["list_rides", "list_blocks"].map((name) => loadRows(name, controller.signal))).then(
-      ([rides, blocks]) => { if (!controller.signal.aborted) setLoad({ status: "ready", snapshot: true, rides, blocks }); },
-      (error) => {
-        if (!controller.signal.aborted) {
-          if (error.code === "42501") setLoad({ status: "denied", snapshot: false, rides: [], blocks: [] });
-          else setLoad((current) => ({ ...current, status: "loadFailed" }));
-        }
-      }
-    );
-    return () => controller.abort();
-  }, [revision, token]);
-
-  useEffect(() => {
-    if (!token) return;
-    let active = true;
+    const { signal } = controller;
     let timer;
-    let previous;
+    let loaded = false;
+    let previousAlerts;
     async function check() {
       try {
-        const current = await driverRpc("driver_booking_alerts");
-        if (!active) return;
-        if (previous === false || (previous && (current.count !== previous.count || current.latest !== previous.latest))) {
-          setRevision((value) => value + 1);
-        }
-        previous = current;
-        setAlerts(current);
+        const { data: alerts, error } = await client.rpc("driver_booking_alerts").abortSignal(signal);
+        if (signal.aborted) return;
+        if (error?.code === "42501") throw error;
+        if (alerts) setAlerts(alerts);
+        if (loaded && alerts?.revision != null && previousAlerts &&
+          alerts.revision === previousAlerts.revision && alerts.count === previousAlerts.count &&
+          alerts.latest === previousAlerts.latest) return;
+
+        client.rpc("get_work_hours").abortSignal(signal).then(({ data, error }) => {
+          if (!signal.aborted) setWorkHours((current) => error ? current ?? false : data);
+        });
+        const [rides, blocks] = await Promise.all(["list_rides", "list_blocks"].map((name) => loadRows(name, signal)));
+        if (signal.aborted) return;
+        setLoad({ status: "ready", snapshot: true, rides, blocks });
+        // Only acknowledge the revision after both lists have loaded.
+        previousAlerts = alerts;
+        loaded = true;
       } catch (error) {
-        if (active && error.code === "42501") {
-          previous = false;
+        if (signal.aborted) return;
+        loaded = false;
+        if (error.code === "42501") {
           setAlerts(false);
           setLoad({ status: "denied", snapshot: false, rides: [], blocks: [] });
+        } else {
+          setLoad((current) => ({ ...current, status: "loadFailed" }));
         }
       } finally {
-        if (active) timer = setTimeout(check, 15000);
+        if (!signal.aborted) timer = setTimeout(check, 15000);
       }
     }
     check();
     return () => {
-      active = false;
+      controller.abort();
       clearTimeout(timer);
     };
-  }, [token]);
+  }, [revision, token]);
 
   function refresh() {
     setLoad((current) => ({ ...current, status: "loading" }));

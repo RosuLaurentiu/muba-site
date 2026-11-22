@@ -16,6 +16,7 @@ and schedule rules. The production URL lives in `src/config.js`.
 - `npm run build` — production build into `dist/`
 - `npm run preview` — serve the built `dist/`
 - `npm run lint` — ESLint over the repo (flat config, `dist` ignored)
+- `npm test` — rider input, fare, schedule and working-hours checks
 
 For booking, auth, or database changes, see [Local booking database](README.md#local-booking-database)
 for the Supabase setup and checks. For UI changes, verify the affected flow in
@@ -46,7 +47,7 @@ the browser in both languages. Run lint and build before committing.
 
 ## Deployment
 
-`.github/workflows/deploy.yml` builds and deploys `dist/` to GitHub Pages on every push to `main` (and on manual dispatch). **Pushing to `main` publishes the live site** — do not push without the owner's go-ahead. The workflow runs `npm ci` and `npm run build` only; it does not lint.
+`.github/workflows/deploy.yml` deploys `dist/` to GitHub Pages on every push to `main` and on manual dispatch. **Pushing to `main` publishes the live site** — do not push without the owner's go-ahead. Deployment requires lint, the fast booking rules, the local database and worker suites, database advisors and a production build. CI applies the project's migrations on a fresh runner.
 
 `vite.config.js` sets `base: "./"` for both GitHub Pages and the custom domain.
 Keep asset and navigation links relative-safe. Ask the owner before any hosted

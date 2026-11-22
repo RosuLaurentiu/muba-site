@@ -295,7 +295,7 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   const hasConflict = context.legsOverlap || context.conflicts.length > 0;
   const frozen = busy || notice === "schedule.retrySame";
   const stale = Boolean(ride && ride.version !== initialVersion);
-  const prevented = (hasConflict && notice !== "schedule.retrySame") || !refreshed || stale;
+  const prevented = notice !== "schedule.retrySame" && (hasConflict || !refreshed || stale);
 
   function update(event) {
     const { name, value, checked, type } = event.target;
@@ -311,13 +311,15 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   async function save(event) {
     event.preventDefault();
     if (prevented || writing.current) return;
-    const validation = ride ? validateTrip(draft, capacity, new Date(), {
-      pickup: parisMinute(ride.pickup_at), return: ride.return_at && parisMinute(ride.return_at)
-    }) : validateBooking(draft, capacity);
-    if (!durationValid) validation.estimatedMinutes = "schedule.durationInvalid";
-    const invalid = focusBookingError(event.currentTarget, validation);
-    setErrors(validation);
-    if (invalid) return;
+    if (!attempt.current) {
+      const validation = ride ? validateTrip(draft, capacity, new Date(), {
+        pickup: parisMinute(ride.pickup_at), return: ride.return_at && parisMinute(ride.return_at)
+      }) : validateBooking(draft, capacity);
+      if (!durationValid) validation.estimatedMinutes = "schedule.durationInvalid";
+      const invalid = focusBookingError(event.currentTarget, validation);
+      setErrors(validation);
+      if (invalid) return;
+    }
     writing.current = true;
     setBusy(true);
     try {

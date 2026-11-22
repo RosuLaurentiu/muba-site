@@ -33,6 +33,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check code and booking rules
+        run: |
+          npm run lint
+          npm test
+
+      - name: Test migrations, booking storage and delivery on the fresh runner
+        shell: bash
+        run: |
+          docker network create --driver bridge --opt com.docker.network.bridge.host_binding_ipv4=127.0.0.1 muba-site-local
+          npx --yes supabase@3.2.0 start --network-id muba-site-local -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor >/dev/null
+          for suite in calendar-sync booking-email ride-storage intake-limits; do
+            npx --yes supabase@3.2.0 status -o json | node "supabase/tests/$suite.mjs"
+          done
+          docker exec -i supabase_db_muba-site psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/work-hours.sql
+          npx --yes supabase@3.2.0 db advisors --level warn --fail-on warn
+
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}

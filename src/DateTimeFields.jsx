@@ -1,14 +1,13 @@
-import { useState } from "react";
 import {
   CalendarDay, CalendarGrid, CalendarHeading, CalendarNext, CalendarPrevious, CalendarWeekday,
   CalendarWeekdays, CalendarWeeks, DatePicker, DatePickerClear, DatePickerContent, DatePickerInput, DatePickerPreset, DatePickerTrigger
 } from "@ui-sdk/react/date-picker";
 import { TimeInput, TimeInputSegment } from "@ui-sdk/react/time-input";
-import { parisMinute } from "./booking";
 import { getText } from "./i18n";
+import { useParisDay } from "./useParisDay";
 
 export function DateField({ name, label, language, value, onChange, disabled, error, max, allowClear = true }) {
-  const [today] = useState(() => parisMinute(new Date()).slice(0, 10));
+  const today = useParisDay();
   const t = (key) => getText(language, key);
   return (
     <div className="field">
