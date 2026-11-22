@@ -207,8 +207,24 @@ most 3 new bookings per rider email address in a rolling day so every accepted
 booking can receive a receipt. Driver-entered phone and WhatsApp rides can be
 saved for the same address and also receive receipts. These limits keep
 scripted requests within a small daily email volume.
-The owner approved these numbers under MS-017. Verify them on the hosted
-release candidate. Change them in a new migration.
+Web riders request a single-use code at the passenger email address and paste
+it into the form before saving. The code lasts 15 minutes. Asking again during
+that window keeps the existing unused code valid. Code requests and failed
+verification consume no booking allowance. The email worker delivers codes
+through the same provider as receipts. There is no rider account to manage.
+
+One source network can save three web rides in a rolling day. The hosted
+Supabase gateway supplies `cf-connecting-ip`; IPv6 addresses share a /64
+bucket. An absent header uses one shared bucket for local development.
+A self-hosted public gateway must overwrite this header and prevent direct
+access to PostgREST. The private tables store per-row salted fingerprints.
+The dispatcher clears expired booking fingerprints after 24 hours and
+verification records after an hour. Code issuance is limited separately to
+six new emails per network and 60 overall per rolling hour.
+
+For rollout, apply the migration, deploy the email worker, then publish the
+form. Older forms cannot create a new web ride once the migration is active.
+Verify code delivery through the production gateway and sender after approval.
 
 A confirmed round trip can keep an outbound pickup that already happened while
 the driver moves the return. Every moved leg must be in the future.

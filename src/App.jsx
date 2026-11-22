@@ -261,6 +261,9 @@ function RiderBooking({ language }) {
   const [screen, setScreen] = useState("entry");
   const [receipt, setReceipt] = useState(null);
   const [saveState, setSaveState] = useState("");
+  const [codeRequested, setCodeRequested] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const codeInput = useRef(null);
   const [copyState, setCopyState] = useState("");
   const [estimating, setEstimating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -483,6 +486,11 @@ function RiderBooking({ language }) {
   }
 
   function updateField(name, value) {
+    if (name === "customerEmail") {
+      setCodeRequested(false);
+      setEmailCode("");
+      setSaveState("");
+    }
     if (name === "pickup" || name === "destination") delete selectedPlaces.current[name];
     if (["pickup", "destination", "pickupDate", "pickupTime", "roundTrip", "returnDate", "returnTime"].includes(name)) {
       clearEstimate();
@@ -547,6 +555,22 @@ function RiderBooking({ language }) {
     setScreen("entry");
   }
 
+  async function requestEmailCode() {
+    if (saving.current) return;
+    saving.current = true;
+    setSaveState("sendingCode");
+    try {
+      await bookingRpc("request_booking_code", { p_email: formData.customerEmail.trim(), p_language: language });
+      setCodeRequested(true);
+      setSaveState("codeSent");
+      window.requestAnimationFrame(() => codeInput.current?.focus());
+    } catch (error) {
+      setSaveState(error.code === "PT429" ? "codeLimit" : "codeFailed");
+    } finally {
+      saving.current = false;
+    }
+  }
+
   async function handleSave(event) {
     event.preventDefault();
     if (saving.current || estimating) return;
@@ -558,12 +582,22 @@ function RiderBooking({ language }) {
         window.requestAnimationFrame(() => invalid.focus());
         return;
       }
+      if (!codeRequested) {
+        await requestEmailCode();
+        return;
+      }
+      if (!/^[a-f0-9]{32}$/i.test(emailCode.trim())) {
+        setSaveState("invalidCode");
+        codeInput.current?.focus();
+        return;
+      }
     }
     saving.current = true;
     setSaveState("saving");
     try {
       if (!attempt.current) {
         const payload = bookingPayload(formData, language);
+        payload.email_code = emailCode.trim().toLowerCase();
         if (route && route.durationMinutes > 0 && route.durationMinutes <= 1440) {
           payload.estimated_minutes = Math.ceil(route.durationMinutes);
         }
@@ -576,10 +610,16 @@ function RiderBooking({ language }) {
       const result = await bookingRpc("save_ride", { p_request_key: key, p_trip: payload });
       if (!result?.reference) throw new Error("MISSING_BOOKING_RECEIPT");
       setReceipt({ ...result, key });
+      attempt.current = null;
+      setEmailCode("");
       setSaveState("");
       setScreen("receipt");
     } catch (error) {
-      if (error.code === "PT422") {
+      if (error.code === "PT403") {
+        attempt.current = null;
+        setSaveState("invalidCode");
+        window.requestAnimationFrame(() => codeInput.current?.focus());
+      } else if (error.code === "PT422") {
         attempt.current = null;
         setSaveState("shortNotice");
       } else if (error.message === "BOOKING_NOT_CONFIGURED" || /^(22\d{3}|23502|23514)$/.test(error.code)) {
@@ -604,6 +644,9 @@ function RiderBooking({ language }) {
 
   function startNewBooking() {
     setCopyState("");
+    setCodeRequested(false);
+    setEmailCode("");
+    setSaveState("");
     attempt.current = null;
     selectedPlaces.current = {};
     clearEstimate();
@@ -615,7 +658,9 @@ function RiderBooking({ language }) {
 
   const t = (key) => getText(language, key);
   const retrySave = saveState === "failed" || saveState === "paused";
-  const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected", shortNotice: "shortNotice" }[saveState];
+  const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected", shortNotice: "shortNotice",
+    invalidCode: "invalidCode", codeLimit: "codeLimit", codeFailed: "codeFailed" }[saveState];
+  const busy = saveState === "saving" || saveState === "sendingCode";
   const totals = getRouteTotals(route, formData.roundTrip);
   const receiptLink = receipt ? "?booking#key=" + receipt.key : "";
   const details = screen === "review" ? [
@@ -725,15 +770,23 @@ function RiderBooking({ language }) {
               <div className="review-trip stack">
                 <h2>{t("planner.tripTitle")}</h2>
                 <BookingDetails rows={details.map(([key, value]) => [t(key), value])} />
-                <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
+                <button className="button" type="button" onClick={editTrip} disabled={busy || retrySave}>{t("booking.edit")}</button>
               </div>
             </section>
             <form className="reservation-form passenger-form" onSubmit={handleSave} noValidate>
-              <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || retrySave}>
+              <fieldset className="panel stack passenger-fields" disabled={busy || retrySave}>
                 <legend><h2>{t("planner.contactTitle")}</h2></legend>
                 {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
                 {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
                 {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
+                {codeRequested && <div className="stack">
+                  <label htmlFor="email-code">{t("booking.emailCode")}</label>
+                  <input ref={codeInput} id="email-code" name="emailCode" value={emailCode} autoComplete="one-time-code"
+                    spellCheck={false} autoCapitalize="none" aria-describedby="email-code-help"
+                    aria-invalid={saveState === "invalidCode"} onChange={(event) => setEmailCode(event.target.value)} />
+                  <p id="email-code-help" role="status">{t("booking.codeHelp")}</p>
+                  <button type="button" className="button" onClick={requestEmailCode}>{t("booking.requestCode")}</button>
+                </div>}
                 {field("notes", "optionalNotes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
                 <p className="muted">{t("booking.contactPrivacy")}</p>
               </fieldset>
@@ -753,8 +806,9 @@ function RiderBooking({ language }) {
                 </p>
               )}
               <div className="reservation-submit">
-                <button className="button primary" type="submit" disabled={estimating || saveState === "saving" || saveState === "shortNotice"}>
-                  {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
+                <button className="button primary" type="submit" disabled={estimating || busy || saveState === "shortNotice"}>
+                  {t(saveState === "sendingCode" ? "booking.sendingCode" : !codeRequested ? "booking.requestCode"
+                    : saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
                 </button>
               </div>
             </form>

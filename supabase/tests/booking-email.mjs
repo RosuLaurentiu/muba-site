@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { bookingEmailHandler } from "../functions/booking-email/handler.mjs";
+import { clearVerifiedTrips, verifiedTrip } from "./verified-trip.mjs";
 
 const { API_URL: apiUrl, PUBLISHABLE_KEY: key, SECRET_KEY: serviceKey } = JSON.parse(readFileSync(0, "utf8"));
 assert.equal(new URL(apiUrl).hostname, "127.0.0.1");
@@ -18,6 +19,9 @@ function sql(statement) {
 
 async function request(path, body, { token, admin, method = "POST", status = 200 } = {}) {
   const headers = { apikey: admin ? serviceKey : key, "Content-Type": "application/json" };
+  if (path.endsWith("/save_ride") && keys.includes(body.p_request_key)) {
+    headers["cf-connecting-ip"] = "192.0.2." + (keys.indexOf(body.p_request_key) + 1);
+  }
   if (token) headers.Authorization = "Bearer " + token;
   const res = await fetch(apiUrl + path, {
     method, headers, body: JSON.stringify(body), signal: AbortSignal.timeout(10000)
@@ -27,6 +31,7 @@ async function request(path, body, { token, admin, method = "POST", status = 200
 }
 
 function rpc(name, body, token, status) {
+  if (name === "save_ride" && !body.p_source) body = verifiedTrip(sql, body);
   return request("/rest/v1/rpc/" + name, body, { token, status });
 }
 
@@ -205,6 +210,7 @@ try {
     .map(({ subject }) => subject), ["Ride request received #" + leasedRide.reference, "Ride cancelled #" + leasedRide.reference]);
   const delayedWorker = bookingEmailHandler({ workerToken: "fixture", apiKey: "fixture", from: "test@example.test",
     supabaseUrl: apiUrl, serviceKey }, async (url) => {
+    if (url.endsWith("/claim_booking_codes")) return Response.json([]);
     assert.equal(url, apiUrl + "/rest/v1/rpc/claim_booking_email");
     return Response.json([{ ...lease, next_attempt: new Date(Date.now() - 1000).toISOString() }]);
   });
@@ -301,6 +307,7 @@ try {
   assert.equal([...delivered.values()].filter(({ subject }) => subject.startsWith("New booking request")).length, 1);
   console.log("PASS driver-entered tracking, rider updates, verified alerts, revocation and duplicate-safe delivery");
 } finally {
+  clearVerifiedTrips(sql);
   const hashes = keys.map(value => `sha256(uuid_send('${value}'::uuid))`).join(",");
   sql(`delete from booking_private.calendar_job where ride_reference in
     (select reference from booking_private.ride where request_key_hash in (${hashes}));

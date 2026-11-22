@@ -39,22 +39,27 @@ as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$
 
     $requestKey = [guid]::NewGuid()
     $active = Invoke-PilotSql $source @"
+insert into booking_private.booking_code (address, language, source_hash, code_hash)
+values ('pilot@example.test', 'en', '', sha256(convert_to('fixture-pilot','UTF8')));
 select public.save_ride('$requestKey', jsonb_build_object(
   'language', 'en', 'pickup', 'Fictional station', 'destination', 'Fictional airport',
   'pickup_time', to_char(now() at time zone 'Europe/Paris' + interval '2 days', 'YYYY-MM-DD"T"HH24:MI'),
   'passengers', 1, 'passenger_name', 'Fictional Rider', 'passenger_phone', '+33000000000',
-  'passenger_email', 'pilot@example.test'
+  'passenger_email', 'pilot@example.test', 'email_code', 'fixture-pilot'
 ))->>'reference';
 "@
     Assert-Pilot ($active -match '^\d+$') 'Could not save the fictional active booking.'
     $pauseTest = @'
 begin;
+insert into booking_private.booking_code (address, language, source_hash, code_hash)
+values ('pause-rider@example.test', 'en', '', sha256(convert_to('fixture-resume','UTF8'))),
+       ('pause-rider@example.test', 'en', '', sha256(convert_to('fixture-notice','UTF8')));
 select set_config('muba.fixture_key', '__REQUEST_KEY__', true);
 select set_config('muba.fixture_trip', jsonb_build_object(
   'language', 'en', 'pickup', 'Fictional checkpoint', 'destination', 'Fictional airport',
   'pickup_time', to_char(now() at time zone 'Europe/Paris' + interval '3 days', 'YYYY-MM-DD"T"HH24:MI'),
   'passengers', 1, 'passenger_name', 'Fictional Rider', 'passenger_phone', '+33000000000',
-  'passenger_email', 'pause-rider@example.test'
+  'passenger_email', 'pause-rider@example.test', 'email_code', 'fixture-resume'
 )::text, true);
 insert into auth.users (id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');
 insert into booking_private.driver (user_id) values ('b6b55d5a-5823-49c8-bdec-508544bf66e3');
@@ -97,14 +102,14 @@ begin
   end if;
   begin
     perform public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb ||
-      jsonb_build_object('pickup_time', to_char(
+      jsonb_build_object('email_code', 'fixture-notice', 'pickup_time', to_char(
         (date_trunc('minute', now()) + interval '119 minutes') at time zone 'Europe/Paris', 'YYYY-MM-DD"T"HH24:MI')));
     raise exception 'Web intake accepted a pickup inside the two-hour notice window';
   exception when sqlstate 'PT422' then
     if sqlerrm <> 'WEB_NOTICE_REQUIRED' then raise; end if;
   end;
   if public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb ||
-        jsonb_build_object('pickup_time', to_char(
+        jsonb_build_object('email_code', 'fixture-notice', 'pickup_time', to_char(
           (date_trunc('minute', now()) + interval '121 minutes') at time zone 'Europe/Paris', 'YYYY-MM-DD"T"HH24:MI')))->>'status'
       is distinct from 'pending' then
     raise exception 'Web intake did not accept a pickup outside the notice window';

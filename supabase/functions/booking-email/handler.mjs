@@ -54,7 +54,21 @@ export function bookingEmailHandler(config, fetcher = fetch) {
       signal: AbortSignal.timeout(10000)
     });
     if (!response.ok) throw new Error("Booking email database request failed");
-    if (name === "claim_booking_email") return response.json();
+    if (name === "claim_booking_email" || name === "claim_booking_codes") return response.json();
+  }
+
+  async function deliver(id, payload) {
+    try {
+      const response = await fetcher(config.emailApiUrl ?? "https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": id },
+        body: JSON.stringify(payload), redirect: "error", signal: AbortSignal.timeout(10000)
+      });
+      return response.ok;
+    } catch {
+      // The provider may have accepted a timed-out request. A retry keeps its ID.
+      return false;
+    }
   }
 
   return async (request) => {
@@ -72,21 +86,30 @@ export function bookingEmailHandler(config, fetcher = fetch) {
         if (Date.parse(job.next_attempt) <= Date.now() + 10000) continue;
         let delivered = false;
         try {
-          const response = await fetcher(config.emailApiUrl ?? "https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": job.id },
-            body: JSON.stringify(message(job, config)),
-            redirect: "error",
-            signal: AbortSignal.timeout(10000)
-          });
-          delivered = response.ok;
+          delivered = await deliver(job.id, message(job, config));
         } catch {
-          // A timeout can follow acceptance. The next attempt uses the same message ID.
+          // Invalid message configuration must not acknowledge this job.
         }
         await rpc("finish_booking_email", { p_id: job.id, p_lease: job.lease, p_sent: delivered });
         if (delivered) sent += 1;
       }
-      return Response.json({ sent, failed: jobs.length - sent });
+      const codes = await rpc("claim_booking_codes", {});
+      for (const job of codes) {
+        const french = job.language === "fr";
+        const accepted = await deliver(job.id, {
+          from: config.from, to: [job.recipient],
+          subject: french ? "Code de verification Private Taxi Paris" : "Private Taxi Paris verification code",
+          text: [french ? "Copiez ce code dans le formulaire de reservation dans les 15 minutes."
+            : "Copy this code into the booking form within 15 minutes.", job.code,
+          french ? "Si vous n'avez pas demande ce code, ignorez ce message. Aucun trajet n'a ete reserve."
+            : "If you did not request this code, ignore this email. No ride has been booked."].join("\n\n")
+        });
+        if (accepted) {
+          await rpc("finish_booking_code", { p_id: job.id });
+          sent += 1;
+        }
+      }
+      return Response.json({ sent, failed: jobs.length + codes.length - sent });
     } catch {
       return new Response(null, { status: 503 });
     }

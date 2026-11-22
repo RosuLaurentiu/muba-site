@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { calendarHandler } from "../functions/calendar-sync/handler.mjs";
+import { clearVerifiedTrips, verifiedTrip } from "./verified-trip.mjs";
 
 const local = JSON.parse(readFileSync(0, "utf8"));
 const origin = "http://127.0.0.1:54321";
@@ -116,6 +117,7 @@ async function callback(state, expected) {
 }
 
 function rpc(name, body, token, expected) {
+  if (name === "save_ride" && body.p_source === "web") body = verifiedTrip(sql, body);
   return api("/rest/v1/rpc/" + name, body, { token, expected });
 }
 
@@ -245,6 +247,7 @@ try {
     sql(`delete from booking_private.calendar_job where ride_reference=${expired.reference}`);
   }
 } finally {
+  clearVerifiedTrips(sql);
   if (keys.length) {
     const hashes = keys.map((key) => `sha256(uuid_send('${key}'::uuid))`).join(",");
     sql(`delete from booking_private.calendar_job where ride_reference in (

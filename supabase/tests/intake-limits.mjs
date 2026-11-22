@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { bookingEmailHandler } from "../functions/booking-email/handler.mjs";
+import { clearVerifiedTrips, verifiedTrip } from "./verified-trip.mjs";
 
 // Read the local CLI status on stdin so test credentials never reach the terminal.
 const { API_URL: apiUrl, PUBLISHABLE_KEY: publishableKey, SECRET_KEY: secretKey } =
@@ -17,20 +19,21 @@ function sql(statement) {
   ], { input: statement, encoding: "utf8" }).trim();
 }
 
-async function request(path, { body, token, admin = false, method = "POST", expected = 200 } = {}) {
+async function request(path, { body, token, network, admin = false, method = "POST", expected = 200 } = {}) {
   const headers = { apikey: admin ? secretKey : publishableKey, "Content-Type": "application/json" };
   if (token) headers.Authorization = "Bearer " + token;
+  if (network) headers["cf-connecting-ip"] = network;
   const response = await fetch(new URL(path, endpoint), {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body),
     redirect: "error", signal: AbortSignal.timeout(10000),
   });
   const content = await response.text();
   const data = content ? JSON.parse(content) : null;
-  assert.equal(response.status, expected, `${path}: ${data?.message ?? data?.code ?? response.status}`);
+  assert.ok([expected].flat().includes(response.status), `${path}: ${data?.message ?? data?.code ?? response.status}`);
   return data;
 }
 
-const rpc = (name, args, token, expected) => request("/rest/v1/rpc/" + name, { body: args, token, expected });
+const rpc = (name, args, token, expected, network) => request("/rest/v1/rpc/" + name, { body: args, token, expected, network });
 const users = [];
 const keys = [];
 const password = randomUUID();
@@ -86,37 +89,92 @@ try {
     from booking_private.ride where source = 'web' and created_at > now() - interval '1 day';`).split("|").map(Number);
   const room = Math.min(10 - hourly, 30 - daily);
   assert.ok(room >= 4, "Remove recent local web requests before running this test");
-  let firstKey;
-  for (let index = 0; index < room; index++) {
-    const key = newKey();
-    firstKey ??= key;
-    await rpc("save_ride", {
-      p_request_key: key,
-      p_trip: { ...trip, pickup_time: `2090-06-${String(11 + index).padStart(2, "0")}T09:00`,
-        passenger_email: index < 3 ? address : `rider-${key}@example.test` },
+  const web = (mailbox = address) => ({ p_request_key: newKey(), p_trip: { ...trip, passenger_email: mailbox } });
+  const save = (args, source, expected = 200) => rpc("save_ride", args, null, expected, source);
+  const source = "2001:db8:1::1";
+  let code;
+  const worker = bookingEmailHandler({ supabaseUrl: apiUrl, serviceKey: secretKey, workerToken: "fixture",
+    from: "test@example.test", apiKey: "fixture", appUrl: "http://127.0.0.1:5173", emailApiUrl: "http://mail.test/" },
+    async (url, options) => {
+      if (new URL(url).origin === endpoint.origin) return fetch(url, options);
+      assert.equal(url, "http://mail.test/");
+      const message = JSON.parse(options.body);
+      assert.ok(message.to.every(recipient => recipient.endsWith("@example.test")));
+      if (message.subject === "Code de verification Private Taxi Paris") {
+        assert.deepEqual(message.to, [address]);
+        code = message.text.match(/\b[a-f0-9]{32}\b/)?.[0];
+      }
+      return Response.json({});
     });
-    if (index === 2) {
-      const addressLimit = await rpc("save_ride", {
-        p_request_key: newKey(), p_trip: { ...trip, passenger_email: address.toUpperCase() }
-      }, null, 401);
-      assert.equal(addressLimit.message, "WEB_INTAKE_LIMIT");
-    }
+  for (const mailbox of [address, address.toUpperCase()]) {
+    assert.equal(await rpc("request_booking_code", { p_email: mailbox, p_language: "fr" }, null, 200, source), true);
   }
+  assert.equal(sql(`select count(*) from booking_private.booking_code where address = '${address}';`), "1");
+  const first = web();
+  assert.equal((await save(first, source, 403)).message, "BOOKING_EMAIL_PROOF_REQUIRED");
+  await rpc("claim_booking_codes", {}, null, 401);
+  const dispatched = await worker(new Request("http://127.0.0.1/", { method: "POST", headers: { Authorization: "Bearer fixture" } }));
+  assert.equal(dispatched.status, 200);
+  assert.match(code ?? "", /^[a-f0-9]{32}$/);
+  assert.equal(sql(`select delivery_code is null from booking_private.booking_code where address = '${address}';`), "t");
+  const wrong = web("different@example.test");
+  wrong.p_trip.email_code = code;
+  assert.equal((await save(wrong, source, 403)).message, "BOOKING_EMAIL_PROOF_REQUIRED");
+  first.p_trip.email_code = code;
+  const [one, duplicate] = await Promise.all([save(first, source), save(first, source)]);
+  assert.equal(one.reference, duplicate.reference);
+  assert.equal((await save({ ...first, p_request_key: newKey() }, source, 403)).message, "BOOKING_EMAIL_PROOF_REQUIRED");
+  const expired = verifiedTrip(sql, web());
+  sql(`update booking_private.booking_code set created_at = now() - interval '16 minutes' where id = '${expired.p_request_key}';`);
+  assert.equal((await save(expired, source, 403)).message, "BOOKING_EMAIL_PROOF_REQUIRED");
+  const sendSource = "192.0.2.40";
+  const issueFixtures = Array.from({ length: 6 }, () => newKey());
+  const issuanceRows = issueFixtures.map(id => `('${id}'::uuid)`).join(",");
+  sql(`insert into booking_private.booking_code (id,address,language,source_hash,code_hash,used)
+    select id,'${address}','en',sha256(uuid_send(id) || convert_to('${sendSource}', 'UTF8')),'',true
+    from (values ${issuanceRows}) as fixture(id);`);
+  assert.equal((await rpc("request_booking_code", { p_email: address, p_language: "en" },
+    null, 429, sendSource)).message, "BOOKING_CODE_LIMIT");
+  await rpc("finish_booking_code", { p_id: newKey() }, null, 401);
+  console.log("PASS French verification email, duplicate send, wrong mailbox, expired and consumed proof, concurrent retry");
+
+  await save(verifiedTrip(sql, web()), source);
+  const race = await Promise.all(["2001:db8:1::2", "2001:db8:1::3"].map((peer, i) =>
+    save(verifiedTrip(sql, web(`race-${i}@example.test`)), peer, [200,401])));
+  assert.equal(race.filter(result => result.status === "pending").length, 1);
+  assert.equal(race.filter(result => result.message === "WEB_INTAKE_LIMIT").length, 1);
+  await save(verifiedTrip(sql, web()), "192.0.2.1");
+  assert.equal((await save(verifiedTrip(sql, web(address.toUpperCase())), "192.0.2.2", 401)).message, "WEB_INTAKE_LIMIT");
   assert.equal(sql(`select count(*) from booking_private.booking_email as email
     join booking_private.ride as ride using (reference)
     where email.kind = 'receipt' and email.recipient = '${address}' and ride.source = 'web';`), "3");
   assert.equal(sql(`select count(*) from booking_private.rider_email where address = '${address}';`), "4");
-  const refused = await rpc("save_ride", { p_request_key: newKey(),
-    p_trip: { ...trip, pickup_time: "2090-07-01T09:00", passenger_email: "global-limit@example.test" } }, null, 401);
+  // Seed the emergency ceiling directly in the test database.
+  function seed(count, age) {
+    if (!count) return;
+    const hashes = Array.from({ length: count }, () => `(sha256(uuid_send('${newKey()}'::uuid)))`).join(",");
+    sql(`insert into booking_private.ride (request_key_hash,request_hash,source,status,language,pickup,destination,
+      pickup_at,passengers,passenger_name,passenger_phone,created_at)
+      select k.hash,'','web','pending','en','Fixture','Fixture',now()+interval '3 days',1,'Fixture','0000000000',
+        now()-interval '${age}' from (values ${hashes}) as k(hash);`);
+  }
+  seed(room - 4, "1 minute");
+  const reserve = verifiedTrip(sql, web("global-limit@example.test"));
+  const refused = await save(reserve, "192.0.2.3", 401);
   assert.equal(refused.message, "WEB_INTAKE_LIMIT");
-  await rpc("save_ride", {
-    p_request_key: firstKey, p_trip: { ...trip, pickup_time: "2090-06-11T09:00", passenger_email: address },
-  });
+  const own = keys.map(key => `sha256(uuid_send('${key}'::uuid))`).join(",");
+  sql(`update booking_private.ride set created_at = now()-interval '2 hours' where source='web' and request_key_hash in (${own});`);
+  seed(30 - daily - room, "2 hours");
+  assert.equal((await save(reserve, "192.0.2.3", 401)).message, "WEB_INTAKE_LIMIT");
+  delete first.p_trip.email_code;
+  assert.equal((await save(first, source)).reference, one.reference);
   assert.equal((await rpc("save_ride", {
     p_request_key: newKey(), p_source: "phone", p_trip: { ...trip, pickup_time: "2090-07-02T09:00" },
   }, token)).status, "confirmed");
-  console.log("PASS web intake limit, same-key retry at the limit, receipt limit per address, driver rides unaffected");
+  console.log("PASS source concurrency, independent visitor, hourly and daily ceilings, mailbox cap, retries and driver rides");
 } finally {
+  clearVerifiedTrips(sql);
+  sql(`delete from booking_private.booking_code where address = '${address}';`);
   const hashes = keys.map((value) => `sha256(uuid_send('${value}'::uuid))`).join(",");
   if (hashes) {
     sql(`delete from booking_private.calendar_job where ride_reference in (

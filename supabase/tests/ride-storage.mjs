@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { clearVerifiedTrips, verifiedTrip } from "./verified-trip.mjs";
 
 // Read the local CLI status on stdin so test credentials never reach the terminal.
 const { API_URL: apiUrl, PUBLISHABLE_KEY: publishableKey, SECRET_KEY: secretKey } =
@@ -32,6 +33,7 @@ async function request(path, { body, token, admin = false, method = "POST", expe
 }
 
 function rpc(name, args, token, expected) {
+  if (name === "save_ride" && !args.p_source) args = verifiedTrip(sql, args);
   return request("/rest/v1/rpc/" + name, { body: args, token, expected });
 }
 
@@ -207,6 +209,7 @@ try {
   assert.equal(overlapping.filter(result => result.message === "SCHEDULE_CONFLICT").length, 1);
   console.log("PASS driver-only time blocks, conflicts across all schedule writes, and concurrent overlap rejection");
 } finally {
+  clearVerifiedTrips(sql);
   // Use hashes so cleanup also covers a save that committed before the test observed its reply.
   const keys = [key, secondKey, manualKey, blockedKey, clockGapKey, ...raceKeys].map(value => `sha256(uuid_send('${value}'::uuid))`);
   sql(`delete from booking_private.calendar_job where ride_reference in (
