@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-22 01:20'
-updated_date: '2026-11-22 01:52'
+updated_date: '2026-11-22 02:14'
 labels: []
 dependencies: []
 references:
@@ -36,18 +36,18 @@ Let the primary driver and one named tester use the same workspace. Preserve the
 done: >-
   Local authorization, Calendar restrictions, and driver workspace checks
   passed. Saved the exact driver OAuth redirect and installed hosted migration
-  20261122015111 from commit 4d3a3ff. Verified the primary driver and Calendar
-  connection remain assigned to the existing owner.
+  20261122015111 from commit 4d3a3ff. Verified the public driver build uses the
+  saved redirect and hosted Supabase returns 302 to Google. The primary driver
+  and Calendar assignment were preserved.
 next: >-
-  Configure and enable Google OAuth in Muba Booking Test, provision the business
-  Auth user and assign the open tester slot, then verify real Google sign-in and
-  driver workspace access for both accounts.
+  Provision and assign the business Auth account, then complete Google sign-in
+  and driver workspace checks for both approved accounts.
 latestChange: >-
-  Hosted second-login slot is ready. Google is disabled with a blank OAuth
-  secret. The business Auth account is absent and the tester slot is empty.
-resultAt: '2026-11-22T01:52:53.539Z'
+  Google provider is enabled and redirects to Google. The primary account
+  exists. The business Auth user and tester assignment are pending, and no
+  primary Google sign-in is recorded yet.
+resultAt: '2026-11-22T02:14:58.012Z'
 remainingChecks:
-  - Google Web OAuth credentials configured and provider enabled
   - Business account provisioned and assigned
   - Both Google accounts open the hosted driver workspace
 ```
@@ -68,6 +68,10 @@ remainingChecks:
         {
           "start": "2026-11-22T01:52:32.035Z",
           "end": "2026-11-22T01:52:49.678Z"
+        },
+        {
+          "start": "2026-11-22T02:13:56.537Z",
+          "end": "2026-11-22T02:14:54.936Z"
         }
       ]
     }
@@ -98,6 +102,32 @@ remainingChecks:
         "codex-session:01a2000a-86d0-7722-9349-886d24da4f86"
       ],
       "recordedAt": "2026-11-22T01:52:42.855Z"
+    },
+    {
+      "source": "codex-task-estimate",
+      "runId": "01a2000a-86d0-7722-9349-886d24da4f86",
+      "segmentId": "auto-1795313639960",
+      "mode": "cumulative",
+      "shared": true,
+      "model": "gpt-6.2-sol",
+      "scope": "task",
+      "attribution": {
+        "taskId": "MS-020",
+        "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
+        "start": "2026-11-22T02:13:59.960Z",
+        "end": "2026-11-22T02:14:48.002Z"
+      },
+      "tokens": {
+        "input": 457503,
+        "output": 1175,
+        "cachedInput": 449664,
+        "reasoningOutput": 49,
+        "total": 458678
+      },
+      "evidence": [
+        "codex-session:01a2000a-86d0-7722-9349-886d24da4f86"
+      ],
+      "recordedAt": "2026-11-22T02:14:48.002Z"
     }
   ],
   "corrections": []
@@ -120,4 +150,6 @@ Distinct outcome: MS-003 delivered Google sign-in for one driver; this adds a se
 2026-11-22T01:24:18.701Z: Shared workspace access and primary-only integrations passed locally. Hosted Google setup requires dashboard access and provisioning the business account.
 
 2026-11-22T01:52:53.540Z: Prior current facts: {"done":"Added a separately assigned tester login. Local checks proved shared ride access, tester writes, active-session revocation, primary-only alerts and Calendar restriction. Both roles passed the EN/FR mobile workspace checks. Lint, build, Calendar type check and database regressions passed.","resultAt":"2026-11-22T01:24:18.700Z"}
+
+2026-11-22T02:14:58.013Z: Prior current facts: {"latestChange":"Hosted second-login slot is ready. Google is disabled with a blank OAuth secret. The business Auth account is absent and the tester slot is empty.","done":"Local authorization, Calendar restrictions, and driver workspace checks passed. Saved the exact driver OAuth redirect and installed hosted migration 20261122015111 from commit 4d3a3ff. Verified the primary driver and Calendar connection remain assigned to the existing owner.","resultAt":"2026-11-22T01:52:53.539Z"}
 <!-- SECTION:NOTES:END -->
