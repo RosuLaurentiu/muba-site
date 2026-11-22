@@ -102,14 +102,16 @@ assigned driver's verified sign-in. Confirm that the backend is the approved
 production project before provisioning or assigning the account. The Resend
 sender remains the verified address on the site domain.
 
-The driver workspace starts with the next pickup and a shortcut to pending
-requests. The selected Paris day, Add ride, Block time and daily agenda
-come before the month calendar. Select a calendar day to open its agenda,
-including pending, confirmed, cancelled and declined rides. Earlier months show
-retained bookings.
-The agenda lists each leg separately. The driver can record phone or WhatsApp
-bookings, reschedule a confirmed ride, and cancel it. Return from a ride or block
-save to the same selected day. If a refresh fails, the workspace identifies the
+The driver workspace starts with the next pickup. On desktop, the daily agenda
+sits beside the month calendar, with any pending requests above the calendar.
+On a phone, the inbox comes first when requests are pending. Select a calendar
+day to open its agenda, including pending, confirmed, cancelled and declined
+rides. Earlier months show retained bookings.
+The agenda lists each leg separately. Ride details group pickup directions with
+the trip and contact actions with the passenger information. The driver can
+record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
+After saving a ride or block, return to the same selected day. If a refresh
+fails, the workspace identifies the
 last loaded schedule and offers another refresh. The save controls show overlaps
 with rides and blocks before writing, and the database checks again during
 each write. With no finish estimate, the schedule reserves the pickup minute

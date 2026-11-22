@@ -129,23 +129,31 @@ h3 { font-size: 1.05rem; }
 .driver-auth { width: 100%; justify-items: stretch; }
 .driver-back { display: inline-block; padding-block: .5rem; margin-bottom: 1rem; color: var(--muted); }
 .driver-nav { display: inline-block; margin-right: .6rem; }
-.driver-main .booking-grid { margin-block: 1rem; }
-.driver-list { min-width: 0; overflow-wrap: anywhere; }
-.month-panel { margin-top: 1.5rem; }
-.month-nav { display: flex; gap: .3rem; align-items: center; margin: 1rem 0; }
-.month-nav strong { flex: 1; text-transform: capitalize; }
-.month-nav .button { padding-inline: .65rem; }
-.month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.driver-board, .driver-detail { display: grid; gap: 1rem; align-items: start; }
+.driver-board { margin-top: 1rem; }
+.driver-board .panel, .driver-detail .panel, .next-ride { padding: 1.25rem; }
+.driver-agenda, .driver-list { min-width: 0; overflow-wrap: anywhere; }
+.driver-empty { color: var(--muted); }
+.driver-agenda > .driver-empty { border-top: 1px solid var(--line); padding-top: 1rem; }
+.agenda-entry, .pending-rides li { display: grid; justify-items: start; gap: .55rem; border-top: 1px solid var(--line); padding-top: .85rem; }
+.pending-rides a, .pending-latest { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; }
+.month-nav { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin: .75rem 0 .4rem; }
+.month-nav strong { flex: 1 0 auto; text-transform: capitalize; }
+.month-actions { display: flex; gap: .3rem; }
+.month-nav .button { min-width: 2.75rem; padding-inline: .55rem; }
+.month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .2rem; }
 .weekday { font-size: .75rem; color: var(--muted); padding-block: .4rem; text-align: center; }
-.month-day { display: flex; flex-direction: column; align-items: center; justify-content: start; padding: .3rem 0; min-height: 3.15rem; background: var(--input); border-radius: .25rem; text-decoration: none; font-variant-numeric: tabular-nums; }
+.month-day { display: grid; justify-items: center; align-content: center; gap: .15rem; min-height: 2.75rem; background: var(--input); border: 1px solid transparent; border-radius: .25rem; text-decoration: none; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .month-day:hover { background: var(--hint); }
+.month-day[data-today] { border-color: var(--field-line); font-weight: 750; }
 .month-day[aria-current] { background: var(--accent); color: var(--on-accent); }
 .month-day small { border: 1px solid currentColor; border-radius: .6rem; padding-inline: .3rem; font-size: .68rem; line-height: 1.1; }
 .calendar-status { font-size: .8rem; color: var(--muted); font-weight: 650; }
-.driver-list > h2 { display: flex; align-items: baseline; gap: .7rem; margin-bottom: 1rem; }
-.request-count { font-size: 1rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.driver-list h2 { display: flex; align-items: center; gap: .6rem; margin-bottom: .75rem; }
+.request-count { color: var(--muted); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.ride-state { padding: .25rem .65rem; border: 1px solid var(--line); border-radius: .25rem; background: var(--hint); font-size: .85rem; }
 .request-alert { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem .65rem; margin-block: .75rem 1rem; padding: .45rem 1rem; border-left: 3px solid var(--accent); background: var(--hint); }
-.request-alert a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.request-alert a { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; }
 .driver-feedback:not(:empty) { margin-block: .8rem; }
 .schedule-date { display: flex; align-items: end; gap: .5rem; }
 .schedule-date .field { flex: 1; max-width: 13.5rem; }
@@ -155,10 +163,16 @@ h3 { font-size: 1.05rem; }
 .schedule-duration { max-width: 24rem; }
 .schedule-fieldset { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
 .ride-list { display: grid; gap: .65rem; list-style: none; padding: 0; margin: 0; }
-.ride-list .stack { gap: .65rem; }
-.next-ride { background: var(--hint); border-left: 3px solid var(--accent); }
-.next-ride > h2 { font-size: 1rem; }
-.next-ride .schedule-entry strong { font: 500 clamp(1.4rem, 2.4vw, 2rem)/1.15 var(--display); font-variant-numeric: lining-nums tabular-nums; }
+.next-ride { display: grid; gap: 1rem; background: var(--hint); border-left: 3px solid var(--accent); }
+.next-ride-time, .next-ride-route { display: grid; align-content: start; gap: .5rem; min-width: 0; }
+.next-ride-time h2 { font-size: 1rem; }
+.next-ride-time strong { font: 500 clamp(1.4rem, 2.4vw, 2rem)/1.15 var(--display); font-variant-numeric: lining-nums tabular-nums; }
+.next-ride-route .actions { margin-top: .45rem; }
+.ride-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem 1rem; margin-bottom: 1.25rem; }
+.ride-heading h1 { margin: 0; overflow-wrap: anywhere; }
+.ride-heading h1 span { color: var(--muted); }
+.driver-detail .booking-details { width: 100%; }
+.driver-detail .panel { align-self: stretch; align-content: start; }
 .muted { color: var(--muted); }
 .calendar-panel { margin-block: 1.75rem 1rem; padding: .8rem 1.15rem; }
 .calendar-panel summary { cursor: pointer; }
@@ -169,7 +183,14 @@ h3 { font-size: 1.05rem; }
 @media (min-width: 750px) {
   .booking-grid { grid-template-columns: 1.05fr .95fr; }
   .signin-layout { grid-template-columns: minmax(19rem, .8fr) 1.2fr; }
-  .driver-main .booking-grid { grid-template-columns: 1.28fr .72fr; gap: 2.5rem; }
+  .driver-board, .driver-detail { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  .driver-board { grid-template-areas: "agenda month" "agenda pending"; grid-template-rows: auto 1fr; }
+  .driver-board:has(.has-pending) { grid-template-areas: "agenda pending" "agenda month"; }
+  .driver-agenda { grid-area: agenda; }
+  .month-panel { grid-area: month; }
+  .driver-list { grid-area: pending; }
+  .next-ride { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1.5rem; }
+  .next-ride-route .booking-details, .trip-detail .booking-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 749px) {
@@ -192,11 +213,10 @@ h3 { font-size: 1.05rem; }
   .reservation-submit .button { width: 100%; }
   .workspace-link { margin-left: 0; }
   .signin-layout .fleet-photo { max-height: 14rem; object-position: center 64%; }
-  .driver-list + .driver-list { border-top: 1px solid var(--line); padding-top: 1rem; }
-  .driver-list.has-pending { order: -1; border-top: 0; padding-top: 0; }
-  .driver-list.has-pending + .driver-list { border-top: 1px solid var(--line); padding-top: 1rem; }
+  .driver-list:not(.has-pending) { order: 1; }
   .driver-main .actions { align-items: stretch; }
   .driver-main .actions .button, .reservation-submit .button { flex: 1 1 9rem; }
+  .trip-detail .button { justify-self: stretch; }
   .fare { font-size: 2.4rem; }
 }
 

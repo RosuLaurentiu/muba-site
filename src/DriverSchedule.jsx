@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import BookingDetails from "./BookingDetails";
 import { bookingPayload, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
@@ -84,21 +85,35 @@ export function NextPickup({ schedule, day, language }) {
   const next = schedule.find((entry) => entry.ride && entry.start >= now);
 
   return (
-    <section className="panel stack next-ride" aria-labelledby="next-pickup">
-      <h2 id="next-pickup">{t("schedule.nextPickup")}</h2>
-      {next ? (
-        <>
-          <EntryText entry={next} language={language} />
+    <section className="panel next-ride" aria-labelledby="next-pickup">
+      <div className="next-ride-time">
+        <h2 id="next-pickup">{t("schedule.nextPickup")}</h2>
+        {next ? (
+          <>
+            <strong>{formatParisTime(next.start, language)}</strong>
+            <span className="muted">
+              {next.endKnown ? t("schedule.finish") + " " + formatParisTime(next.end, language) : t("schedule.finishUnknown")}
+            </span>
+            {next.returning && <span>{t("schedule.returnLeg")}</span>}
+          </>
+        ) : <p className="muted">{t("schedule.noUpcoming")}</p>}
+      </div>
+      {next && (
+        <div className="next-ride-route">
+          <BookingDetails rows={[
+            [t("planner.labels.pickup"), next.pickup],
+            [t("planner.labels.destination"), next.destination]
+          ]} />
           <div className="actions">
-            <a className="button" href={"tel:" + next.ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
-            <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(next.pickup)}
+            <a className="button primary" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(next.pickup)}
               target="_blank" rel="noreferrer">{t("driver.directions")}</a>
+            <a className="button" href={"tel:" + next.ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
             <a className="button" href={driverLink(day, { ride: next.ride.reference, ...(next.returning ? { leg: "return" } : {}) })}>
               {t("driver.detail")} {next.ride.reference}
             </a>
           </div>
-        </>
-      ) : <p>{t("schedule.noUpcoming")}</p>}
+        </div>
+      )}
     </section>
   );
 }
@@ -140,7 +155,7 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
 
   function card(entry) {
     return (
-      <li className="panel stack" key={entry.id}>
+      <li className="agenda-entry" key={entry.id}>
         {entry.ride && <span className="calendar-status">{t("booking.state." + entry.ride.status)}</span>}
         <EntryText entry={entry} language={language} />
         {entry.ride ? (
@@ -160,46 +175,51 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
   }
 
   return (
-    <section className="driver-list" aria-labelledby="day-heading">
-      <h2 id="day-heading">{dateLabel(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h2>
-      <div className="schedule-date schedule-controls">
-        {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
-        <label className="field">
-          {t("schedule.parisDay")}
-          <input type="date" value={day} max="9999-12-30" onChange={(event) => {
-            if (event.currentTarget.validity.valid && event.currentTarget.value) {
-              window.location.assign(driverLink(event.currentTarget.value) + "#day-heading");
-            }
-          }} />
-        </label>
-        {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
-      </div>
-      {day >= today && <div className="actions schedule-controls">
-        <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
-        <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
-      </div>}
-      {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
-      {entries.length === 0 && <p>{t("schedule.dayEmpty")}</p>}
-      <section id="reservation-calendar" className="panel month-panel" aria-label={t("schedule.calendar")}>
-        <h2>{t("schedule.calendar")}</h2>
+    <>
+      <section className="panel driver-agenda" aria-labelledby="day-heading">
+        <h2 id="day-heading">{dateLabel(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h2>
+        <div className="schedule-date schedule-controls">
+          {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
+          <label className="field">
+            {t("schedule.parisDay")}
+            <input type="date" value={day} max="9999-12-30" onChange={(event) => {
+              if (event.currentTarget.validity.valid && event.currentTarget.value) {
+                window.location.assign(driverLink(event.currentTarget.value) + "#day-heading");
+              }
+            }} />
+          </label>
+          {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
+        </div>
+        {day >= today && <div className="actions schedule-controls">
+          <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
+          <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
+        </div>}
+        {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
+        {entries.length === 0 && <p className="driver-empty">{t("schedule.dayEmpty")}</p>}
+      </section>
+      <section id="reservation-calendar" className="panel month-panel" aria-labelledby="calendar-heading">
+        <h2 id="calendar-heading">{t("schedule.calendar")}</h2>
         <div className="month-nav">
           <strong>{dateLabel(day, { month: "long", year: "numeric" })}</strong>
-          <a className="button" href={driverLink(today) + "#reservation-calendar"}>{t("schedule.today")}</a>
-          {first > "0001-01-01" && <a className="button" aria-label={t("schedule.prevMonth")} href={driverLink(moveDay(first, -1).slice(0, 7) + "-01") + "#reservation-calendar"}>‹</a>}
-          {last < "9999-12-31" && <a className="button" aria-label={t("schedule.nextMonth")} href={driverLink(moveDay(last, 1)) + "#reservation-calendar"}>›</a>}
+          <div className="month-actions">
+            <a className="button" href={driverLink(today) + "#reservation-calendar"}>{t("schedule.today")}</a>
+            {first > "0001-01-01" && <a className="button" aria-label={t("schedule.prevMonth")} href={driverLink(moveDay(first, -1).slice(0, 7) + "-01") + "#reservation-calendar"}>‹</a>}
+            {last < "9999-12-31" && <a className="button" aria-label={t("schedule.nextMonth")} href={driverLink(moveDay(last, 1)) + "#reservation-calendar"}>›</a>}
+          </div>
         </div>
         <div className="month-grid">
           {Array.from({ length: 7 }, (_, i) => <span className="weekday" key={i}>{dateLabel(moveDay("2024-01-01", i), { weekday: "short" })}</span>)}
           {Array.from({ length: weekdayOffset }, (_, i) => <span aria-hidden="true" key={"blank" + i} />)}
           {[...byDay].map(([date, items]) => (
-            <a className="month-day" key={date} aria-current={date === day ? "date" : undefined}
-              href={driverLink(date) + "#day-heading"} aria-label={dateLabel(date, { dateStyle: "full" }) + " · " + t("schedule.entries") + " " + items.length}>
+            <a className="month-day" key={date} aria-current={date === day ? "date" : undefined} data-today={date === today ? "" : undefined}
+              href={driverLink(date) + "#day-heading"} aria-label={dateLabel(date, { dateStyle: "full" }) +
+                (date === today ? " · " + t("schedule.today") : "") + " · " + t("schedule.entries") + " " + items.length}>
               {Number(date.slice(-2))}{items.length > 0 && <small>{items.length}</small>}
             </a>
           ))}
         </div>
       </section>
-    </section>
+    </>
   );
 }
 

@@ -111,24 +111,29 @@ function BookingEmailStatus({ language }) {
   );
 }
 
-function PendingList({ rides, language, day }) {
+function PendingList({ rides, language, day, latest }) {
   const t = (key) => getText(language, key);
   return (
-    <section className={"driver-list" + (rides.length ? " has-pending" : "")} id="pending" aria-labelledby="pending-heading">
-      <h2 id="pending-heading">{t("driver.pending")} <span className="request-count">{rides.length}</span></h2>
+    <section className={"panel driver-list" + (rides.length ? " has-pending" : "")} id="pending" aria-labelledby="pending-heading">
+      <div role="status">
+        <h2 id="pending-heading">{t("driver.pending")} <span className="request-count">{rides.length}</span></h2>
+      </div>
+      {rides.length > 1 && latest != null && <a className="pending-latest" href={driverLink(day, { ride: latest })}>
+        {t("driver.latestRequest")}
+      </a>}
       {rides.length ? (
-        <ul className="ride-list">
+        <ul className="ride-list pending-rides">
           {rides.map((ride) => (
-            <li className="panel stack" key={ride.reference}>
+            <li key={ride.reference}>
               <strong>{formatParisTime(ride.pickup_at, language)}</strong>
               <p>{ride.pickup} → {ride.destination}</p>
-              <a className="button" href={driverLink(day, { ride: ride.reference })}>
+              <a href={driverLink(day, { ride: ride.reference })}>
                 {t("driver.detail")} {ride.reference}
               </a>
             </li>
           ))}
         </ul>
-      ) : <p>{t("driver.pendingEmpty")}</p>}
+      ) : <p className="driver-empty">{t("driver.pendingEmpty")}</p>}
     </section>
   );
 }
@@ -186,39 +191,49 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
 
   return (
     <>
-      <h1 ref={heading} tabIndex={-1}>{t("driver.detail")} {ride.reference}</h1>
-      <div className="panel stack">
-        <strong>{t("booking.state." + ride.status)}</strong>
-        {returning && <span>{t("schedule.returnLeg")}</span>}
-        <BookingDetails rows={[
-          [t("planner.labels.pickup"), pickup],
-          [t("planner.labels.destination"), destination],
-          [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
-          ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
-          [t("planner.labels.passengers"), ride.passengers],
-          [t("driver.passenger"), ride.passenger_name],
-          [t("planner.labels.phone"), ride.passenger_phone],
-          ...(ride.agreed_fare_cents != null ? [[t("driver.agreedFare"),
-            new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-GB", {
-              style: "currency", currency: "EUR"
-            }).format(ride.agreed_fare_cents / 100)]] : []),
-          ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : []),
-          ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
-        ]} />
-        <div className="actions">
-          {ride.passenger_email && (
-            <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
-              "?subject=" + encodeURIComponent(t("booking.reference") + " " + ride.reference)}>
-              {t("driver.emailRider")}
-            </a>
-          )}
-          <a className="button" href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
-          <a className="button" href={"https://wa.me/" + toWhatsAppNumber(ride.passenger_phone)} target="_blank" rel="noreferrer">
-            {t("nav.whatsApp")}
-          </a>
-          <a className="button" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
+      <header className="ride-heading">
+        <h1 ref={heading} tabIndex={-1}>{t("driver.detail")} <span>#{ride.reference}</span></h1>
+        <strong className="ride-state" data-status={ride.status}>{t("booking.state." + ride.status)}</strong>
+      </header>
+      <div className="driver-detail">
+        <section className="panel stack trip-detail" aria-labelledby="trip-detail-heading">
+          <h2 id="trip-detail-heading">{t("driver.trip")}</h2>
+          {returning && <span className="muted">{t("schedule.returnLeg")}</span>}
+          <BookingDetails rows={[
+            [t("planner.labels.pickup"), pickup],
+            [t("planner.labels.destination"), destination],
+            [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
+            ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
+            ...(ride.agreed_fare_cents != null ? [[t("driver.agreedFare"),
+              new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-GB", {
+                style: "currency", currency: "EUR"
+              }).format(ride.agreed_fare_cents / 100)]] : []),
+            ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
+          ]} />
+          <a className="button primary" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
             target="_blank" rel="noreferrer">{t("driver.directions")}</a>
-        </div>
+        </section>
+        <section className="panel stack" aria-labelledby="passenger-detail-heading">
+          <h2 id="passenger-detail-heading">{t("driver.passengerDetails")}</h2>
+          <BookingDetails rows={[
+            [t("driver.passenger"), ride.passenger_name],
+            [t("planner.labels.phone"), ride.passenger_phone],
+            [t("planner.labels.passengers"), ride.passengers],
+            ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : [])
+          ]} />
+          <div className="actions">
+            <a className="button" href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
+            <a className="button" href={"https://wa.me/" + toWhatsAppNumber(ride.passenger_phone)} target="_blank" rel="noreferrer">
+              {t("nav.whatsApp")}
+            </a>
+            {ride.passenger_email && (
+              <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
+                "?subject=" + encodeURIComponent(t("booking.reference") + " " + ride.reference)}>
+                {t("driver.emailRider")}
+              </a>
+            )}
+          </div>
+        </section>
       </div>
       {ride.status === "pending" && (
         <>
@@ -363,6 +378,7 @@ function DriverRides({ session, language }) {
   const ready = load.status === "ready";
   const haveData = load.snapshot && alerts !== false;
   const pending = load.rides.filter((ride) => ride.status === "pending");
+  const pendingCount = alerts?.count ?? pending.length;
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
   return (
     <>
@@ -370,12 +386,6 @@ function DriverRides({ session, language }) {
         ? <a className="driver-back" href={driverLink(day)}>← {t("driver.back")}</a>
         : <h1>{t("driver.title")}</h1>}
       {haveData && !subpage && <NextPickup schedule={schedule} day={day} language={language} />}
-      <div role="status">
-        {haveData && (!subpage || alerts?.count > 0) && <p className="request-alert">
-          <a href={subpage ? driverLink(day) + "#pending" : "#pending"}>{t("driver.pending")} {alerts?.count ?? pending.length}</a>
-          {alerts?.count > 0 && <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>}
-        </p>}
-      </div>
       {load.status === "loadFailed" && haveData && (
         <div className="actions driver-feedback">
           <p role="status">{t("driver.scheduleStale")}</p>
@@ -397,14 +407,20 @@ function DriverRides({ session, language }) {
           {haveData && !subpage ? (
             <>
               <p className="driver-feedback" role="status">{notice ? t(notice) : query.has("saved") ? t("schedule.saved") : ""}</p>
-              <div className="booking-grid">
+              <div className="driver-board">
+                <PendingList rides={pending} language={language} day={day} latest={alerts?.latest} />
                 <DriverDay schedule={schedule} rides={load.rides} day={day} today={today} language={language} onRemove={removeBlock} />
-                <PendingList rides={pending} language={language} day={day} />
               </div>
             </>
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
+      {subpage && <div role="status">
+        {haveData && pendingCount > 0 && <p className="request-alert">
+          <a href={driverLink(day) + "#pending"}>{t("driver.pending")} <span className="request-count">{pendingCount}</span></a>
+          {alerts?.count > 0 && <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>}
+        </p>}
+      </div>}
       {haveData && <BookingEmailStatus language={language} />}
       {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">

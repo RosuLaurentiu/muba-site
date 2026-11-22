@@ -116,7 +116,7 @@ export const translations = {
       accept: "Confirm ride", decline: "Decline request", decisionSaved: "Decision saved.",
       staleDecision: "This ride changed since you opened it. Review the current status.",
       decisionFailed: "Could not verify the change. Check the current status before trying again.",
-      passenger: "Passenger", refresh: "Refresh",
+      trip: "Trip", passengerDetails: "Passenger details", passenger: "Passenger", refresh: "Refresh",
       confirmDecline: "Decline this request? The rider will be told the ride is unavailable."
     },
     booking: {
@@ -411,7 +411,7 @@ export const translations = {
       accept: "Confirmer la course", decline: "Refuser la demande", decisionSaved: "Decision enregistree.",
       staleDecision: "Cette course a change. Verifiez son statut actuel.",
       decisionFailed: "Impossible de verifier le changement. Consultez le statut actuel avant de reessayer.",
-      passenger: "Passager", refresh: "Actualiser",
+      trip: "Trajet", passengerDetails: "Coordonnees du passager", passenger: "Passager", refresh: "Actualiser",
       confirmDecline: "Refuser cette demande ? Le passager sera informe que la course est indisponible."
     },
     booking: {
