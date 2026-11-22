@@ -615,6 +615,7 @@ function RiderBooking({ language }) {
               <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
               {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"), maxLength: 300, required: true })}
               {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"), maxLength: 300, required: true })}
+              <p className="muted">{t("booking.addressPrivacy")}</p>
               <div className="time-pair">
                 {field("pickupDate", "date", { type: "date", required: true })}
                 {field("pickupTime", "time", { type: "time", required: true })}
@@ -673,7 +674,18 @@ function RiderBooking({ language }) {
             {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
             {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254 })}
             {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
+            <p className="muted">{t("booking.contactPrivacy")}</p>
           </fieldset>
+          <details className="panel form-submit">
+            <summary>{t("booking.privacyTitle")}</summary>
+            <div className="stack calendar-content">
+              <p>{t("booking.privacyOperator")} {appConfig.operatorName}. <a href={"mailto:" + appConfig.email}>{appConfig.email}</a></p>
+              <p>{t("booking.privacyUse")}</p>
+              <p>{t("booking.privacyServices")}</p>
+              <p>{t("booking.privacyRetention")}</p>
+              <p>{t("booking.privacyRights")} <a href="https://www.cnil.fr/fr/plaintes">CNIL</a></p>
+            </div>
+          </details>
           {saveMessage && (
             <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}</p>
           )}
@@ -692,6 +704,7 @@ function RiderBooking({ language }) {
           <div className="panel stack">
             <p className="booking-reference">{t("booking.reference")} <strong>{receipt.reference}</strong></p>
             <p className="booking-status" role="status">{t("booking.state." + receipt.status)}</p>
+            {receipt.status === "pending" && <p>{t("booking.confirmationNote")}</p>}
             <BookingDetails rows={tripRows(receipt, t, language)} />
             <p>{t("booking.keepLink")}</p>
             <div className="actions">
@@ -734,7 +747,7 @@ function BookingStatus({ language }) {
           <>
             <p className="booking-reference">{t("booking.reference")} <strong>{ride.reference}</strong></p>
             <p className="booking-status" role="status">{t("booking.state." + ride.status)}</p>
-            {ride.status === "pending" && <p>{t("booking.checkStatusLater")}</p>}
+            {ride.status === "pending" && <p>{t("booking.confirmationNote")} {t("booking.checkStatusLater")}</p>}
             <BookingDetails rows={tripRows(ride, t, language)} />
           </>
         ) : <p role="status">{t("booking.lookup." + feedback)}</p>}

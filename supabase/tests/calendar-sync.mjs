@@ -161,7 +161,7 @@ try {
   const declined = await createRide(null, "web", "Declined pickup", "2090-10-30T09:30");
   await change(driver.token, declined, 1, "declined");
   assert.deepEqual((await rpc("calendar_status", {}, driver.token)).outstanding, []);
-  await change(driver.token, web, 1, "confirmed");
+  await change(driver.token, web, 1, "confirmed", { agreed_fare_cents: 7250, fare_accepted: true });
   const phone = await createRide(driver.token, "phone", "Phone pickup", "2090-10-29T12:30");
   const whatsapp = await createRide(driver.token, "whatsapp", "WhatsApp pickup", "2090-10-29T14:30", null, 20);
   refreshAvailable = false;

@@ -23,6 +23,7 @@ export const appConfig = {
   phoneDisplay: "+33 6 68 47 81 37",
   phoneLink: "+33668478137",
   email: "privatetaxiparis@gmail.com",
+  operatorName: "Mubashir",
 
   // Add your real Calendly event URL when ready.
   calendlyUrl: "https://calendly.com/rosulaurentiu33/30min",

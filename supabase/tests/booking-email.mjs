@@ -122,7 +122,7 @@ try {
     const change = (booking, version, status, schedule) => rpc("change_ride", {
       p_reference: booking.reference, p_version: version, p_status: status, p_schedule: schedule
     }, driver.token);
-    await change(primary, 1, "confirmed");
+    await change(primary, 1, "confirmed", { agreed_fare_cents: 7250, fare_accepted: true });
     const fallback = (await rpc("get_ride", { p_request_key: keys[index] })).pickup_at;
     await change(primary, 2, "confirmed", { pickup_time: "2091-05-21T12:30", return_time: null });
     const changed = await rpc("get_ride", { p_request_key: keys[index] });

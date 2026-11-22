@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { getRouteTotals, routeEstimate } from "../../src/fare.js";
+import { getRouteTotals, parseAgreedFare, routeEstimate } from "../../src/fare.js";
+
+for (const [input, cents] of [["72,50", 7250], ["72.5", 7250], ["72", 7200], ["0,01", 1], ["21474836.47", 2147483647]]) {
+  assert.equal(parseAgreedFare(input), cents);
+}
+for (const input of ["", "0", "-1", "1e2", "1,001", "21474836.48"]) {
+  assert.equal(parseAgreedFare(input), null);
+}
 
 function leg(km, minutes, trafficMinutes) {
   return {

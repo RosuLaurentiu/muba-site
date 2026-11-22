@@ -4,13 +4,21 @@ title: Finish the rider booking journey for release
 status: To Do
 assignee: []
 created_date: '2026-11-21 21:47'
-updated_date: '2026-11-21 21:57'
+updated_date: '2026-11-22 00:31'
 labels: []
 dependencies:
   - MS-010
 references:
   - MS-006
   - MS-015
+modified_files:
+  - README.md
+  - src/App.jsx
+  - src/DriverWorkspace.jsx
+  - src/config.js
+  - src/i18n.js
+  - src/fare.js
+  - supabase/migrations/20261122002638_require_accepted_web_fare.sql
 priority: high
 type: enhancement
 ordinal: 21000
@@ -27,20 +35,26 @@ Apply the approved booking and privacy wording to the existing bilingual rider e
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Local Chromium fixtures passed one-way and return requests, editing, manual
-  addresses without Maps, retry through a lost response and an intake pause, and
-  private status. Local Supabase confirmed same-key idempotency, denied
-  unassigned access, and rejected stale decisions and overlaps.
+  Implemented and locally verified the WhatsApp quote flow. Pending web requests
+  require an agreed fare and driver acknowledgment before confirming. The rider
+  sees bilingual quote instructions and a privacy notice naming Mubashir. The
+  existing public contact is also the requested production driver address. Local
+  database, mobile EN/FR, lint and build checks passed.
 next: >-
-  Apply approved EN and FR policy and privacy wording after MS-010. Recheck the
-  final candidate on the hosted test site.
+  Review the remaining booking and privacy wording against MS-010 and identify
+  the approved production backend for the driver assignment. Use the quote
+  candidate for the driver walkthrough and hosted checks.
 latestChange: >-
-  Local rehearsal passed the bilingual rider flow and same-request retry. Final
-  copy still needs owner decisions.
-resultAt: '2026-11-21T21:57:26.774Z'
+  The quote and privacy changes passed the local checks. Production Auth
+  assignment awaits the designated backend. The existing test driver was
+  preserved.
+resultAt: '2026-11-22T00:31:23.751Z'
 remainingChecks:
-  - MS-010 approved booking and privacy wording
-  - Hosted release candidate rider walkthrough
+  - Confirm privacy contact and review final provider and booking terms
+  - Apply any remaining approved rules and review the hosted rider journey
+  - >-
+    Provision the requested verified driver account in the designated production
+    backend and verify sign-in
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -54,4 +68,8 @@ remainingChecks:
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-21T21:57:26.775Z: Local rehearsal passed the bilingual rider flow and same-request retry. Final copy still needs owner decisions.
+
+2026-11-22T00:31:23.752Z: Prior current facts: {"done":"Local Chromium fixtures passed one-way and return requests, editing, manual addresses without Maps, retry through a lost response and an intake pause, and private status. Local Supabase confirmed same-key idempotency, denied unassigned access, and rejected stale decisions and overlaps.","resultAt":"2026-11-21T21:57:26.774Z"}
+
+2026-11-22T00:31:23.752Z: The quote and privacy changes passed the local checks. Production Auth assignment awaits the designated backend. The existing test driver was preserved.
 <!-- SECTION:NOTES:END -->

@@ -47,7 +47,11 @@ Data API schemas.
   reference identifies the ride but does not grant access.
 - `list_rides` and `change_ride` require the assigned driver's authenticated
   session. A change includes the current `p_version`. On a conflict, reload the
-  ride before submitting a new decision.
+  ride before submitting a new decision. To confirm a pending web request,
+  include `agreed_fare_cents` as a positive integer and `fare_accepted: true`
+  in `p_schedule`. The driver sends the final quote over WhatsApp and records
+  the total after the rider accepts it. Existing confirmed rides and manual
+  bookings can be managed without a new quote.
 - Send pickup and return as local Paris values (`YYYY-MM-DDTHH:mm`). The
   database returns absolute timestamps for display in Paris time. It rejects
   nonexistent spring clock times and resolves the repeated autumn hour to
@@ -82,6 +86,11 @@ account, then assign that Auth user ID in `booking_private.driver`. Supabase
 links the Google identity to the existing account. The sign-in flow requests
 basic Google identity only. Connect Google Calendar separately in the driver
 workspace if the driver wants calendar sync.
+
+For production, use `privatetaxiparis@gmail.com` for the public contact and the
+assigned driver's verified sign-in. Confirm that the backend is the approved
+production project before provisioning or assigning the account. The Resend
+sender remains the verified address on the site domain.
 
 The driver workspace starts with the next pickup and a shortcut to pending
 requests. The selected Paris day, Add ride, Block time and daily agenda

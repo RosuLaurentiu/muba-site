@@ -1,5 +1,12 @@
 import { appConfig } from "./config.js";
 
+export function parseAgreedFare(input) {
+  const match = /^(\d{1,8})(?:[.,](\d{1,2}))?$/.exec(input.trim());
+  if (!match) return null;
+  const cents = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  return cents > 0 && cents <= 2147483647 ? cents : null;
+}
+
 export function routeEstimate(leg) {
   const distanceKm = leg?.distance?.value / 1000;
   const durationMinutes = (leg?.duration_in_traffic?.value ?? leg?.duration?.value) / 60;

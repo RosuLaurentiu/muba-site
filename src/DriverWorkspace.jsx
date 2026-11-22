@@ -4,6 +4,7 @@ import BookingDetails from "./BookingDetails";
 import CalendarPanel from "./CalendarPanel";
 import { BlockEditor, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
+import { parseAgreedFare } from "./fare";
 import { getText } from "./i18n";
 import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
 
@@ -135,6 +136,8 @@ function PendingList({ rides, language, day }) {
 function RideDetail({ ride, returning, language, onChanged, notice, setNotice, refreshing, schedule, day }) {
   const [busy, setBusy] = useState(false);
   const [estimate, setEstimate] = useState(ride.estimated_minutes ?? "");
+  const [fare, setFare] = useState("");
+  const [fareAccepted, setFareAccepted] = useState(false);
   const changing = useRef(false);
   const heading = useRef(null);
   const t = (key) => getText(language, key);
@@ -142,6 +145,9 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
   const durationValid = minutes === null || (Number.isInteger(minutes) && minutes >= 1 && minutes <= 1440);
   const context = scheduleContext(rideLegs(ride, durationValid ? minutes : null), schedule, ride.reference);
   const hasConflict = context.legsOverlap || context.conflicts.length > 0;
+  const fareRequired = ride.source === "web" && ride.status === "pending";
+  const fareCents = parseAgreedFare(fare);
+  const canConfirm = !hasConflict && durationValid && (!fareRequired || (fareCents !== null && fareAccepted));
   const pickup = returning ? ride.destination : ride.pickup;
   const destination = returning ? ride.pickup : ride.destination;
 
@@ -151,7 +157,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
 
   async function decide(status) {
     if (changing.current) return;
-    if (status === "confirmed" && (hasConflict || !durationValid)) return;
+    if (status === "confirmed" && !canConfirm) return;
     if (status === "cancelled" && !window.confirm(t("schedule.confirmCancel"))) return;
     if (status === "declined" && !window.confirm(t("driver.confirmDecline"))) return;
     changing.current = true;
@@ -160,13 +166,17 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
     try {
       const saved = await driverRpc("change_ride", {
         p_reference: ride.reference, p_version: ride.version, p_status: status,
-        ...(status === "confirmed" ? { p_schedule: { estimated_minutes: minutes } } : {})
+        ...(status === "confirmed" ? { p_schedule: {
+          estimated_minutes: minutes,
+          ...(fareRequired ? { agreed_fare_cents: fareCents, fare_accepted: fareAccepted } : {})
+        } } : {})
       });
       onChanged(saved);
       setNotice("driver.decisionSaved");
     } catch (error) {
       setNotice(error.message === "SCHEDULE_CONFLICT" ? "schedule.conflictChanged" :
-        error.code === "PT409" ? "driver.staleDecision" : "driver.decisionFailed");
+        error.message === "ACCEPTED_FARE_REQUIRED" ? "driver.fareRequired" :
+          error.code === "PT409" ? "driver.staleDecision" : "driver.decisionFailed");
       onChanged();
     } finally {
       changing.current = false;
@@ -188,6 +198,10 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
           [t("planner.labels.passengers"), ride.passengers],
           [t("driver.passenger"), ride.passenger_name],
           [t("planner.labels.phone"), ride.passenger_phone],
+          ...(ride.agreed_fare_cents != null ? [[t("driver.agreedFare"),
+            new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-GB", {
+              style: "currency", currency: "EUR"
+            }).format(ride.agreed_fare_cents / 100)]] : []),
           ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : []),
           ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
         ]} />
@@ -202,6 +216,25 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
       </div>
       {ride.status === "pending" && (
         <>
+          {fareRequired && (
+            <fieldset className="panel stack form-submit" disabled={busy}>
+              <legend>{t("driver.quote")}</legend>
+              <p>{t("driver.quoteInstructions")}</p>
+              <div className="field">
+                <label htmlFor="agreed-fare">{t("driver.agreedFareInput")}</label>
+                <input id="agreed-fare" inputMode="decimal" value={fare} maxLength={11}
+                  aria-invalid={fare !== "" && fareCents === null ? true : undefined}
+                  aria-describedby={fare !== "" && fareCents === null ? "fare-error" : undefined}
+                  onChange={(event) => { setFare(event.target.value); setFareAccepted(false); }} />
+                {fare !== "" && fareCents === null && <span id="fare-error" className="field-error">{t("driver.invalidFare")}</span>}
+              </div>
+              <label className="check">
+                <input type="checkbox" checked={fareAccepted} disabled={fareCents === null}
+                  onChange={(event) => setFareAccepted(event.target.checked)} />
+                {t("driver.fareAccepted")}
+              </label>
+            </fieldset>
+          )}
           <div className="field form-submit schedule-duration">
             <label htmlFor="accept-duration">{t("schedule.duration")}</label>
             <input id="accept-duration" type="number" min="1" max="1440" value={estimate}
@@ -211,7 +244,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
           </div>
           <SchedulePreview context={context} language={language} />
           <div className="actions form-submit">
-            <button className="button primary" type="button" disabled={busy || refreshing || hasConflict || !durationValid}
+            <button className="button primary" type="button" disabled={busy || refreshing || !canConfirm}
               onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
             <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
           </div>

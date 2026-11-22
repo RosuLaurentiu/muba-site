@@ -114,7 +114,14 @@ try {
   assert.equal(listed.request_key_hash, undefined);
   assert.equal(listed.request_hash, undefined);
   assert.equal((await rpc("change_ride", { ...change, p_status: "cancelled" }, driverToken, 409)).message, "INVALID_RIDE_TRANSITION");
-  const decision = { ...change, p_driver_notes: "Internal only" };
+  for (const p_schedule of [null, { agreed_fare_cents: 7250 }, { fare_accepted: true },
+    { fare_accepted: "true", agreed_fare_cents: 7250 }, { fare_accepted: true, agreed_fare_cents: "7250" },
+    { fare_accepted: true, agreed_fare_cents: 0 }, { fare_accepted: true, agreed_fare_cents: 1.5 },
+    { fare_accepted: true, agreed_fare_cents: 2147483648 }]) {
+    assert.equal((await rpc("change_ride", { ...change, p_schedule }, driverToken, 400)).message, "ACCEPTED_FARE_REQUIRED");
+  }
+  assert.equal((await rpc("get_ride", { p_request_key: key })).status, "pending");
+  const decision = { ...change, p_driver_notes: "Internal only", p_schedule: { agreed_fare_cents: 7250, fare_accepted: true } };
   const attempts = await Promise.allSettled([
     rpc("change_ride", decision, driverToken),
     rpc("change_ride", decision, driverToken),
@@ -132,10 +139,12 @@ try {
   assert.equal(reloaded.length, 1);
   assert.equal(reloaded[0].version, 2);
   assert.equal(reloaded[0].driver_notes, "Internal only");
+  assert.equal(reloaded[0].agreed_fare_cents, 7250);
   const rescheduled = await rpc("change_ride", {
     ...change, p_version: 2, p_schedule: { pickup_time: "2090-05-21T11:00", return_time: trip.return_time },
   }, newToken);
   assert.equal(rescheduled.pickup_at, "2090-05-21T09:00:00+00:00");
+  assert.equal(rescheduled.agreed_fare_cents, 7250);
   const cancelled = await rpc("change_ride", { ...change, p_version: 3, p_status: "cancelled" }, newToken);
   assert.equal(cancelled.status, "cancelled");
   assert.equal((await rpc("get_ride", { p_request_key: key })).status, "cancelled");
@@ -166,7 +175,7 @@ try {
   assert.equal((await rpc("save_ride", { ...blockedSave, p_source: "phone" }, newToken, 409)).message, "SCHEDULE_CONFLICT");
   const blockedRequest = await rpc("save_ride", blockedSave);
   assert.equal((await rpc("change_ride", {
-    p_reference: blockedRequest.reference, p_version: 1, p_status: "confirmed",
+    p_reference: blockedRequest.reference, p_version: 1, p_status: "confirmed", p_schedule: decision.p_schedule,
   }, newToken, 409)).message, "SCHEDULE_CONFLICT");
   assert.equal((await rpc("change_ride", {
     p_reference: manual.reference, p_version: 1, p_status: "confirmed", p_schedule: blockedTime,
