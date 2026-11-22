@@ -7,6 +7,13 @@ export function parseAgreedFare(input) {
   return cents > 0 && cents <= 2147483647 ? cents : null;
 }
 
+export function formatFareCents(cents, language) {
+  const { currency, locale } = appConfig.pricing;
+  return new Intl.NumberFormat(locale[language] ?? locale.en, {
+    style: "currency", currency, minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2
+  }).format(cents / 100);
+}
+
 export function routeEstimate(leg) {
   const distanceKm = leg?.distance?.value / 1000;
   const durationMinutes = (leg?.duration_in_traffic?.value ?? leg?.duration?.value) / 60;

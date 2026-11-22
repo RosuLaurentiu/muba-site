@@ -92,9 +92,15 @@ try {
   console.log("PASS same-key concurrent save, payload mismatch, and Paris return times");
 
   const second = await rpc("save_ride", {
-    p_request_key: secondKey, p_trip: { ...trip, pickup: "Bastille", return_time: null },
+    p_request_key: secondKey, p_trip: { ...trip, pickup: "Bastille", return_time: null, estimated_fare_cents: 4700 },
   });
   references.add(second.reference);
+  assert.equal(second.estimated_fare_cents, 4700);
+  assert.equal(second.agreed_fare_cents, null);
+  assert.equal(pending.estimated_fare_cents, null);
+  assert.equal((await rpc("save_ride", {
+    p_request_key: randomUUID(), p_trip: { ...trip, estimated_fare_cents: "47" },
+  }, null, 400)).message, "INVALID_FARE_ESTIMATE");
   assert.notEqual(second.reference, pending.reference);
   assert.equal(await rpc("get_ride", { p_request_key: randomUUID() }), null);
   assert.deepEqual(await rpc("get_ride", { p_request_key: key }), pending);
@@ -105,7 +111,8 @@ try {
   const change = { p_reference: pending.reference, p_version: 1, p_status: "confirmed" };
   await rpc("change_ride", change, otherToken, 403);
   await rpc("save_ride", { ...booking, p_source: "phone" }, null, 401);
-  console.log("PASS rider-scoped access, hidden tables and non-driver denial");
+  assert.equal((await rpc("list_rides", {}, driverToken)).find(ride => String(ride.reference) === second.reference).estimated_fare_cents, 4700);
+  console.log("PASS rider-scoped access, hidden tables, non-driver denial and the stored fare estimate");
 
   const listed = (await rpc("list_rides", {}, driverToken)).find(ride => String(ride.reference) === pending.reference);
   assert.equal(listed.passenger_name, trip.passenger_name);

@@ -5,8 +5,9 @@ import CalendarPanel from "./CalendarPanel";
 import { BlockEditor, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
 import WorkHoursEditor from "./WorkHoursEditor";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
-import { parseAgreedFare } from "./fare";
-import { getText } from "./i18n";
+import { appConfig } from "./config";
+import { formatFareCents, parseAgreedFare } from "./fare";
+import { getLocalizedConfigValue, getText } from "./i18n";
 import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
 import { isOutsideWorkHours } from "./workingHours";
 
@@ -55,6 +56,31 @@ function toWhatsAppNumber(phone) {
   if (digits.startsWith("00")) return digits.slice(2);
   if (digits.length === 10 && digits.startsWith("0")) return "33" + digits.slice(1);
   return digits;
+}
+
+// The quote goes out in the language the rider used to book.
+function quoteMessage(ride, fareCents) {
+  const language = ride.language === "fr" ? "fr" : "en";
+  const q = (key) => getText(language, key);
+  return [
+    q("driver.quoteGreeting").replace("{name}", ride.passenger_name),
+    "",
+    q("driver.quoteIntro").replace("{reference}", ride.reference),
+    q("planner.labels.pickup") + ": " + ride.pickup,
+    q("planner.labels.destination") + ": " + ride.destination,
+    q("booking.pickupAt") + ": " + formatParisTime(ride.pickup_at, language),
+    ...(ride.return_at ? [q("booking.returnAt") + ": " + formatParisTime(ride.return_at, language)] : []),
+    q("planner.labels.passengers") + ": " + ride.passengers,
+    "",
+    q("driver.quoteFare").replace("{fare}", formatFareCents(fareCents, language)),
+    q("driver.quoteReply"),
+    "",
+    appConfig.operatorName + " · " + getLocalizedConfigValue(appConfig.businessName, language)
+  ].join("\n");
+}
+
+function quoteSubject(ride) {
+  return getText(ride.language === "fr" ? "fr" : "en", "driver.quoteSubject").replace("{reference}", ride.reference);
 }
 
 function BookingEmailStatus({ language }) {
@@ -160,8 +186,16 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
   const fareRequired = ride.source === "web" && ride.status === "pending";
   const fareCents = parseAgreedFare(fare);
   const canConfirm = !hasConflict && durationValid && (!fareRequired || (fareCents !== null && fareAccepted));
+  const missing = [
+    ...(hasConflict ? ["driver.needNoConflict"] : []),
+    ...(durationValid ? [] : ["driver.needDuration"]),
+    ...(fareRequired && fareCents === null ? ["driver.needFare"] : []),
+    ...(fareRequired && !fareAccepted ? ["driver.needAcceptance"] : [])
+  ];
+  const listFormat = new Intl.ListFormat(language === "fr" ? "fr-FR" : "en-GB", { type: "conjunction" });
   const pickup = returning ? ride.destination : ride.pickup;
   const destination = returning ? ride.pickup : ride.destination;
+  const whatsAppNumber = toWhatsAppNumber(ride.passenger_phone);
 
   useEffect(() => {
     if (ride.status !== "pending" && notice) heading.current?.focus();
@@ -206,51 +240,24 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
         <p className="field-error form-submit">{t("schedule.outsideWorkHours")}</p>
       )}
       <div className="driver-detail">
-        <section className="panel stack trip-detail" aria-labelledby="trip-detail-heading">
-          <h2 id="trip-detail-heading">{t("driver.trip")}</h2>
-          {returning && <span className="muted">{t("schedule.returnLeg")}</span>}
-          <BookingDetails rows={[
-            [t("planner.labels.pickup"), pickup],
-            [t("planner.labels.destination"), destination],
-            [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
-            ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
-            ...(ride.agreed_fare_cents != null ? [[t("driver.agreedFare"),
-              new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-GB", {
-                style: "currency", currency: "EUR"
-              }).format(ride.agreed_fare_cents / 100)]] : []),
-            ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
-          ]} />
-          <a className={ride.status === "confirmed" ? "button primary" : "button"} href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
-            target="_blank" rel="noreferrer">{t("driver.directions")}</a>
-        </section>
-        <section className="panel stack passenger-detail" aria-labelledby="passenger-detail-heading">
-          <h2 id="passenger-detail-heading">{t("driver.passengerDetails")}</h2>
-          <BookingDetails rows={[
-            [t("driver.passenger"), ride.passenger_name],
-            [t("planner.labels.phone"), ride.passenger_phone],
-            [t("planner.labels.passengers"), ride.passengers],
-            ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : [])
-          ]} />
-          <div className="actions">
-            <a className="button" href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
-            <a className="button" href={"https://wa.me/" + toWhatsAppNumber(ride.passenger_phone)} target="_blank" rel="noreferrer">
-              {t("nav.whatsApp")}
-            </a>
-            {ride.passenger_email && (
-              <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
-                "?subject=" + encodeURIComponent(t("booking.reference") + " " + ride.reference)}>
-                {t("driver.emailRider")}
-              </a>
-            )}
-          </div>
-        </section>
         {ride.status === "pending" && (
           <section className="panel stack driver-decision" aria-labelledby="decision-heading">
             <h2 id="decision-heading">{t("driver.decision")}</h2>
+            <p className="decision-summary">
+              <strong>{formatParisTime(ride.pickup_at, language)}</strong>
+              {ride.return_at && <> · {t("schedule.returnLeg")} {formatParisTime(ride.return_at, language)}</>}
+              <br />{ride.pickup} → {ride.destination}
+            </p>
             {fareRequired && (
               <fieldset className="schedule-fieldset stack" disabled={busy}>
                 <legend>{t("driver.quote")}</legend>
                 <p>{t("driver.quoteInstructions")}</p>
+                <p className="rider-estimate">
+                  {ride.estimated_fare_cents != null ? (
+                    <>{t("driver.riderEstimate")}: <strong>{formatFareCents(ride.estimated_fare_cents, language)}</strong>
+                      {ride.return_at && <> · {t("driver.roundTripTotal")}</>}</>
+                  ) : <span className="muted">{t("driver.noRiderEstimate")}</span>}
+                </p>
                 <div className="field">
                   <label htmlFor="agreed-fare">{t("driver.agreedFareInput")}</label>
                   <input id="agreed-fare" inputMode="decimal" value={fare} maxLength={11}
@@ -258,6 +265,22 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
                     aria-describedby={fare !== "" && fareCents === null ? "fare-error" : undefined}
                     onChange={(event) => { setFare(event.target.value); setFareAccepted(false); }} />
                   {fare !== "" && fareCents === null && <span id="fare-error" className="field-error">{t("driver.invalidFare")}</span>}
+                </div>
+                <div className="actions quote-actions">
+                  {fareCents === null ? (
+                    <p className="muted">{t("driver.quoteNeedsFare")}</p>
+                  ) : (
+                    <>
+                      {ride.passenger_email && (
+                        <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
+                          "?subject=" + encodeURIComponent(quoteSubject(ride)) + "&body=" + encodeURIComponent(quoteMessage(ride, fareCents))}>
+                          {t("driver.sendQuoteEmail")}
+                        </a>
+                      )}
+                      <a className="button" href={"https://wa.me/" + whatsAppNumber + "?text=" + encodeURIComponent(quoteMessage(ride, fareCents))}
+                        target="_blank" rel="noreferrer">{t("driver.sendQuoteWhatsApp")}</a>
+                    </>
+                  )}
                 </div>
                 <label className="check">
                   <input type="checkbox" checked={fareAccepted} disabled={fareCents === null}
@@ -274,13 +297,55 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
               {!durationValid && <span id="accept-duration-error" className="field-error">{t("schedule.durationInvalid")}</span>}
             </div>
             <SchedulePreview context={context} language={language} />
+            {missing.length > 0 && (
+              <p className="muted confirm-help" id="confirm-help">
+                {t("driver.confirmNeeds").replace("{items}", listFormat.format(missing.map(t)))}
+              </p>
+            )}
             <div className="actions">
               <button className="button primary" type="button" disabled={busy || refreshing || !canConfirm}
+                aria-describedby={missing.length ? "confirm-help" : undefined}
                 onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
               <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
             </div>
           </section>
         )}
+        <section className="panel stack trip-detail" aria-labelledby="trip-detail-heading">
+          <h2 id="trip-detail-heading">{t("driver.trip")}</h2>
+          {returning && <span className="muted">{t("schedule.returnLeg")}</span>}
+          <BookingDetails rows={[
+            [t("planner.labels.pickup"), pickup],
+            [t("planner.labels.destination"), destination],
+            [t("booking.pickupAt"), formatParisTime(returning ? ride.return_at : ride.pickup_at, language)],
+            ...(!returning && ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
+            ...(ride.agreed_fare_cents != null ? [[t("driver.agreedFare"), formatFareCents(ride.agreed_fare_cents, language)]] : []),
+            ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
+          ]} />
+          <a className={ride.status === "confirmed" ? "button primary" : "button"} href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
+            target="_blank" rel="noreferrer">{t("driver.directions")}</a>
+        </section>
+        <section className="panel stack passenger-detail" aria-labelledby="passenger-detail-heading">
+          <h2 id="passenger-detail-heading">{t("driver.passengerDetails")}</h2>
+          <BookingDetails rows={[
+            [t("driver.passenger"), ride.passenger_name],
+            [t("planner.labels.phone"), ride.passenger_phone],
+            [t("planner.labels.passengers"), ride.passengers],
+            [t("driver.riderLanguage"), t("languages." + (ride.language === "fr" ? "fr" : "en"))],
+            ...(ride.passenger_notes ? [[t("planner.labels.notes"), ride.passenger_notes]] : [])
+          ]} />
+          <div className="actions">
+            <a className="button" href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
+            <a className="button" href={"https://wa.me/" + whatsAppNumber} target="_blank" rel="noreferrer">
+              {t("nav.whatsApp")}
+            </a>
+            {ride.passenger_email && (
+              <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
+                "?subject=" + encodeURIComponent(t("booking.reference") + " " + ride.reference)}>
+                {t("driver.emailRider")}
+              </a>
+            )}
+          </div>
+        </section>
       </div>
       {ride.status === "confirmed" && (
         <div className="actions form-submit">

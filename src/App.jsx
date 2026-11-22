@@ -5,7 +5,7 @@ import { bookingPayload, bookingRpc, focusBookingError, formatParisTime, getPari
 import BookingDetails from "./BookingDetails";
 import { DateField, TimeField } from "./DateTimeFields";
 import PassengerCountField from "./PassengerCountField";
-import { getRouteTotals, routeEstimate } from "./fare";
+import { formatFareCents, getRouteTotals, routeEstimate } from "./fare";
 import {
   getInitialLanguage,
   getLocalizedConfigValue,
@@ -204,13 +204,22 @@ function updateStructuredData(language) {
   script.textContent = JSON.stringify(schema);
 }
 
+function fareRow(ride, t, language) {
+  if (ride.agreed_fare_cents != null) return [[t("booking.agreedFare"), formatFareCents(ride.agreed_fare_cents, language)]];
+  if (ride.estimated_fare_cents != null && ride.status === "pending") {
+    return [[t("summary.fare"), formatFareCents(ride.estimated_fare_cents, language)]];
+  }
+  return [];
+}
+
 function tripRows(ride, t, language) {
   return [
     [t("planner.labels.pickup"), ride.pickup],
     [t("planner.labels.destination"), ride.destination],
     [t("booking.pickupAt"), formatParisTime(ride.pickup_at, language)],
     ...(ride.return_at ? [[t("booking.returnAt"), formatParisTime(ride.return_at, language)]] : []),
-    [t("planner.labels.passengers"), ride.passengers]
+    [t("planner.labels.passengers"), ride.passengers],
+    ...fareRow(ride, t, language)
   ];
 }
 
@@ -255,6 +264,7 @@ function RiderBooking({ language }) {
   const [copyState, setCopyState] = useState("");
   const [estimating, setEstimating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const saving = useRef(false);
   const attempt = useRef(null);
   const estimateSequence = useRef(0);
@@ -311,6 +321,7 @@ function RiderBooking({ language }) {
 
     let cancelled = false;
     let authFailed = false;
+    let addressGuard = null;
     const autocompleteListeners = [];
     const inputListeners = new AbortController();
     const previousAuthFailure = window.gm_authFailure;
@@ -318,11 +329,35 @@ function RiderBooking({ language }) {
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(appConfig.googleMapsApiKey)}` +
       `&libraries=places&language=${encodeURIComponent(mapLanguageRef.current)}`;
 
+    // Google disables inputs that use Autocomplete when it rejects the key. Undo that so riders can type addresses.
+    function keepAddressesEditable() {
+      if (addressGuard) return;
+      const inputs = [pickupInputRef.current, destinationInputRef.current].filter(Boolean);
+      const restore = (input) => {
+        if (input.disabled) input.disabled = false;
+        if (input.classList.contains("gm-err-autocomplete")) input.classList.remove("gm-err-autocomplete");
+        if (input.style.backgroundImage) input.style.backgroundImage = "";
+        if (input.dataset.placeholder && input.placeholder !== input.dataset.placeholder) {
+          input.placeholder = input.dataset.placeholder;
+        }
+      };
+      for (const input of inputs) {
+        window.google?.maps?.event?.clearInstanceListeners?.(input);
+        restore(input);
+      }
+      addressGuard = new MutationObserver((records) => records.forEach((record) => restore(record.target)));
+      for (const input of inputs) {
+        addressGuard.observe(input, { attributes: true, attributeFilter: ["disabled", "class", "placeholder", "style"] });
+      }
+    }
+
     const handleMapFailure = () => {
       if (cancelled) {
         return;
       }
 
+      keepAddressesEditable();
+      setMapFailed(true);
       setMapReady(false);
       estimateSequence.current++;
       setEstimating(false);
@@ -429,6 +464,7 @@ function RiderBooking({ language }) {
 
     return () => {
       cancelled = true;
+      addressGuard?.disconnect();
       inputListeners.abort();
       autocompleteListeners.forEach((listener) => listener.remove());
       window.gm_authFailure = previousAuthFailure;
@@ -533,6 +569,9 @@ function RiderBooking({ language }) {
         if (route && route.durationMinutes > 0 && route.durationMinutes <= 1440) {
           payload.estimated_minutes = Math.ceil(route.durationMinutes);
         }
+        const shownFare = getRouteTotals(route, formData.roundTrip)?.fare;
+        // Store the whole-euro fare the rider saw on the review screen.
+        if (shownFare > 0 && shownFare <= 100000) payload.estimated_fare_cents = Math.round(shownFare) * 100;
         attempt.current = { key: crypto.randomUUID(), payload };
       }
       const { key, payload } = attempt.current;
@@ -637,10 +676,12 @@ function RiderBooking({ language }) {
               <a href="#ride-contact">{t("booking.contact")}</a>
             </p>
             <div className="rider-fields">
-              {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"), maxLength: 300, required: true })}
-              {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"), maxLength: 300, required: true })}
+              {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"),
+                "data-placeholder": t("planner.placeholders.pickup"), maxLength: 300, required: true })}
+              {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"),
+                "data-placeholder": t("planner.placeholders.destination"), maxLength: 300, required: true })}
             </div>
-            <p className="muted field-note">{t("booking.addressPrivacy")}</p>
+            <p className="muted field-note">{t(mapFailed ? "booking.mapsUnavailable" : "booking.addressPrivacy")}</p>
             <div className="time-pair">
               {tripField(DateField, "pickupDate", "date")}
               {tripField(TimeField, "pickupTime", "time")}

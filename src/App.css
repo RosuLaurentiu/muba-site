@@ -254,6 +254,10 @@ h3 { font-size: 1.05rem; }
 .driver-decision .schedule-fieldset, .driver-decision .schedule-preview { width: 100%; }
 .driver-decision .schedule-fieldset legend { padding: 0; margin-bottom: .4rem; font-weight: 700; }
 .driver-decision .schedule-preview { margin-top: 0; }
+.decision-summary { width: 100%; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
+.rider-estimate strong { font-variant-numeric: tabular-nums; }
+.quote-actions { width: 100%; }
+.confirm-help { font-size: .9rem; }
 .schedule-advisory, .schedule-conflicts { border-top: 1px solid var(--line); padding-block: .5rem; }
 .schedule-advisory summary { min-height: 2.75rem; align-content: center; cursor: pointer; }
 .block-fields { gap: 1.25rem; }
@@ -291,6 +295,7 @@ h3 { font-size: 1.05rem; }
   .driver-detail:has(.driver-decision) .trip-detail { grid-area: trip; }
   .driver-detail:has(.driver-decision) .passenger-detail { grid-area: passenger; }
   .driver-detail:has(.driver-decision) .driver-decision { grid-area: decision; align-self: start; }
+  .decision-summary { display: none; }
   .driver-board { grid-template-areas: "agenda month" "agenda pending"; grid-template-rows: auto 1fr; }
   .driver-board:has(.has-pending) { grid-template-areas: "pending month" "agenda month"; }
   .driver-agenda { grid-area: agenda; }
