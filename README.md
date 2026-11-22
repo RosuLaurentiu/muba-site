@@ -106,13 +106,14 @@ assigned driver's verified sign-in. Confirm that the backend is the approved
 production project before provisioning or assigning the account. The Resend
 sender remains the verified address on the site domain.
 
-The driver workspace starts with the next pickup. On desktop, the daily agenda
-sits beside the month calendar, with any pending requests above the calendar.
-On a phone, the inbox comes first when requests are pending. Select a calendar
+Use **Add ride** beside the workspace heading to add a ride to the selected day.
+The next pickup gives direct access to directions. Pending requests appear above
+the daily agenda, beside the month calendar on desktop. Select a calendar
 day to open its agenda, including pending, confirmed, cancelled and declined
 rides. Earlier months show retained bookings.
 The agenda lists each leg separately. Ride details group pickup directions with
-the trip and contact actions with the passenger information. The driver can
+the trip and contact actions with the passenger information. Pending requests
+group the quote and confirmation controls under **Booking decision**. The driver can
 record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
 The rider form and **Add ride** use the same passenger selector. Both start at
 one passenger and use the largest configured vehicle capacity. Muba styles the
@@ -134,9 +135,9 @@ each write. With no finish estimate, the schedule reserves the pickup minute
 and shows the unknown finish. Ride previews show the minutes available
 between successive legs after deducting intervening blocks. If the prior
 finish is unknown, the preview identifies that gap as unknown.
-The preview starts with a draft target of 60 minutes. Adjust the advisory
-target to the locations during review. A short gap or unknown finish shows a
-warning. The driver still has to approve the travel-buffer rule.
+Open **Travel time between rides** to adjust the draft target of 60 minutes for
+the locations. A short gap or unknown finish shows a warning in the summary.
+The driver still has to approve the travel-buffer rule.
 
 Use the local stack for development and verification. Ask the owner before
 creating or modifying a hosted project.

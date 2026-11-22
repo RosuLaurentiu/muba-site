@@ -199,7 +199,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
   return (
     <>
       <header className="ride-heading">
-        <h1 ref={heading} tabIndex={-1}>{t("driver.detail")} <span>#{ride.reference}</span></h1>
+        <h1 ref={heading} tabIndex={-1}>{t(ride.status === "pending" ? "driver.reviewRequest" : "driver.detail")} <span>#{ride.reference}</span></h1>
         <strong className="ride-state" data-status={ride.status}>{t("booking.state." + ride.status)}</strong>
       </header>
       {ride.status === "pending" && rideOutsideWorkHours(ride, hours) && (
@@ -220,10 +220,10 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
               }).format(ride.agreed_fare_cents / 100)]] : []),
             ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
           ]} />
-          <a className="button primary" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
+          <a className={ride.status === "confirmed" ? "button primary" : "button"} href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(pickup)}
             target="_blank" rel="noreferrer">{t("driver.directions")}</a>
         </section>
-        <section className="panel stack" aria-labelledby="passenger-detail-heading">
+        <section className="panel stack passenger-detail" aria-labelledby="passenger-detail-heading">
           <h2 id="passenger-detail-heading">{t("driver.passengerDetails")}</h2>
           <BookingDetails rows={[
             [t("driver.passenger"), ride.passenger_name],
@@ -244,43 +244,44 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
             )}
           </div>
         </section>
+        {ride.status === "pending" && (
+          <section className="panel stack driver-decision" aria-labelledby="decision-heading">
+            <h2 id="decision-heading">{t("driver.decision")}</h2>
+            {fareRequired && (
+              <fieldset className="schedule-fieldset stack" disabled={busy}>
+                <legend>{t("driver.quote")}</legend>
+                <p>{t("driver.quoteInstructions")}</p>
+                <div className="field">
+                  <label htmlFor="agreed-fare">{t("driver.agreedFareInput")}</label>
+                  <input id="agreed-fare" inputMode="decimal" value={fare} maxLength={11}
+                    aria-invalid={fare !== "" && fareCents === null ? true : undefined}
+                    aria-describedby={fare !== "" && fareCents === null ? "fare-error" : undefined}
+                    onChange={(event) => { setFare(event.target.value); setFareAccepted(false); }} />
+                  {fare !== "" && fareCents === null && <span id="fare-error" className="field-error">{t("driver.invalidFare")}</span>}
+                </div>
+                <label className="check">
+                  <input type="checkbox" checked={fareAccepted} disabled={fareCents === null}
+                    onChange={(event) => setFareAccepted(event.target.checked)} />
+                  {t("driver.fareAccepted")}
+                </label>
+              </fieldset>
+            )}
+            <div className="field schedule-duration">
+              <label htmlFor="accept-duration">{t("schedule.duration")}</label>
+              <input id="accept-duration" type="number" min="1" max="1440" value={estimate}
+                onChange={(event) => setEstimate(event.target.value)} disabled={busy}
+                aria-invalid={durationValid ? undefined : true} aria-describedby={durationValid ? undefined : "accept-duration-error"} />
+              {!durationValid && <span id="accept-duration-error" className="field-error">{t("schedule.durationInvalid")}</span>}
+            </div>
+            <SchedulePreview context={context} language={language} />
+            <div className="actions">
+              <button className="button primary" type="button" disabled={busy || refreshing || !canConfirm}
+                onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
+              <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
+            </div>
+          </section>
+        )}
       </div>
-      {ride.status === "pending" && (
-        <>
-          {fareRequired && (
-            <fieldset className="panel stack form-submit" disabled={busy}>
-              <legend>{t("driver.quote")}</legend>
-              <p>{t("driver.quoteInstructions")}</p>
-              <div className="field">
-                <label htmlFor="agreed-fare">{t("driver.agreedFareInput")}</label>
-                <input id="agreed-fare" inputMode="decimal" value={fare} maxLength={11}
-                  aria-invalid={fare !== "" && fareCents === null ? true : undefined}
-                  aria-describedby={fare !== "" && fareCents === null ? "fare-error" : undefined}
-                  onChange={(event) => { setFare(event.target.value); setFareAccepted(false); }} />
-                {fare !== "" && fareCents === null && <span id="fare-error" className="field-error">{t("driver.invalidFare")}</span>}
-              </div>
-              <label className="check">
-                <input type="checkbox" checked={fareAccepted} disabled={fareCents === null}
-                  onChange={(event) => setFareAccepted(event.target.checked)} />
-                {t("driver.fareAccepted")}
-              </label>
-            </fieldset>
-          )}
-          <div className="field form-submit schedule-duration">
-            <label htmlFor="accept-duration">{t("schedule.duration")}</label>
-            <input id="accept-duration" type="number" min="1" max="1440" value={estimate}
-              onChange={(event) => setEstimate(event.target.value)} disabled={busy}
-              aria-invalid={durationValid ? undefined : true} aria-describedby={durationValid ? undefined : "accept-duration-error"} />
-            {!durationValid && <span id="accept-duration-error" className="field-error">{t("schedule.durationInvalid")}</span>}
-          </div>
-          <SchedulePreview context={context} language={language} />
-          <div className="actions form-submit">
-            <button className="button primary" type="button" disabled={busy || refreshing || !canConfirm}
-              onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
-            <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
-          </div>
-        </>
-      )}
       {ride.status === "confirmed" && (
         <div className="actions form-submit">
           <a className="button" href={driverLink(day, { ride: ride.reference, edit: "", ...(returning ? { leg: "return" } : {}) })}>{t("schedule.reschedule")}</a>
@@ -292,7 +293,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
   );
 }
 
-function DriverRides({ session, language }) {
+function DriverRides({ session, language, children }) {
   const [load, setLoad] = useState({ status: "loading", snapshot: false, rides: [], blocks: [] });
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
@@ -402,18 +403,24 @@ function DriverRides({ session, language }) {
   const pendingCount = alerts?.count ?? pending.length;
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
   const savedNotice = query.get("saved") === "hours" ? "schedule.workHoursSaved" : query.has("saved") ? "schedule.saved" : "";
+  const pendingList = <PendingList rides={pending} language={language} day={day} latest={alerts?.latest} hours={workHours?.hours} />;
+  const refreshButton = <button className="button" type="button" aria-disabled={load.status === "loading"}
+    onClick={() => { if (load.status !== "loading") refresh(); }}>
+    {t(load.status === "loading" ? "driver.refreshing" : "driver.refresh")}
+  </button>;
   return (
     <>
       {subpage
         ? <a className="driver-back" href={driverLink(day)}>← {t("driver.back")}</a>
-        : <h1>{t("driver.title")}</h1>}
+        : <div className="workspace-heading">
+          <h1>{t("driver.title")}</h1>
+          {haveData && <div className="actions workspace-actions">
+            {day >= today && <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>}
+            {refreshButton}
+          </div>}
+        </div>}
       {haveData && !subpage && <NextPickup schedule={schedule} day={day} language={language} />}
-      {load.status === "loadFailed" && haveData && (
-        <div className="actions driver-feedback">
-          <p role="status">{t("driver.scheduleStale")}</p>
-          <button className="button" type="button" onClick={refresh}>{t("driver.refresh")}</button>
-        </div>
-      )}
+      {load.status === "loadFailed" && haveData && <p className="driver-feedback" role="status">{t("driver.scheduleStale")}</p>}
       {haveData && editingHours ? (
         <>
           <h1>{t("schedule.workHours")}</h1>
@@ -437,24 +444,33 @@ function DriverRides({ session, language }) {
             <>
               <p className="driver-feedback" role="status">{(notice || savedNotice) && t(notice || savedNotice)}</p>
               <div className="driver-board">
-                <PendingList rides={pending} language={language} day={day} latest={alerts?.latest} hours={workHours?.hours} />
+                {pending.length > 0 && pendingList}
                 <DriverDay schedule={schedule} rides={load.rides} day={day} today={today} language={language} onRemove={removeBlock} workHours={workHours} />
+                {pending.length === 0 && pendingList}
               </div>
             </>
-          ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
+          ) : <div className="panel stack booking-fallback">
+            <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>
+            {load.status === "loadFailed" && refreshButton}
+          </div>}
         </>
       )}
       {subpage && !editingHours && <div role="status">
         {haveData && pendingCount > 0 && <p className="request-alert">
           <a href={driverLink(day) + "#pending"}>{t("driver.pending")} <span className="request-count">{pendingCount}</span></a>
-          {alerts?.count > 0 && <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>}
+          {alerts?.count > 0 && String(alerts.latest) !== selectedReference && (
+            <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>
+          )}
         </p>}
       </div>}
-      {haveData && !editingHours && <BookingEmailStatus language={language} />}
-      {haveData && !editingHours && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
-      {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
-        <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("driver.refresh")}</button>
-      </div>}
+      <footer className="driver-tools">
+        {haveData && !editingHours && <BookingEmailStatus language={language} />}
+        {haveData && !editingHours && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
+        <div className="actions">
+          {subpage && (haveData || load.status !== "loadFailed") && refreshButton}
+          {children}
+        </div>
+      </footer>
     </>
   );
 }
@@ -553,7 +569,7 @@ export default function DriverWorkspace({ language }) {
   }
 
   return (
-    <main className="site-main driver-main">
+    <main className="site-main driver-main" id="main-content" tabIndex={-1}>
       {!client || session === undefined || completingSignIn ? (
         <>
           <h1>{t("driver.title")}</h1>
@@ -561,12 +577,15 @@ export default function DriverWorkspace({ language }) {
         </>
       ) : session ? (
         <>
-          <DriverRides key={session.user.id} session={session} language={language} />
-          <button className="button driver-sign-out" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
+          <DriverRides key={session.user.id} session={session} language={language}>
+            <button className="button" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
+          </DriverRides>
+          {errorKey && <p className="field-error form-submit" role="alert">{t(errorKey)}</p>}
         </>
       ) : (
         <div className="signin-layout">
           <div>
+            <a className="driver-back" href={window.location.pathname}>{t("driver.backToBooking")}</a>
             <h1>{t("driver.signIn")}</h1>
             <form className="panel stack driver-auth" onSubmit={signIn}>
               <div className="field"><label htmlFor="driver-email">{t("footer.email")}</label>
@@ -575,7 +594,8 @@ export default function DriverWorkspace({ language }) {
               <div className="field"><label htmlFor="driver-password">{t("driver.password")}</label>
                 <input id="driver-password" name="password" type="password" autoComplete="current-password" required />
               </div>
-              <button className="button primary" type="submit" disabled={busy}>{t("driver.signIn")}</button>
+              {errorKey && <p className="field-error" role="alert">{t(errorKey)}</p>}
+              <button className="button primary" type="submit" disabled={busy}>{t(busy ? "driver.signingIn" : "driver.signIn")}</button>
               {googleEnabled && (
                 <button className="button" type="button" disabled={busy} onClick={signInWithGoogle}>
                   {t("driver.googleSignIn")}
@@ -586,7 +606,6 @@ export default function DriverWorkspace({ language }) {
           <img className="fleet-photo" src={import.meta.env.BASE_URL + "paris-fleet.jpg"} width="1200" height="800" alt="" />
         </div>
       )}
-      {errorKey && <p className="field-error form-submit" role="alert">{t(errorKey)}</p>}
     </main>
   );
 }

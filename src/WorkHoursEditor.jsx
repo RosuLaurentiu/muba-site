@@ -73,7 +73,11 @@ export default function WorkHoursEditor({ current, day, language, rpc }) {
         })}
       </fieldset>
       <p role="status" className="driver-feedback field-error" id="work-hours-error">{notice && t(notice)}</p>
-      <button className="button primary" type="submit" disabled={busy}>{t("saveWorkHours")}</button>
+      <div className="actions editor-actions">
+        <button className="button primary" type="submit" disabled={busy}>{t(busy ? "saving" : "saveWorkHours")}</button>
+        <a className="button" href={driverLink(day) + "#day-heading"} aria-disabled={busy}
+          onClick={(event) => { if (busy) event.preventDefault(); }}>{t("discard")}</a>
+      </div>
     </form>
   );
 }

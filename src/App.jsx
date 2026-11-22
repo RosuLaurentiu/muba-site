@@ -227,6 +227,24 @@ function ContactFooter({ language, workspaceLink = false }) {
   );
 }
 
+function BookingResult({ ride, language, children }) {
+  const t = (key) => getText(language, key);
+  return (
+    <div className="booking-grid booking-result">
+      <section className="panel stack" aria-label={t("booking.view")}>
+        <p className="booking-status" role="status">{t("booking.state." + ride.status)}</p>
+        <p className="booking-reference">{t("booking.reference")} <strong>#{ride.reference}</strong></p>
+        {ride.status === "pending" && <p>{t("booking.confirmationNote")}</p>}
+        {children}
+      </section>
+      <section className="panel stack" aria-labelledby="result-trip-heading">
+        <h2 id="result-trip-heading">{t("planner.tripTitle")}</h2>
+        <BookingDetails rows={tripRows(ride, t, language)} />
+      </section>
+    </div>
+  );
+}
+
 function RiderBooking({ language }) {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState({});
@@ -597,7 +615,7 @@ function RiderBooking({ language }) {
   }
 
   return (
-    <main className="site-main rider-main">
+    <main className="site-main rider-main" id="main-content" tabIndex={-1}>
       <div hidden={screen !== "entry"}>
         <header className="booking-hero">
           <div className="hero-copy">
@@ -613,19 +631,21 @@ function RiderBooking({ language }) {
             width="1200" height="800" alt={t("planner.fleetImage")} fetchPriority="high" />
         </header>
         <form className="reservation-form" onSubmit={handleReview} noValidate>
-          <div className="trip-entry">
-            <section className="panel stack" aria-labelledby="trip-heading">
-              <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
+          <section className="panel stack" aria-labelledby="trip-heading">
+            <h2 id="trip-heading">{t("planner.tripTitle")}</h2>
+            <p className="muted trip-note">{t("booking.webNotice").replace("{hours}", appConfig.minimumWebNoticeHours)}{" "}
+              <a href="#ride-contact">{t("booking.contact")}</a>
+            </p>
+            <div className="rider-fields">
               {field("pickup", "pickup", { ref: pickupInputRef, autoComplete: "street-address", placeholder: t("planner.placeholders.pickup"), maxLength: 300, required: true })}
               {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"), maxLength: 300, required: true })}
-              <p className="muted">{t("booking.addressPrivacy")}</p>
-              <div className="time-pair">
-                {tripField(DateField, "pickupDate", "date")}
-                {tripField(TimeField, "pickupTime", "time")}
-              </div>
-              <p className="muted">{t("booking.webNotice").replace("{hours}", appConfig.minimumWebNoticeHours)}{" "}
-                <a href="#ride-contact">{t("booking.contact")}</a>
-              </p>
+            </div>
+            <p className="muted field-note">{t("booking.addressPrivacy")}</p>
+            <div className="time-pair">
+              {tripField(DateField, "pickupDate", "date")}
+              {tripField(TimeField, "pickupTime", "time")}
+            </div>
+            <div className="rider-fields trip-options">
               <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={formData.passengers}
                 onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)}
                 disabled={saveState === "saving" || retrySave} />
@@ -633,14 +653,14 @@ function RiderBooking({ language }) {
                 <input name="roundTrip" type="checkbox" checked={formData.roundTrip} onChange={handleInputChange} />
                 {t("planner.labels.roundTrip")}
               </label>
-              {formData.roundTrip && (
-                <div className="time-pair">
-                  {tripField(DateField, "returnDate", "returnDate")}
-                  {tripField(TimeField, "returnTime", "returnTime")}
-                </div>
-              )}
-            </section>
-          </div>
+            </div>
+            {formData.roundTrip && (
+              <div className="time-pair">
+                {tripField(DateField, "returnDate", "returnDate")}
+                {tripField(TimeField, "returnTime", "returnTime")}
+              </div>
+            )}
+          </section>
           <div className="reservation-submit">
             <button className="button primary" type="submit">{t("booking.checkFare")} <span aria-hidden="true">→</span></button>
           </div>
@@ -650,8 +670,7 @@ function RiderBooking({ language }) {
       {screen === "review" && (
         <>
           <h1 ref={headingRef} tabIndex={-1}>{t("booking.review")}</h1>
-          <div className="booking-grid">
-            <div className="panel"><BookingDetails rows={details.map(([key, value]) => [t(key), value])} /></div>
+          <div className="booking-grid review-layout">
             <section className="panel stack" aria-labelledby="fare-heading">
               <h2 id="fare-heading">{t("summary.fare")}</h2>
               <div role="status">
@@ -663,66 +682,63 @@ function RiderBooking({ language }) {
                   </>
                 ) : t("booking.fareUnavailable")}
               </div>
-              <p>{t("booking.confirmationNote")}</p>
+              <p className="trip-note">{t("booking.confirmationNote")}</p>
+              <div className="review-trip stack">
+                <h2>{t("planner.tripTitle")}</h2>
+                <BookingDetails rows={details.map(([key, value]) => [t(key), value])} />
+                <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
+              </div>
             </section>
+            <form className="reservation-form passenger-form" onSubmit={handleSave} noValidate>
+              <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || retrySave}>
+                <legend><h2>{t("planner.contactTitle")}</h2></legend>
+                {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
+                {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
+                {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
+                {field("notes", "optionalNotes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
+                <p className="muted">{t("booking.contactPrivacy")}</p>
+              </fieldset>
+              <details className="panel booking-privacy">
+                <summary>{t("booking.privacyTitle")}</summary>
+                <div className="stack calendar-content">
+                  <p>{t("booking.privacyOperator")} {appConfig.operatorName}. <a href={"mailto:" + appConfig.email}>{appConfig.email}</a></p>
+                  <p>{t("booking.privacyUse")}</p>
+                  <p>{t("booking.privacyServices")}</p>
+                  <p>{t("booking.privacyRetention")}</p>
+                  <p>{t("booking.privacyRights")} <a href="https://www.cnil.fr/fr/plaintes">CNIL</a></p>
+                </div>
+              </details>
+              {saveMessage && (
+                <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}
+                  {saveState === "shortNotice" && <>{" "}<a href="#ride-contact">{t("booking.contact")}</a></>}
+                </p>
+              )}
+              <div className="reservation-submit">
+                <button className="button primary" type="submit" disabled={estimating || saveState === "saving" || saveState === "shortNotice"}>
+                  {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
+                </button>
+              </div>
+            </form>
           </div>
         </>
       )}
 
-      <div className="route-preview panel" hidden={screen !== "review" || !mapReady || (!totals && !estimating)}>
-        <h2>{t("map.label")}</h2>
+      <section className="route-preview panel" aria-labelledby="route-heading" hidden={screen !== "review" || !mapReady || (!totals && !estimating)}>
+        <h2 id="route-heading">{t("map.label")}</h2>
         <div ref={mapRef} className="map-surface"></div>
-      </div>
-
-      {screen === "review" && (
-        <form className="reservation-form passenger-form" onSubmit={handleSave} noValidate>
-          <fieldset className="panel stack passenger-fields" disabled={saveState === "saving" || retrySave}>
-            <legend><h2>{t("planner.contactTitle")}</h2></legend>
-            {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
-            {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
-            {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
-            {field("notes", "notes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
-            <p className="muted">{t("booking.contactPrivacy")}</p>
-          </fieldset>
-          <details className="panel form-submit">
-            <summary>{t("booking.privacyTitle")}</summary>
-            <div className="stack calendar-content">
-              <p>{t("booking.privacyOperator")} {appConfig.operatorName}. <a href={"mailto:" + appConfig.email}>{appConfig.email}</a></p>
-              <p>{t("booking.privacyUse")}</p>
-              <p>{t("booking.privacyServices")}</p>
-              <p>{t("booking.privacyRetention")}</p>
-              <p>{t("booking.privacyRights")} <a href="https://www.cnil.fr/fr/plaintes">CNIL</a></p>
-            </div>
-          </details>
-          {saveMessage && (
-            <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}
-              {saveState === "shortNotice" && <>{" "}<a href="#ride-contact">{t("booking.contact")}</a></>}
-            </p>
-          )}
-          <div className="reservation-submit split">
-            <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
-            <button className="button primary" type="submit" disabled={estimating || saveState === "saving" || saveState === "shortNotice"}>
-              {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
-            </button>
-          </div>
-        </form>
-      )}
+      </section>
 
       {screen === "receipt" && (
         <>
           <h1 ref={headingRef} tabIndex={-1}>{t("booking.receipt")}</h1>
-          <div className="panel stack">
-            <p className="booking-reference">{t("booking.reference")} <strong>{receipt.reference}</strong></p>
-            <p className="booking-status" role="status">{t("booking.state." + receipt.status)}</p>
-            {receipt.status === "pending" && <p>{t("booking.confirmationNote")}</p>}
-            <BookingDetails rows={tripRows(receipt, t, language)} />
+          <BookingResult ride={receipt} language={language}>
             <p>{t("booking.keepLink")}</p>
             <div className="actions">
               <a className="button primary" href={receiptLink}>{t("booking.view")}</a>
               <button className="button" type="button" onClick={copyLink}>{t("booking.copyLink")}</button>
             </div>
-            <p className="muted" role="status">{copyState && t("booking." + copyState)}</p>
-          </div>
+            <p className="muted booking-feedback" role="status">{copyState && t("booking." + copyState)}</p>
+          </BookingResult>
           <button className="button form-submit" type="button" onClick={startNewBooking}>{t("booking.another")}</button>
         </>
       )}
@@ -731,44 +747,55 @@ function RiderBooking({ language }) {
   );
 }
 
-function BookingStatus({ language }) {
+function readBookingKey() {
+  return new URLSearchParams(window.location.hash.slice(1)).get("key");
+}
+
+function BookingStatus({ language, requestKey }) {
   const [result, setResult] = useState({ status: "loading" });
   const [refresh, setRefresh] = useState(0);
-  const key = new URLSearchParams(window.location.hash.slice(1)).get("key");
-  const validKey = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key);
+  const validKey = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestKey);
   const t = (name) => getText(language, name);
 
   useEffect(() => {
     let active = true;
     if (!validKey) return;
-    bookingRpc("get_ride", { p_request_key: key })
+    bookingRpc("get_ride", { p_request_key: requestKey })
       .then((ride) => { if (active) setResult({ status: ride ? "ready" : "missing", ride }); })
-      .catch(() => { if (active) setResult({ status: "error" }); });
+      .catch(() => { if (active) setResult((current) => ({ ...current, status: "error" })); });
     return () => { active = false; };
-  }, [key, refresh, validKey]);
+  }, [requestKey, refresh, validKey]);
 
   const ride = result.ride;
   const feedback = validKey ? result.status : "missing";
+  const refreshButton = validKey && <button className={feedback === "missing" ? "button" : "button primary"}
+    type="button" aria-disabled={feedback === "loading"} onClick={() => {
+    if (feedback === "loading") return;
+    setResult((current) => ({ ...current, status: "loading" }));
+    setRefresh((count) => count + 1);
+  }}>{t("booking.refresh")}</button>;
   return (
-    <main className="site-main">
+    <main className="site-main" id="main-content" tabIndex={-1}>
       <h1>{t("booking.view")}</h1>
-      <div className="panel stack">
-        {ride ? (
-          <>
-            <p className="booking-reference">{t("booking.reference")} <strong>{ride.reference}</strong></p>
-            <p className="booking-status" role="status">{t("booking.state." + ride.status)}</p>
-            {ride.status === "pending" && <p>{t("booking.confirmationNote")} {t("booking.checkStatusLater")}</p>}
-            <BookingDetails rows={tripRows(ride, t, language)} />
-          </>
-        ) : <p role="status">{t("booking.lookup." + feedback)}</p>}
-      </div>
-      <div className="actions form-submit">
-        <a className={validKey ? "button" : "button primary"} href={window.location.pathname}>{t("booking.another")}</a>
-        {validKey && <button className="button primary" type="button" onClick={() => {
-          setResult({ status: "loading" });
-          setRefresh((count) => count + 1);
-        }}>{t("booking.refresh")}</button>}
-      </div>
+      {ride ? (
+        <BookingResult ride={ride} language={language}>
+          {refreshButton}
+          <p className="muted booking-feedback" role="status">
+            {feedback !== "ready" && t(feedback === "error" ? "booking.lookup.stale" : "booking.lookup.loading")}
+          </p>
+        </BookingResult>
+      ) : (
+        <div className="panel stack booking-fallback">
+          <p role="status">{t("booking.lookup." + feedback)}</p>
+          <div className="actions">
+            {feedback === "missing" && <a className="button primary" href={window.location.pathname}>{t("booking.another")}</a>}
+            {refreshButton}
+          </div>
+        </div>
+      )}
+      {(ride || feedback === "error") && (
+        <a className="button form-submit" href={window.location.pathname}>{t("booking.another")}</a>
+      )}
       <ContactFooter language={language} />
     </main>
   );
@@ -777,8 +804,10 @@ function BookingStatus({ language }) {
 function App() {
   const query = new URLSearchParams(window.location.search);
   const driverView = query.has("driver");
+  const privateView = !driverView && query.has("booking");
   const layoutStorageKey = driverView ? "muba-driver-layout" : "muba-rider-layout";
   const [language, setLanguage] = useState(getInitialLanguage);
+  const [bookingKey, setBookingKey] = useState(() => privateView ? readBookingKey() : null);
   const [layout, setLayout] = useState(() => {
     try {
       return localStorage.getItem(layoutStorageKey) === "light" ? "light" : "dark";
@@ -792,6 +821,13 @@ function App() {
     document.documentElement.dataset.layout = layout;
   }, [language, layout]);
 
+  useEffect(() => {
+    if (!privateView) return;
+    const update = () => setBookingKey(readBookingKey());
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, [privateView]);
+
   function selectLayout(next) {
     setLayout(next);
     try {
@@ -801,9 +837,12 @@ function App() {
     }
   }
 
-  const privateView = query.has("booking");
   return (
     <>
+      <a className="skip-link" href="#main-content" onClick={(event) => {
+        event.preventDefault();
+        document.getElementById("main-content")?.focus();
+      }}>{getText(language, "nav.skip")}</a>
       <header className="site-header">
         <div className="site-bar">
           <div className="wordmark">
@@ -830,10 +869,10 @@ function App() {
         </div>
       </header>
       {driverView ? (
-        <Suspense fallback={<main className="site-main"><p role="status">{getText(language, "driver.loading")}</p></main>}>
+        <Suspense fallback={<main className="site-main" id="main-content" tabIndex={-1}><p role="status">{getText(language, "driver.loading")}</p></main>}>
           <DriverWorkspace language={language} />
         </Suspense>
-      ) : privateView ? <BookingStatus language={language} /> : <RiderBooking language={language} />}
+      ) : privateView ? <BookingStatus key={bookingKey ?? ""} requestKey={bookingKey} language={language} /> : <RiderBooking language={language} />}
     </>
   );
 }

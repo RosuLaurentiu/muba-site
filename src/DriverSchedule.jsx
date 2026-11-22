@@ -34,45 +34,53 @@ export function SchedulePreview({ context, language }) {
   const target = travelTarget === "" ? 60 : Number(travelTarget);
   if (!context.legsOverlap && !context.conflicts.length && !context.neighbors.length && !context.gaps.length) return null;
   return (
-    <div className="panel stack schedule-preview">
+    <div className="schedule-preview">
       {(context.legsOverlap || context.conflicts.length > 0) && (
-        <>
-          <h2 className="field-error">{t("schedule.conflict")}</h2>
+        <section className="stack schedule-conflicts" aria-labelledby="schedule-conflict-heading">
+          <h2 className="field-error" id="schedule-conflict-heading">{t("schedule.conflict")}</h2>
           {context.legsOverlap && <p>{t("schedule.legsOverlap")}</p>}
           {context.conflicts.map((entry) => <EntryText key={entry.id} entry={entry} language={language} />)}
-        </>
+        </section>
       )}
       {context.gaps.length > 0 && (
-        <>
-          <h2>{t("schedule.travelBetween")}</h2>
-          <label className="field schedule-duration">
-            {t("schedule.travelTarget")}
-            <input type="number" min="0" max="1440" value={travelTarget} onChange={(event) => {
-              const value = event.target.value;
-              if (value === "" || (/^\d+$/.test(value) && Number(value) <= 1440)) setTravelTarget(value);
-            }} />
-          </label>
-          <p className="muted">{t("schedule.travelAdvisory")}</p>
-          <ul className="stack">
-            {context.gaps.map(({ prior, next, minutes }) => (
-              <li key={prior.id + "-" + next.id}>
-                {prior.endKnown && <>{formatParisTime(prior.end, language)} → </>}
-                {formatParisTime(next.start, language)} ·{" "}
-                {minutes === null ? <span className="field-error">{t("schedule.travelUnknown")}</span> : <>
-                  {minutes} {t("units.minuteShort")} {t("schedule.travelAvailable")}
-                  {minutes < target && <> · <span className="field-error">{t("schedule.travelShort")}</span></>}
-                </>}
-              </li>
-            ))}
-          </ul>
-        </>
+        <details className="schedule-advisory">
+          <summary>{t("schedule.travelBetween")}
+            {context.gaps.some(({ minutes }) => minutes === null || minutes < target) && (
+              <span className="field-error"> · {t("schedule.checkTravel")}</span>
+            )}
+          </summary>
+          <div className="stack calendar-content">
+            <label className="field schedule-duration">
+              {t("schedule.travelTarget")}
+              <input type="number" min="0" max="1440" value={travelTarget} onChange={(event) => {
+                const value = event.target.value;
+                if (value === "" || (/^\d+$/.test(value) && Number(value) <= 1440)) setTravelTarget(value);
+              }} />
+            </label>
+            <p className="muted">{t("schedule.travelAdvisory")}</p>
+            <ul className="stack">
+              {context.gaps.map(({ prior, next, minutes }) => (
+                <li key={prior.id + "-" + next.id}>
+                  {prior.endKnown && <>{formatParisTime(prior.end, language)} → </>}
+                  {formatParisTime(next.start, language)} ·{" "}
+                  {minutes === null ? <span className="field-error">{t("schedule.travelUnknown")}</span> : <>
+                    {minutes} {t("units.minuteShort")} {t("schedule.travelAvailable")}
+                    {minutes < target && <> · <span className="field-error">{t("schedule.travelShort")}</span></>}
+                  </>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
       )}
       {!context.gaps.length && context.neighbors.length > 0 && (
-        <>
-          <h2>{t("schedule.neighbors")}</h2>
-          <p className="muted">{t("schedule.checkTravel")}</p>
-          {context.neighbors.map((entry) => <EntryText key={entry.id} entry={entry} language={language} />)}
-        </>
+        <details className="schedule-advisory">
+          <summary>{t("schedule.neighbors")}</summary>
+          <div className="stack calendar-content">
+            <p className="muted">{t("schedule.checkTravel")}</p>
+            {context.neighbors.map((entry) => <EntryText key={entry.id} entry={entry} language={language} />)}
+          </div>
+        </details>
       )}
     </div>
   );
@@ -110,9 +118,9 @@ export function NextPickup({ schedule, day, language }) {
           <div className="actions">
             <a className="button primary" href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(next.pickup)}
               target="_blank" rel="noreferrer">{t("driver.directions")}</a>
-            <a className="button" href={"tel:" + next.ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
-            <a className="button" href={driverLink(day, { ride: next.ride.reference, ...(next.returning ? { leg: "return" } : {}) })}>
-              {t("driver.detail")} {next.ride.reference}
+            <a className="pickup-link" href={"tel:" + next.ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
+            <a className="pickup-link" href={driverLink(day, { ride: next.ride.reference, ...(next.returning ? { leg: "return" } : {}) })}>
+              {t("driver.detail")} #{next.ride.reference}
             </a>
           </div>
         </div>
@@ -176,9 +184,11 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
         <div className="agenda-summary">
           {ride ? (
             <>
-              <span className="calendar-status">{t("booking.state." + ride.status)}{entry.returning && " · " + t("schedule.returnLeg")}</span>
+              <span className="calendar-status">{t("booking.state." + ride.status)}{entry.returning && " · " + t("schedule.returnLeg")}
+                {pending && isOutsideWorkHours(workHours?.hours, entry.start) &&
+                  <span className="field-error"> · {t("schedule.outsideWorkHours")}</span>}
+              </span>
               <p>{entry.pickup} → {entry.destination}</p>
-              {pending && isOutsideWorkHours(workHours?.hours, entry.start) && <p className="field-error">{t("schedule.outsideWorkHours")}</p>}
               <div className="agenda-links">
                 <a href={driverLink(day, { ride: ride.reference, ...(entry.returning ? { leg: "return" } : {}) })}>
                   {t(pending ? "driver.reviewRequest" : "driver.detail")} #{ride.reference}
@@ -213,10 +223,7 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
           {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
         </div>
         <div className="actions schedule-controls">
-          {day >= today && <>
-            <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
-            <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
-          </>}
+          {day >= today && <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>}
           <a className="button" href={driverLink(day, { hours: "" })}>{t("schedule.workHours")}</a>
         </div>
         {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
@@ -358,10 +365,11 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   return (
     <>
       <h1>{t(ride ? "schedule.reschedule" : "schedule.addRide")}</h1>
-      <form onSubmit={save} noValidate>
-        <fieldset className="booking-grid schedule-fieldset" disabled={frozen}>
+      <form className={ride ? "schedule-editor compact-editor" : "schedule-editor"} onSubmit={save} noValidate>
+        <fieldset className={(ride ? "" : "booking-grid ") + "schedule-fieldset"} disabled={frozen}>
           <legend className="sr-only">{t("planner.tripTitle")}</legend>
           <div className="panel stack">
+            <h2>{t("planner.tripTitle")}</h2>
             {field("pickup", "planner.labels.pickup", { maxLength: 300, required: true })}
             {field("destination", "planner.labels.destination", { maxLength: 300, required: true })}
             <div className="time-pair">
@@ -382,12 +390,13 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
           </div>
           {!ride && (
             <div className="panel stack">
-              {field("customerName", "driver.passengerName", { maxLength: 150 })}
-              {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40 })}
+              <h2>{t("planner.contactTitle")}</h2>
+              {field("customerName", "driver.passengerName", { maxLength: 150, required: true })}
+              {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40, required: true })}
               {field("customerEmail", "planner.labels.email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
               <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={draft.passengers}
                 onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)} disabled={frozen} />
-              <DraftField name="notes" label={t("planner.labels.notes")}>
+              <DraftField name="notes" label={t("planner.labels.optionalNotes")}>
                 <textarea id="notes" name="notes" rows={3} maxLength={1500} value={draft.notes} onChange={update} />
               </DraftField>
               <DraftField name="source" label={t("schedule.source")}>
@@ -401,9 +410,15 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
         </fieldset>
         <SchedulePreview context={context} language={language} />
         {(notice || stale) && <p className="field-error form-submit" role="alert">{t(stale ? "schedule.reopenEdit" : notice)}</p>}
-        <button className="button primary form-submit" type="submit" disabled={busy || prevented}>
-          {t(notice === "schedule.retrySame" ? "schedule.retry" : "schedule.saveRide")}
-        </button>
+        <div className="actions editor-actions">
+          <button className="button primary" type="submit" disabled={busy || prevented}>
+            {t(busy ? "schedule.saving" : notice === "schedule.retrySame" ? "schedule.retry" : "schedule.saveRide")}
+          </button>
+          <a className="button" href={ride ? driverLink(day, { ride: ride.reference, ...(returning ? { leg: "return" } : {}) }) : driverLink(day) + "#day-heading"}
+            aria-disabled={busy} onClick={(event) => { if (busy) event.preventDefault(); }}>
+            {t("schedule.discard")}
+          </a>
+        </div>
       </form>
     </>
   );
@@ -465,8 +480,8 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
   return (
     <>
       <h1>{t("schedule.addBlock")}</h1>
-      <form onSubmit={save} noValidate>
-        <div className="panel stack">
+      <form className="schedule-editor compact-editor" onSubmit={save} noValidate>
+        <div className="panel stack block-fields">
           {["start", "end"].map((name) => {
             const [date, time] = times[name].split("T");
             return (
@@ -486,9 +501,13 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
         </div>
         <SchedulePreview context={context} language={language} />
         {error && <p className="field-error form-submit" role="alert">{t(error)}</p>}
-        <button className="button primary form-submit" type="submit" disabled={busy || prevented}>
-          {t(error === "schedule.retrySame" ? "schedule.retry" : "schedule.saveBlock")}
-        </button>
+        <div className="actions editor-actions">
+          <button className="button primary" type="submit" disabled={busy || prevented}>
+            {t(busy ? "schedule.saving" : error === "schedule.retrySame" ? "schedule.retry" : "schedule.saveBlock")}
+          </button>
+          <a className="button" href={driverLink(day) + "#day-heading"} aria-disabled={busy}
+            onClick={(event) => { if (busy) event.preventDefault(); }}>{t("schedule.discard")}</a>
+        </div>
       </form>
     </>
   );

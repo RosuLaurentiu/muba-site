@@ -21,7 +21,7 @@ export const translations = {
       contact: "Contact",
       callNow: "Call now",
       whatsApp: "WhatsApp",
-      languageLabel: "Language selector"
+      languageLabel: "Language selector", skip: "Skip to main content"
     },
     hero: {
       title: "Minimal booking, smooth rides, and a premium first impression.",
@@ -100,10 +100,12 @@ export const translations = {
       conflictChanged: "The schedule changed. Review the conflicts before trying again.",
       reopenEdit: "This ride changed. Reopen it to edit the latest schedule.",
       saveFailed: "Could not save the change. Check the current schedule.",
-      retrySame: "Could not verify the save. Retry with the same details.", retry: "Retry save"
+      retrySame: "Could not verify the save. Retry with the same details.", retry: "Retry save",
+      saving: "Saving...", discard: "Discard changes"
     },
     driver: {
       title: "Driver workspace", signIn: "Driver sign-in", password: "Password", signOut: "Sign out",
+      signingIn: "Signing in...", backToBooking: "Back to booking", refreshing: "Refreshing...", decision: "Booking decision",
       signInFailed: "Could not sign in. Check your email and password and try again.",
       googleSignIn: "Sign in with Google", googleSignInFailed: "Google sign-in did not finish. Try again or use your password.",
       emailFailed: "Booking emails awaiting retry:", emailRetryExpired: "Booking emails past the safe retry window:",
@@ -159,11 +161,10 @@ export const translations = {
       keepLink: "Keep the private booking link to see the driver's decision.",
       copyLink: "Copy private link", linkCopied: "Link copied. Keep it to follow your request.",
       linkCopyFailed: "Could not copy the link. Open the booking and bookmark the page.",
-      checkStatusLater: "Refresh this page to check whether the driver has confirmed your request.",
       view: "View booking", another: "Start a new request", refresh: "Refresh status",
       contact: "Contact the driver", call: "Call",
       state: { pending: "Pending driver confirmation", confirmed: "Ride confirmed", declined: "Request declined", cancelled: "Ride cancelled" },
-      lookup: { loading: "Loading booking...", missing: "This booking link is invalid or has expired.", error: "Could not load the booking. Try refreshing." }
+      lookup: { loading: "Loading booking...", missing: "This booking link is invalid or has expired.", error: "Could not load the booking. Try refreshing.", stale: "Refresh failed. Showing the last known status." }
     },
     planner: {
       startBooking: "Reserve a ride",
@@ -190,7 +191,7 @@ export const translations = {
         email: "Email for the receipt and booking updates",
         phone: "Phone number",
         passengers: "Passengers",
-        notes: "Extra details"
+        notes: "Extra details", optionalNotes: "Extra details (optional)"
       },
       placeholders: {
         pickup: "Airport, hotel, street address",
@@ -326,7 +327,7 @@ export const translations = {
       contact: "Contact",
       callNow: "Appeler",
       whatsApp: "WhatsApp",
-      languageLabel: "Selecteur de langue"
+      languageLabel: "Selecteur de langue", skip: "Aller au contenu principal"
     },
     hero: {
       title: "Reservation simple, trajets fluides et premiere impression premium.",
@@ -405,10 +406,12 @@ export const translations = {
       conflictChanged: "Le planning a change. Verifiez les conflits avant de reessayer.",
       reopenEdit: "Cette course a change. Rouvrez-la pour modifier le dernier planning.",
       saveFailed: "Impossible d'enregistrer la modification. Verifiez le planning actuel.",
-      retrySame: "Impossible de verifier l'enregistrement. Reessayez avec les memes donnees.", retry: "Reessayer"
+      retrySame: "Impossible de verifier l'enregistrement. Reessayez avec les memes donnees.", retry: "Reessayer",
+      saving: "Enregistrement...", discard: "Ignorer les modifications"
     },
     driver: {
       title: "Espace chauffeur", signIn: "Connexion chauffeur", password: "Mot de passe", signOut: "Se deconnecter",
+      signingIn: "Connexion en cours...", backToBooking: "Retour a la reservation", refreshing: "Actualisation...", decision: "Decision sur la demande",
       signInFailed: "Connexion impossible. Verifiez votre e-mail et votre mot de passe, puis reessayez.",
       googleSignIn: "Se connecter avec Google", googleSignInFailed: "La connexion Google a echoue. Reessayez ou utilisez votre mot de passe.",
       emailFailed: "E-mails de reservation en attente de nouvel essai :", emailRetryExpired: "E-mails hors delai de nouvel essai :",
@@ -464,11 +467,10 @@ export const translations = {
       keepLink: "Conservez le lien prive pour consulter la decision du chauffeur.",
       copyLink: "Copier le lien prive", linkCopied: "Lien copie. Gardez-le pour suivre votre demande.",
       linkCopyFailed: "Impossible de copier le lien. Ouvrez la reservation et ajoutez la page aux favoris.",
-      checkStatusLater: "Actualisez cette page pour voir si le chauffeur a confirme votre demande.",
       view: "Voir la reservation", another: "Nouvelle demande", refresh: "Actualiser le statut",
       contact: "Contacter le chauffeur", call: "Appeler",
       state: { pending: "En attente de confirmation du chauffeur", confirmed: "Course confirmee", declined: "Demande refusee", cancelled: "Course annulee" },
-      lookup: { loading: "Chargement de la reservation...", missing: "Le lien de reservation est invalide ou expire.", error: "Impossible de charger la reservation. Actualisez le statut." }
+      lookup: { loading: "Chargement de la reservation...", missing: "Le lien de reservation est invalide ou expire.", error: "Impossible de charger la reservation. Actualisez le statut.", stale: "Echec de l'actualisation. Dernier statut connu affiche." }
     },
     planner: {
       startBooking: "Reserver un trajet",
@@ -495,7 +497,7 @@ export const translations = {
         email: "E-mail pour le recu et le suivi de la reservation",
         phone: "Numero de telephone",
         passengers: "Passagers",
-        notes: "Details supplementaires"
+        notes: "Details supplementaires", optionalNotes: "Details supplementaires (facultatif)"
       },
       placeholders: {
         pickup: "Aeroport, hotel, adresse",
