@@ -168,14 +168,18 @@ try {
   assert.equal((await (await runWorker()).json()).sent, 0);
 
   googleIdentity(driver, "assigned-google@example.test", true);
+  sql(`insert into booking_private.driver_tester (user_id) values ('${other.id}');`);
   const [newRide, sameRide] = await Promise.all([save(6), save(6)]);
   assert.deepEqual(newRide, sameRide);
   assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
     count: baseline.count + 1, latest: newRide.reference
   });
+  assert.deepEqual(await rpc("list_rides", {}, other.token), await rpc("list_rides", {}, driver.token));
+  assert.deepEqual(await rpc("driver_booking_alerts", {}, other.token),
+    await rpc("driver_booking_alerts", {}, driver.token));
   const manual = await rpc("save_ride", {
     p_request_key: keys[7], p_source: "phone", p_trip: { ...trip, passenger_email: "manual-rider@example.test" }
-  }, driver.token);
+  }, other.token);
   assert.deepEqual(await rpc("driver_booking_alerts", {}, driver.token), {
     count: baseline.count + 1, latest: newRide.reference
   });
@@ -200,6 +204,8 @@ try {
   await rpc("change_ride", { p_reference: manual.reference, p_version: 1, p_status: "cancelled" }, driver.token);
   assert.equal((await (await runWorker()).json()).sent, 1);
   assert.ok([...delivered.values()].some(({ subject }) => subject === "Ride cancelled #" + manual.reference));
+  sql(`delete from booking_private.driver_tester where user_id = '${other.id}';`);
+  await rpc("list_rides", {}, other.token, 403);
 
   await save(8);
   sql(`delete from booking_private.driver where user_id = '${driver.id}';`);

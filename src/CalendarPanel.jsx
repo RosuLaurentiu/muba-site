@@ -66,6 +66,8 @@ export default function CalendarPanel({ client, language, day, updateKey }) {
     }
   }
 
+  if (calendar?.can_manage === false) return null;
+
   return (
     <details className="panel calendar-panel">
       <summary>

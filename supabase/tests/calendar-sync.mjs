@@ -147,6 +147,11 @@ try {
   const authorize = { action: "authorize", calendar_id: calendarId };
   await action(null, authorize, 401);
   await action(other.token, authorize, 403);
+  sql(`insert into booking_private.driver_tester(user_id) values ('${other.id}');`);
+  const testerStatus = await rpc("calendar_status", {}, other.token);
+  assert.deepEqual(testerStatus, { can_manage: false, calendar_id: null, outstanding: [] });
+  await action(other.token, authorize, 403);
+  await action(other.token, { action: "sync" }, 403);
   await rpc("calendar_service", { action: "connection", args: {} }, driver.token, 403);
   await callback(await begin(driver.token), "failed");
   probeAvailable = true;

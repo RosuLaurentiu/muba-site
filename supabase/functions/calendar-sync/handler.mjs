@@ -189,7 +189,8 @@ export function calendarHandler(config, fetcher = fetch) {
       });
       if (!auth.ok) return json({ error: "DRIVER_REQUIRED" }, 403);
       owner = (await auth.json()).id;
-      await rpc("calendar_status", {}, token, config.publishableKey);
+      const calendar = await rpc("calendar_status", {}, token, config.publishableKey);
+      if (calendar.can_manage === false) return json({ error: "DRIVER_REQUIRED" }, 403);
     } catch {
       return json({ error: "DRIVER_REQUIRED" }, 403);
     }

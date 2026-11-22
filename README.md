@@ -34,9 +34,12 @@ the check. Status JSON is piped to the test without printing credentials. Run
 `npx --yes supabase@3.2.0 stop` when the local stack is no longer needed.
 
 Public sign-up is disabled. A database administrator assigns an existing Auth
-user to `booking_private.driver`. The table allows one driver and has no
-client write access. Keep the `booking_private` schema outside the exposed
-Data API schemas.
+user to `booking_private.driver` as the primary driver. The administrator can
+assign a different existing Auth user to `booking_private.driver_tester` for
+testing. Both can use the same schedule and booking records. Booking alerts
+and the shared Google Calendar connection belong to the primary driver.
+Remove the tester row to revoke workspace access. Keep `booking_private`
+outside the exposed Data API schemas.
 
 - `save_ride` takes `p_trip` with `passenger_email` and a new UUID v4 `p_request_key`. Use the same
   key and payload on retry. The key also acts as the rider's private access
@@ -76,18 +79,23 @@ and accept or decline a pending request. Refresh to load new requests.
 
 To enable Google sign-in locally, use a separate Google Web application OAuth
 client with the authorized redirect URI `http://127.0.0.1:54321/auth/v1/callback`.
-While the Google project is in Testing, add the driver's Google account as a
-test user. In the ignored project-root `.env`, set
+While the Google project is in Testing, add both approved Google accounts as
+test users. In the ignored project-root `.env`, set
 `SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED=true` and set
 `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`
 to the test client's credentials. Keep the secret on the server side. Restart
 local Supabase and open `http://127.0.0.1:5173/?driver`.
 
-Create the driver's Auth account with the same verified email as their Google
-account, then assign that Auth user ID in `booking_private.driver`. Supabase
-links the Google identity to the existing account. The sign-in flow requests
-basic Google identity only. Connect Google Calendar separately in the driver
-workspace if the driver wants calendar sync.
+Create each Auth account with the verified email of its Google account. Assign
+the account IDs in the primary and tester tables. Supabase links each Google
+identity to its existing account. The sign-in flow requests basic Google
+identity. Connect Google Calendar separately from the primary workspace.
+
+For hosted Google sign-in, use the approved Supabase project's
+`/auth/v1/callback` as the Google OAuth redirect URI. Add
+`https://privatetaxiparis.com/?driver&google-sign-in` to the Supabase redirect
+allowlist when testing against the public domain. Use the corresponding URL
+for a separate test site.
 
 For production, use `privatetaxiparis@gmail.com` for the public contact and the
 assigned driver's verified sign-in. Confirm that the backend is the approved
