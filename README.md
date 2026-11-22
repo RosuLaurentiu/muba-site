@@ -26,7 +26,11 @@ npx --yes supabase@3.2.0 status -o json 2>$null | node supabase/tests/intake-lim
 npx --yes supabase@3.2.0 db advisors --level warn --fail-on warn
 node supabase/tests/rider-input.mjs
 node supabase/tests/schedule.mjs
+node supabase/tests/work-hours.mjs
 ```
+
+The `supabase/tests/work-hours.sql` check runs on an unassigned local stack
+with the working-hours migration applied. It rolls back its fixtures.
 
 Run the integration test on an unassigned local stack. It provisions two
 fictional users through local Auth and removes the users and its bookings after
@@ -110,6 +114,12 @@ rides. Earlier months show retained bookings.
 The agenda lists each leg separately. Ride details group pickup directions with
 the trip and contact actions with the passenger information. The driver can
 record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
+Use **Working hours** in the agenda to set a regular week in Paris time. Check
+each day when a shift starts. An end time earlier than the start means the
+shift ends the following day. **Block time** still applies to one-off changes.
+The agenda shows that day's hours. A pending request with a pickup outside
+these hours has a warning in the driver workspace and can still be reviewed
+and confirmed. Changing hours does not change existing rides or time blocks.
 After saving a ride or block, return to the same selected day. If a refresh
 fails, the workspace identifies the
 last loaded schedule and offers another refresh. The save controls show overlaps

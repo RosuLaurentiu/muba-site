@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
 import CalendarPanel from "./CalendarPanel";
 import { BlockEditor, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
+import WorkHoursEditor from "./WorkHoursEditor";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
 import { parseAgreedFare } from "./fare";
 import { getText } from "./i18n";
 import { driverLink, parisDay, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
+import { isOutsideWorkHours } from "./workingHours";
 
 const config = getBookingConfig();
 const client = config && createClient(config.url, config.key, {
@@ -111,7 +113,11 @@ function BookingEmailStatus({ language }) {
   );
 }
 
-function PendingList({ rides, language, day, latest }) {
+function rideOutsideWorkHours(ride, hours) {
+  return [ride.pickup_at, ride.return_at].some((instant) => instant && isOutsideWorkHours(hours, instant));
+}
+
+function PendingList({ rides, language, day, latest, hours }) {
   const t = (key) => getText(language, key);
   return (
     <section className={"panel driver-list" + (rides.length ? " has-pending" : "")} id="pending" aria-labelledby="pending-heading">
@@ -127,8 +133,9 @@ function PendingList({ rides, language, day, latest }) {
             <li key={ride.reference}>
               <strong>{formatParisTime(ride.pickup_at, language)}</strong>
               <p>{ride.pickup} → {ride.destination}</p>
+              {rideOutsideWorkHours(ride, hours) && <p className="field-error">{t("schedule.outsideWorkHours")}</p>}
               <a href={driverLink(day, { ride: ride.reference })}>
-                {t("driver.detail")} {ride.reference}
+                {t("driver.reviewRequest")} #{ride.reference}
               </a>
             </li>
           ))}
@@ -138,7 +145,7 @@ function PendingList({ rides, language, day, latest }) {
   );
 }
 
-function RideDetail({ ride, returning, language, onChanged, notice, setNotice, refreshing, schedule, day }) {
+function RideDetail({ ride, returning, language, onChanged, notice, setNotice, refreshing, schedule, day, hours }) {
   const [busy, setBusy] = useState(false);
   const [estimate, setEstimate] = useState(ride.estimated_minutes ?? "");
   const [fare, setFare] = useState("");
@@ -195,6 +202,9 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
         <h1 ref={heading} tabIndex={-1}>{t("driver.detail")} <span>#{ride.reference}</span></h1>
         <strong className="ride-state" data-status={ride.status}>{t("booking.state." + ride.status)}</strong>
       </header>
+      {ride.status === "pending" && rideOutsideWorkHours(ride, hours) && (
+        <p className="field-error form-submit">{t("schedule.outsideWorkHours")}</p>
+      )}
       <div className="driver-detail">
         <section className="panel stack trip-detail" aria-labelledby="trip-detail-heading">
           <h2 id="trip-detail-heading">{t("driver.trip")}</h2>
@@ -287,6 +297,7 @@ function DriverRides({ session, language }) {
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
   const [alerts, setAlerts] = useState(null);
+  const [workHours, setWorkHours] = useState(undefined);
   const t = (key) => getText(language, key);
   const [today] = useState(() => parisDay(new Date()));
   const query = new URLSearchParams(window.location.search);
@@ -296,11 +307,21 @@ function DriverRides({ session, language }) {
   const editing = query.has("edit");
   const adding = query.has("new");
   const blocking = query.has("block");
-  const subpage = Boolean(selectedReference || adding || blocking);
+  const editingHours = query.has("hours");
+  const subpage = Boolean(selectedReference || adding || blocking || editingHours);
   const selected = load.rides.find((ride) => String(ride.reference) === selectedReference);
   const returning = query.get("leg") === "return" && Boolean(selected?.return_at);
   const schedule = plannedSchedule(load.rides, load.blocks);
   const token = session.access_token;
+
+  useEffect(() => {
+    if (!token) return;
+    const controller = new AbortController();
+    client.rpc("get_work_hours").abortSignal(controller.signal).then(({ data, error }) => {
+      if (!controller.signal.aborted) setWorkHours((current) => error ? current ?? false : data);
+    });
+    return () => controller.abort();
+  }, [revision, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -380,6 +401,7 @@ function DriverRides({ session, language }) {
   const pending = load.rides.filter((ride) => ride.status === "pending");
   const pendingCount = alerts?.count ?? pending.length;
   const editor = { schedule, day, language, rpc: driverRpc, refresh, refreshed: ready };
+  const savedNotice = query.get("saved") === "hours" ? "schedule.workHoursSaved" : query.has("saved") ? "schedule.saved" : "";
   return (
     <>
       {subpage
@@ -392,7 +414,14 @@ function DriverRides({ session, language }) {
           <button className="button" type="button" onClick={refresh}>{t("driver.refresh")}</button>
         </div>
       )}
-      {haveData && blocking ? (
+      {haveData && editingHours ? (
+        <>
+          <h1>{t("schedule.workHours")}</h1>
+          {workHours ? <WorkHoursEditor current={workHours} day={day} language={language} rpc={driverRpc} /> : (
+            <p role="status">{t(workHours === undefined ? "schedule.workHoursLoading" : "schedule.workHoursUnavailable")}</p>
+          )}
+        </>
+      ) : haveData && blocking ? (
         <BlockEditor {...editor} />
       ) : haveData && adding ? (
         <ScheduleEditor {...editor} />
@@ -400,29 +429,29 @@ function DriverRides({ session, language }) {
         <ScheduleEditor {...editor} ride={selected} returning={returning} />
       ) : haveData && selected ? (
         <RideDetail ride={selected} returning={returning} language={language} onChanged={onChanged} setNotice={setNotice}
-          notice={notice || (query.has("saved") ? "schedule.saved" : "")} refreshing={!ready} schedule={schedule} day={day} />
+          notice={notice || savedNotice} refreshing={!ready} schedule={schedule} day={day} hours={workHours?.hours} />
       ) : (
         <>
           {subpage && <h1>{t("driver.title")}</h1>}
           {haveData && !subpage ? (
             <>
-              <p className="driver-feedback" role="status">{notice ? t(notice) : query.has("saved") ? t("schedule.saved") : ""}</p>
+              <p className="driver-feedback" role="status">{(notice || savedNotice) && t(notice || savedNotice)}</p>
               <div className="driver-board">
-                <PendingList rides={pending} language={language} day={day} latest={alerts?.latest} />
-                <DriverDay schedule={schedule} rides={load.rides} day={day} today={today} language={language} onRemove={removeBlock} />
+                <PendingList rides={pending} language={language} day={day} latest={alerts?.latest} hours={workHours?.hours} />
+                <DriverDay schedule={schedule} rides={load.rides} day={day} today={today} language={language} onRemove={removeBlock} workHours={workHours} />
               </div>
             </>
           ) : <p role="status">{t("driver." + (ready ? "notFound" : load.status))}</p>}
         </>
       )}
-      {subpage && <div role="status">
+      {subpage && !editingHours && <div role="status">
         {haveData && pendingCount > 0 && <p className="request-alert">
           <a href={driverLink(day) + "#pending"}>{t("driver.pending")} <span className="request-count">{pendingCount}</span></a>
           {alerts?.count > 0 && <a href={driverLink(day, { ride: alerts.latest })}>{t("driver.latestRequest")}</a>}
         </p>}
       </div>}
-      {haveData && <BookingEmailStatus language={language} />}
-      {haveData && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
+      {haveData && !editingHours && <BookingEmailStatus language={language} />}
+      {haveData && !editingHours && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
       {!(load.status === "loadFailed" && haveData) && <div className="driver-nav">
         <button className="button" type="button" disabled={load.status === "loading"} onClick={refresh}>{t("driver.refresh")}</button>
       </div>}

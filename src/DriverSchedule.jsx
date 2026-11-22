@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
+import { isOutsideWorkHours, workPeriods } from "./workingHours";
 import { bookingPayload, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
@@ -118,7 +119,7 @@ export function NextPickup({ schedule, day, language }) {
   );
 }
 
-export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
+export function DriverDay({ schedule, rides, day, today, language, onRemove, workHours }) {
   const [removing, setRemoving] = useState("");
   const t = (key) => getText(language, key);
   const calendar = [...schedule, ...rides.filter(ride => ride.status !== "confirmed").flatMap(ride => rideLegs(ride))]
@@ -142,6 +143,12 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
   const entries = byDay.get(day);
   const locale = language === "fr" ? "fr-FR" : "en-GB";
   const dateLabel = (value, options) => new Date(value + "T12:00:00Z").toLocaleDateString(locale, { ...options, timeZone: "UTC" });
+  const periods = workHours?.hours ? workPeriods(workHours.hours, day) : null;
+
+  function agendaTime(instant) {
+    const [date, time] = parisMinute(instant).split("T");
+    return date === day ? time : formatParisTime(instant, language);
+  }
 
   async function remove(id) {
     if (!window.confirm(t("schedule.confirmRemove"))) return;
@@ -154,22 +161,38 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
   }
 
   function card(entry) {
+    const { ride } = entry;
+    const pending = ride?.status === "pending";
     return (
       <li className="agenda-entry" key={entry.id}>
-        {entry.ride && <span className="calendar-status">{t("booking.state." + entry.ride.status)}</span>}
-        <EntryText entry={entry} language={language} />
-        {entry.ride ? (
-          <>
-            <span>{entry.ride.passenger_name} · <a href={"tel:" + entry.ride.passenger_phone.replace(/[^+\d]/g, "")}>{entry.ride.passenger_phone}</a></span>
-            <div className="actions">
-              <a className="button" href={driverLink(day, { ride: entry.ride.reference, ...(entry.returning ? { leg: "return" } : {}) })}>
-                {t("driver.detail")} {entry.ride.reference}
-              </a>
-            </div>
-          </>
-        ) : (
-          <button className="button destructive" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>
-        )}
+        <div className="agenda-clock">
+          <strong>{agendaTime(entry.start)}</strong>
+          <span className="muted">{entry.endKnown
+            ? (ride ? t("schedule.finish") : t("schedule.blocked")) + " " + agendaTime(entry.end)
+            : t("schedule.finishUnknown")}</span>
+        </div>
+        <div className="agenda-summary">
+          {ride ? (
+            <>
+              <span className="calendar-status">{t("booking.state." + ride.status)}{entry.returning && " · " + t("schedule.returnLeg")}</span>
+              <p>{entry.pickup} → {entry.destination}</p>
+              {pending && isOutsideWorkHours(workHours?.hours, entry.start) && <p className="field-error">{t("schedule.outsideWorkHours")}</p>}
+              <div className="agenda-links">
+                <a href={driverLink(day, { ride: ride.reference, ...(entry.returning ? { leg: "return" } : {}) })}>
+                  {t(pending ? "driver.reviewRequest" : "driver.detail")} #{ride.reference}
+                </a>
+                <a href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")} aria-label={t("driver.call") + " · " + ride.passenger_name}>
+                  {ride.passenger_name}
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <strong>{t("schedule.timeBlocked")}</strong>
+              <button className="button destructive" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>
+            </>
+          )}
+        </div>
       </li>
     );
   }
@@ -178,6 +201,9 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
     <>
       <section className="panel driver-agenda" aria-labelledby="day-heading">
         <h2 id="day-heading">{dateLabel(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h2>
+        <p className="day-work-hours muted">{periods ? (
+          <>{t("schedule.workHours")} · {periods.length ? periods.map(([start, end]) => start + "–" + end).join(" / ") : t("schedule.dayOff")}</>
+        ) : t(workHours === undefined ? "schedule.workHoursLoading" : workHours === false ? "schedule.workHoursUnavailable" : "schedule.workHoursNotSet")}</p>
         <div className="schedule-date schedule-controls">
           {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
           <label className="field">
@@ -190,10 +216,13 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
           </label>
           {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
         </div>
-        {day >= today && <div className="actions schedule-controls">
-          <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
-          <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
-        </div>}
+        <div className="actions schedule-controls">
+          {day >= today && <>
+            <a className="button primary" href={driverLink(day, { new: "" })}>{t("schedule.addRide")}</a>
+            <a className="button" href={driverLink(day, { block: "" })}>{t("schedule.addBlock")}</a>
+          </>}
+          <a className="button" href={driverLink(day, { hours: "" })}>{t("schedule.workHours")}</a>
+        </div>
         {entries.length > 0 && <ul className="ride-list">{entries.map(card)}</ul>}
         {entries.length === 0 && <p className="driver-empty">{t("schedule.dayEmpty")}</p>}
       </section>
@@ -218,6 +247,7 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove }) {
             </a>
           ))}
         </div>
+        <p className="calendar-count muted">{t("schedule.calendarCount")}</p>
       </section>
     </>
   );

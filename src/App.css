@@ -136,6 +136,15 @@ h3 { font-size: 1.05rem; }
 .driver-empty { color: var(--muted); }
 .driver-agenda > .driver-empty { border-top: 1px solid var(--line); padding-top: 1rem; }
 .agenda-entry, .pending-rides li { display: grid; justify-items: start; gap: .55rem; border-top: 1px solid var(--line); padding-top: .85rem; }
+.day-work-hours, .calendar-count { margin-top: .4rem; font-size: .9rem; }
+.agenda-entry { grid-template-columns: minmax(0, 8rem) minmax(0, 1fr); column-gap: 1.1rem; }
+.agenda-clock, .agenda-summary { display: grid; gap: .3rem; justify-items: start; align-content: start; }
+.agenda-clock { font-variant-numeric: tabular-nums; }
+.agenda-clock strong { font-size: 1.15rem; line-height: 1.3; }
+.agenda-clock .muted { font-size: .85rem; }
+.agenda-links { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+.agenda-links a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .9rem; }
+.agenda-links a:first-child { font-weight: 650; }
 .pending-rides a, .pending-latest { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; }
 .month-nav { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin: .75rem 0 .4rem; }
 .month-nav strong { flex: 1 0 auto; text-transform: capitalize; }
@@ -162,6 +171,13 @@ h3 { font-size: 1.05rem; }
 .schedule-entry strong { font-variant-numeric: tabular-nums; font-size: 1.13rem; }
 .schedule-duration { max-width: 24rem; }
 .schedule-fieldset { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+.work-hours-form { max-width: 44rem; }
+.work-hours-form > .muted { margin-bottom: 1rem; }
+.work-hours-form > .button { margin-top: 1rem; }
+.work-hours-row { display: grid; grid-template-columns: minmax(8rem, .7fr) minmax(0, 1.3fr); align-items: center; gap: .3rem 1rem; padding-block: .65rem; border-top: 1px solid var(--line); }
+.work-hours-row .field { font-size: .9rem; font-weight: 600; }
+.work-hours-row .field input { padding-inline: .45rem; }
+.work-hours-row .check { font-weight: 650; text-transform: capitalize; }
 .ride-list { display: grid; gap: .65rem; list-style: none; padding: 0; margin: 0; }
 .next-ride { display: grid; gap: 1rem; background: var(--hint); border-left: 3px solid var(--accent); }
 .next-ride-time, .next-ride-route { display: grid; align-content: start; gap: .5rem; min-width: 0; }
@@ -218,6 +234,12 @@ h3 { font-size: 1.05rem; }
   .driver-main .actions .button, .reservation-submit .button { flex: 1 1 9rem; }
   .trip-detail .button { justify-self: stretch; }
   .fare { font-size: 2.4rem; }
+}
+
+@media (max-width: 500px) {
+  .agenda-entry, .work-hours-row { grid-template-columns: minmax(0, 1fr); }
+  .agenda-clock { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; }
+  .work-hours-row:has(.time-pair) { padding-bottom: .9rem; }
 }
 
 .pac-container {
