@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
+import PassengerCountField from "./PassengerCountField";
 import { isOutsideWorkHours, workPeriods } from "./workingHours";
 import { bookingPayload, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
@@ -296,7 +297,11 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
 
   function update(event) {
     const { name, value, checked, type } = event.target;
-    setDraft((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
+    updateField(name, type === "checkbox" ? checked : value);
+  }
+
+  function updateField(name, value) {
+    setDraft((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
     setNotice("");
   }
@@ -383,7 +388,8 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
               {field("customerName", "planner.labels.name", { maxLength: 150 })}
               {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40 })}
               {field("customerEmail", "planner.labels.email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
-              {field("passengers", "planner.labels.passengers", { type: "number", min: 1, max: capacity })}
+              <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={draft.passengers}
+                onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)} disabled={frozen} />
               {field("notes", "planner.labels.notes", { maxLength: 1500 })}
               <DraftField name="source" label={t("schedule.source")}>
                 <select id="source" name="source" value={draft.source} onChange={update}>

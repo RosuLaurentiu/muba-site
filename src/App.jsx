@@ -3,6 +3,7 @@ import "./App.css";
 import { appConfig } from "./config";
 import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validatePassenger, validateWebTrip } from "./booking";
 import BookingDetails from "./BookingDetails";
+import PassengerCountField from "./PassengerCountField";
 import { getRouteTotals, routeEstimate } from "./fare";
 import {
   getInitialLanguage,
@@ -425,14 +426,18 @@ function RiderBooking({ language }) {
 
   function handleInputChange(event) {
     const { name, type, value, checked } = event.target;
+    updateField(name, type === "checkbox" ? checked : value);
+  }
+
+  function updateField(name, value) {
     if (name === "pickup" || name === "destination") delete selectedPlaces.current[name];
     if (["pickup", "destination", "pickupDate", "pickupTime", "roundTrip", "returnDate", "returnTime"].includes(name)) {
       clearEstimate();
     }
     setFormData((current) => ({
       ...current,
-      [name]: type === "checkbox" ? checked : value,
-      ...(name === "roundTrip" && !checked ? { returnDate: "", returnTime: "" } : {})
+      [name]: value,
+      ...(name === "roundTrip" && !value ? { returnDate: "", returnTime: "" } : {})
     }));
     setErrors((current) => {
       if (!current[name]) return current;
@@ -586,11 +591,7 @@ function RiderBooking({ language }) {
     return (
       <div className="field">
         <label htmlFor={name}>{t("planner.labels." + label)}</label>
-        {name === "passengers" ? (
-          <select {...props}>
-            {Array.from({ length: capacity }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
-          </select>
-        ) : name === "notes" ? <textarea {...props} /> : <input {...props} />}
+        {name === "notes" ? <textarea {...props} /> : <input {...props} />}
         {error && <span className="field-error" id={name + "-error"}>{t(error)}</span>}
       </div>
     );
@@ -626,7 +627,9 @@ function RiderBooking({ language }) {
               <p className="muted">{t("booking.webNotice").replace("{hours}", appConfig.minimumWebNoticeHours)}{" "}
                 <a href="#ride-contact">{t("booking.contact")}</a>
               </p>
-              {field("passengers", "passengers", { required: true })}
+              <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={formData.passengers}
+                onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)}
+                disabled={saveState === "saving" || retrySave} />
               <label className="check">
                 <input name="roundTrip" type="checkbox" checked={formData.roundTrip} onChange={handleInputChange} />
                 {t("planner.labels.roundTrip")}

@@ -114,6 +114,9 @@ rides. Earlier months show retained bookings.
 The agenda lists each leg separately. Ride details group pickup directions with
 the trip and contact actions with the passenger information. The driver can
 record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
+The rider form and **Add ride** use the same passenger selector. Both start at
+one passenger and use the largest configured vehicle capacity. Muba styles the
+UI SDK Select to match the existing Light and Dark controls.
 Use **Working hours** in the agenda to set a regular week in Paris time. Check
 each day when a shift starts. An end time earlier than the start means the
 shift ends the following day. **Block time** still applies to one-off changes.
