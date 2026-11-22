@@ -206,6 +206,12 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
           ...(ride.driver_notes ? [[t("driver.notes"), ride.driver_notes]] : [])
         ]} />
         <div className="actions">
+          {ride.passenger_email && (
+            <a className="button" href={"mailto:" + encodeURIComponent(ride.passenger_email) +
+              "?subject=" + encodeURIComponent(t("booking.reference") + " " + ride.reference)}>
+              {t("driver.emailRider")}
+            </a>
+          )}
           <a className="button" href={"tel:" + ride.passenger_phone.replace(/[^+\d]/g, "")}>{t("driver.call")}</a>
           <a className="button" href={"https://wa.me/" + toWhatsAppNumber(ride.passenger_phone)} target="_blank" rel="noreferrer">
             {t("nav.whatsApp")}
@@ -336,7 +342,7 @@ function DriverRides({ session, language }) {
     if (ride) {
       setLoad((current) => ({
         ...current,
-        rides: current.rides.map((entry) => entry.reference === ride.reference ? ride : entry)
+        rides: current.rides.map((entry) => entry.reference === ride.reference ? { ...entry, ...ride } : entry)
       }));
     } else {
       refresh();

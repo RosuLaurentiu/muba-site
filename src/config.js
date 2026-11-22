@@ -24,6 +24,7 @@ export const appConfig = {
   phoneLink: "+33668478137",
   email: "privatetaxiparis@gmail.com",
   operatorName: "Mubashir",
+  minimumWebNoticeHours: 2,
 
   // Add your real Calendly event URL when ready.
   calendlyUrl: "https://calendly.com/rosulaurentiu33/30min",

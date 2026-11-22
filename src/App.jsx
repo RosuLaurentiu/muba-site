@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { appConfig } from "./config";
-import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validatePassenger, validateTrip } from "./booking";
+import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validatePassenger, validateWebTrip } from "./booking";
 import BookingDetails from "./BookingDetails";
 import { getRouteTotals, routeEstimate } from "./fare";
 import {
@@ -215,7 +215,7 @@ function tripRows(ride, t, language) {
 function ContactFooter({ language, workspaceLink = false }) {
   const t = (key) => getText(language, key);
   return (
-    <footer className="site-footer actions">
+    <footer className="site-footer actions" id="ride-contact">
       <span>{t("booking.contact")}</span>
       <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
       <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
@@ -444,7 +444,7 @@ function RiderBooking({ language }) {
 
   async function handleReview(event) {
     event.preventDefault();
-    const nextErrors = validateTrip(formData, capacity);
+    const nextErrors = validateWebTrip(formData, capacity);
     setErrors(nextErrors);
     const invalid = [...event.currentTarget.elements].find((field) => nextErrors[field.name]);
     if (invalid) {
@@ -525,7 +525,10 @@ function RiderBooking({ language }) {
       setSaveState("");
       setScreen("receipt");
     } catch (error) {
-      if (error.message === "BOOKING_NOT_CONFIGURED" || /^(22\d{3}|23502|23514)$/.test(error.code)) {
+      if (error.code === "PT422") {
+        attempt.current = null;
+        setSaveState("shortNotice");
+      } else if (error.message === "BOOKING_NOT_CONFIGURED" || /^(22\d{3}|23502|23514)$/.test(error.code)) {
         attempt.current = null;
         setSaveState("rejected");
       } else {
@@ -558,7 +561,7 @@ function RiderBooking({ language }) {
 
   const t = (key) => getText(language, key);
   const retrySave = saveState === "failed" || saveState === "paused";
-  const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected" }[saveState];
+  const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected", shortNotice: "shortNotice" }[saveState];
   const totals = getRouteTotals(route, formData.roundTrip);
   const receiptLink = receipt ? "?booking#key=" + receipt.key : "";
   const details = screen === "review" ? [
@@ -620,6 +623,9 @@ function RiderBooking({ language }) {
                 {field("pickupDate", "date", { type: "date", required: true })}
                 {field("pickupTime", "time", { type: "time", required: true })}
               </div>
+              <p className="muted">{t("booking.webNotice").replace("{hours}", appConfig.minimumWebNoticeHours)}{" "}
+                <a href="#ride-contact">{t("booking.contact")}</a>
+              </p>
               {field("passengers", "passengers", { required: true })}
               <label className="check">
                 <input name="roundTrip" type="checkbox" checked={formData.roundTrip} onChange={handleInputChange} />
@@ -687,11 +693,13 @@ function RiderBooking({ language }) {
             </div>
           </details>
           {saveMessage && (
-            <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}</p>
+            <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}
+              {saveState === "shortNotice" && <>{" "}<a href="#ride-contact">{t("booking.contact")}</a></>}
+            </p>
           )}
           <div className="reservation-submit split">
             <button className="button" type="button" onClick={editTrip} disabled={saveState === "saving" || retrySave}>{t("booking.edit")}</button>
-            <button className="button primary" type="submit" disabled={estimating || saveState === "saving"}>
+            <button className="button primary" type="submit" disabled={estimating || saveState === "saving" || saveState === "shortNotice"}>
               {t(saveState === "saving" ? "booking.saving" : retrySave ? "booking.retry" : "booking.send")}
             </button>
           </div>

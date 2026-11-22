@@ -50,8 +50,9 @@ Data API schemas.
   session. A change includes the current `p_version`. On a conflict, reload the
   ride before submitting a new decision. To confirm a pending web request,
   include `agreed_fare_cents` as a positive integer and `fare_accepted: true`
-  in `p_schedule`. The driver sends the final quote over WhatsApp and records
-  the total after the rider accepts it. Existing confirmed rides and manual
+  in `p_schedule`. The driver can open a quote email from the ride details or
+  use WhatsApp, then records the total after the rider accepts it. Rider
+  email is available through the signed-in driver list. Existing confirmed rides and manual
   bookings can be managed without a new quote.
 - Send pickup and return as local Paris values (`YYYY-MM-DDTHH:mm`). The
   database returns absolute timestamps for display in Paris time. It rejects
@@ -177,6 +178,11 @@ Restore-BookingArchive -Path $archivePath -Key $archiveKey -Arguments @('--singl
 ```
 
 ### Web request limits
+
+`save_ride` requires at least two hours between submission and pickup for new
+web requests. For shorter notice, use Call or WhatsApp. The driver can save a
+short-notice ride directly. A retry of a saved request returns the original
+booking, including after its pickup enters the two-hour window.
 
 `save_ride` accepts at most 10 web requests per hour and 30 per day across
 all riders. Above either limit it refuses new web requests with

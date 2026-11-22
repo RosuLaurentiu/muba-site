@@ -110,6 +110,7 @@ try {
   const listed = (await rpc("list_rides", {}, driverToken)).find(ride => String(ride.reference) === pending.reference);
   assert.equal(listed.passenger_name, trip.passenger_name);
   assert.equal(listed.passenger_phone, trip.passenger_phone);
+  assert.equal(listed.passenger_email, trip.passenger_email);
   assert.equal(listed.passenger_notes, trip.passenger_notes);
   assert.equal(listed.request_key_hash, undefined);
   assert.equal(listed.request_hash, undefined);

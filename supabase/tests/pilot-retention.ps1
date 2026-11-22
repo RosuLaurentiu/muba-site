@@ -95,6 +95,20 @@ begin
       is distinct from 'pending' then
     raise exception 'Anonymous web intake did not resume';
   end if;
+  begin
+    perform public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb ||
+      jsonb_build_object('pickup_time', to_char(
+        (date_trunc('minute', now()) + interval '119 minutes') at time zone 'Europe/Paris', 'YYYY-MM-DD"T"HH24:MI')));
+    raise exception 'Web intake accepted a pickup inside the two-hour notice window';
+  exception when sqlstate 'PT422' then
+    if sqlerrm <> 'WEB_NOTICE_REQUIRED' then raise; end if;
+  end;
+  if public.save_ride(gen_random_uuid(), current_setting('muba.fixture_trip')::jsonb ||
+        jsonb_build_object('pickup_time', to_char(
+          (date_trunc('minute', now()) + interval '121 minutes') at time zone 'Europe/Paris', 'YYYY-MM-DD"T"HH24:MI')))->>'status'
+      is distinct from 'pending' then
+    raise exception 'Web intake did not accept a pickup outside the notice window';
+  end if;
 end;
 $check$;
 rollback;

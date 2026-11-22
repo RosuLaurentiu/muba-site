@@ -1,3 +1,5 @@
+import { appConfig } from "./config.js";
+
 const parisClock = new Intl.DateTimeFormat("sv-SE", {
   timeZone: "Europe/Paris",
   dateStyle: "short",
@@ -63,6 +65,17 @@ export function validatePassenger(form) {
     errors.customerEmail = "booking.emailRequired";
   } else if (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(email)) {
     errors.customerEmail = "booking.invalidEmail";
+  }
+  return errors;
+}
+
+export function validateWebTrip(form, capacity, now = new Date()) {
+  const errors = validateTrip(form, capacity, now);
+  if (!errors.pickupDate && !errors.pickupTime) {
+    const pickup = getParisInstant(`${form.pickupDate}T${form.pickupTime}`);
+    if (pickup - now < appConfig.minimumWebNoticeHours * 3600000) {
+      errors.pickupTime = "booking.shortNotice";
+    }
   }
   return errors;
 }
