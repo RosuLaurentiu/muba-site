@@ -79,7 +79,7 @@ export const translations = {
       workHoursUnavailable: "Could not load working hours. Try refreshing.", dayOff: "Day off",
       workHoursHelp: "Set a regular week in Paris time. Use Block time for a one-off change. Requests outside these hours still come through and are flagged for review.",
       workStart: "Start", workEnd: "End", followingDay: "Next day", overnightUntil: "Overnight shift until",
-      invalidWorkHours: "Choose different start and end times.", outsideWorkHours: "Pickup outside working hours",
+      invalidWorkHours: "Choose different start and end times.", missingWorkHours: "Enter a start and end time.", outsideWorkHours: "Pickup outside working hours",
       saveWorkHours: "Save working hours", workHoursSaved: "Working hours saved.",
       workHoursSaveFailed: "Could not save working hours. Try again.",
       workHoursChanged: "Working hours changed elsewhere. Go back and reopen Working hours before saving.",
@@ -125,7 +125,7 @@ export const translations = {
       accept: "Confirm ride", decline: "Decline request", decisionSaved: "Decision saved.",
       staleDecision: "This ride changed since you opened it. Review the current status.",
       decisionFailed: "Could not verify the change. Check the current status before trying again.",
-      trip: "Trip", passengerDetails: "Passenger details", passenger: "Passenger", refresh: "Refresh",
+      trip: "Trip", passengerDetails: "Passenger details", passenger: "Passenger", passengerName: "Passenger name", refresh: "Refresh",
       confirmDecline: "Decline this request? The rider will be told the ride is unavailable."
     },
     booking: {
@@ -134,6 +134,7 @@ export const translations = {
       checkFare: "Review trip and fare",
       pickupAt: "Pickup in Paris time", returnAt: "Return in Paris time",
       pickupDateRequired: "Enter a pickup date.", pickupTimeRequired: "Enter a pickup time.",
+      dateFormat: "DD/MM/YYYY", dateField: "Date", timeField: "Time", showCalendar: "Open calendar", clearDate: "Clear", invalidDate: "Enter a valid date.",
       invalidParisTime: "Choose a valid local time in Paris.", futurePickup: "Choose a future pickup time in Paris.", futureReturn: "Choose a future return time in Paris.",
       webNotice: "Request online at least {hours} hours before pickup. For a sooner ride, call or use WhatsApp.",
       shortNotice: "This pickup is too soon to book online. Choose a later time, call or use WhatsApp.",
@@ -383,7 +384,7 @@ export const translations = {
       workHoursUnavailable: "Impossible de charger les horaires. Actualisez la page.", dayOff: "Jour de repos",
       workHoursHelp: "Definissez une semaine type en heure de Paris. Bloquez un creneau pour un changement ponctuel. Les demandes hors horaires restent possibles et sont signalees.",
       workStart: "Debut", workEnd: "Fin", followingDay: "Le lendemain", overnightUntil: "Service de nuit jusqu'a",
-      invalidWorkHours: "Les heures de debut et de fin doivent etre differentes.", outsideWorkHours: "Depart hors horaires de travail",
+      invalidWorkHours: "Les heures de debut et de fin doivent etre differentes.", missingWorkHours: "Indiquez une heure de debut et de fin.", outsideWorkHours: "Depart hors horaires de travail",
       saveWorkHours: "Enregistrer les horaires", workHoursSaved: "Horaires enregistres.",
       workHoursSaveFailed: "Impossible d'enregistrer les horaires. Reessayez.",
       workHoursChanged: "Les horaires ont change. Revenez en arriere, puis ouvrez de nouveau les horaires avant de les enregistrer.",
@@ -429,7 +430,7 @@ export const translations = {
       accept: "Confirmer la course", decline: "Refuser la demande", decisionSaved: "Decision enregistree.",
       staleDecision: "Cette course a change. Verifiez son statut actuel.",
       decisionFailed: "Impossible de verifier le changement. Consultez le statut actuel avant de reessayer.",
-      trip: "Trajet", passengerDetails: "Coordonnees du passager", passenger: "Passager", refresh: "Actualiser",
+      trip: "Trajet", passengerDetails: "Coordonnees du passager", passenger: "Passager", passengerName: "Nom du passager", refresh: "Actualiser",
       confirmDecline: "Refuser cette demande ? Le passager sera informe que la course est indisponible."
     },
     booking: {
@@ -438,6 +439,7 @@ export const translations = {
       checkFare: "Verifier le trajet et le tarif",
       pickupAt: "Depart, heure de Paris", returnAt: "Retour, heure de Paris",
       pickupDateRequired: "Indiquez une date de depart.", pickupTimeRequired: "Indiquez une heure de depart.",
+      dateFormat: "JJ/MM/AAAA", dateField: "Date", timeField: "Heure", showCalendar: "Ouvrir le calendrier", clearDate: "Effacer", invalidDate: "Indiquez une date valide.",
       invalidParisTime: "Choisissez une heure locale valide a Paris.", futurePickup: "Choisissez une heure de depart ulterieure a Paris.", futureReturn: "Choisissez une heure de retour ulterieure a Paris.",
       webNotice: "Envoyez votre demande au moins {hours} heures avant le depart. Pour un depart plus proche, appelez-nous ou utilisez WhatsApp.",
       shortNotice: "Ce depart est trop proche pour une demande en ligne. Choisissez une autre heure, appelez-nous ou utilisez WhatsApp.",

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { focusBookingError } from "./booking";
+import { TimeField } from "./DateTimeFields";
 import { getText } from "./i18n";
 import { driverLink, moveDay } from "./schedule";
 
@@ -15,14 +17,18 @@ export default function WorkHoursEditor({ current, day, language, rpc }) {
 
   function update(index, values) {
     setDraft((days) => days.map((item, i) => i === index ? { ...item, ...values } : item));
-    setNotice((currentNotice) => currentNotice === "invalidWorkHours" ? "" : currentNotice);
+    setNotice((currentNotice) => ["invalidWorkHours", "missingWorkHours"].includes(currentNotice) ? "" : currentNotice);
   }
 
   async function save(event) {
     event.preventDefault();
     if (busy) return;
-    if (draft.some(({ working, start, end }) => working && start === end)) {
-      setNotice("invalidWorkHours");
+    const invalidDay = draft.findIndex(({ working, start, end }) => working && (!start || !end || start === end));
+    if (invalidDay >= 0) {
+      const { start, end } = draft[invalidDay];
+      const message = start && end ? "invalidWorkHours" : "missingWorkHours";
+      focusBookingError(event.currentTarget, { [(start ? "work-end-" : "work-start-") + invalidDay]: message });
+      setNotice(message);
       return;
     }
     setBusy(true);
@@ -38,7 +44,7 @@ export default function WorkHoursEditor({ current, day, language, rpc }) {
   }
 
   return (
-    <form className="panel work-hours-form" onSubmit={save}>
+    <form className="panel work-hours-form" onSubmit={save} noValidate>
       <p className="muted">{t("workHoursHelp")}</p>
       <fieldset className="schedule-fieldset" disabled={busy}>
         {draft.map(({ working, start, end }, index) => {
@@ -53,23 +59,20 @@ export default function WorkHoursEditor({ current, day, language, rpc }) {
               </label>
               {working ? (
                 <div className="time-pair">
-                  <label className="field">
-                    {t("workStart")}
-                    <input type="time" required value={start} onChange={(event) => update(index, { start: event.target.value })} />
-                  </label>
-                  <label className="field">
-                    {t("workEnd")}
-                    {end && start && end < start && <span className="muted"> · {t("followingDay")}</span>}
-                    <input type="time" required value={end} aria-invalid={notice === "invalidWorkHours" && start === end || undefined}
-                      onChange={(event) => update(index, { end: event.target.value })} />
-                  </label>
+                  <TimeField name={"work-start-" + index} label={t("workStart")} language={language} value={start}
+                    onChange={(value) => update(index, { start: value })} disabled={busy}
+                    errorId={notice === "missingWorkHours" && !start ? "work-hours-error" : undefined} />
+                  <TimeField name={"work-end-" + index} label={t("workEnd")} language={language} value={end}
+                    onChange={(value) => update(index, { end: value })} disabled={busy}
+                    errorId={(notice === "invalidWorkHours" && start === end) || (notice === "missingWorkHours" && !end) ? "work-hours-error" : undefined}
+                    hint={end && start && end < start ? t("followingDay") : ""} />
                 </div>
               ) : <span className="muted">{overnight ? t("overnightUntil") + " " + previous.end : t("dayOff")}</span>}
             </div>
           );
         })}
       </fieldset>
-      <p role="status" className="driver-feedback field-error">{notice && t(notice)}</p>
+      <p role="status" className="driver-feedback field-error" id="work-hours-error">{notice && t(notice)}</p>
       <button className="button primary" type="submit" disabled={busy}>{t("saveWorkHours")}</button>
     </form>
   );

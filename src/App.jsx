@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { appConfig } from "./config";
-import { bookingPayload, bookingRpc, formatParisTime, getParisInstant, validatePassenger, validateWebTrip } from "./booking";
+import { bookingPayload, bookingRpc, focusBookingError, formatParisTime, getParisInstant, validatePassenger, validateWebTrip } from "./booking";
 import BookingDetails from "./BookingDetails";
+import { DateField, TimeField } from "./DateTimeFields";
 import PassengerCountField from "./PassengerCountField";
 import { getRouteTotals, routeEstimate } from "./fare";
 import {
@@ -434,11 +435,7 @@ function RiderBooking({ language }) {
     if (["pickup", "destination", "pickupDate", "pickupTime", "roundTrip", "returnDate", "returnTime"].includes(name)) {
       clearEstimate();
     }
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-      ...(name === "roundTrip" && !value ? { returnDate: "", returnTime: "" } : {})
-    }));
+    setFormData((current) => ({ ...current, [name]: value }));
     setErrors((current) => {
       if (!current[name]) return current;
       const next = { ...current };
@@ -450,12 +447,9 @@ function RiderBooking({ language }) {
   async function handleReview(event) {
     event.preventDefault();
     const nextErrors = validateWebTrip(formData, capacity);
+    const invalid = focusBookingError(event.currentTarget, nextErrors);
     setErrors(nextErrors);
-    const invalid = [...event.currentTarget.elements].find((field) => nextErrors[field.name]);
-    if (invalid) {
-      window.requestAnimationFrame(() => invalid.focus());
-      return;
-    }
+    if (invalid) return;
 
     setScreen("review");
     clearEstimate();
@@ -597,6 +591,11 @@ function RiderBooking({ language }) {
     );
   }
 
+  function tripField(Field, name, label) {
+    return <Field name={name} label={t("planner.labels." + label)} language={language} value={formData[name]}
+      onChange={(value) => updateField(name, value)} error={errors[name] && t(errors[name])} />;
+  }
+
   return (
     <main className="site-main rider-main">
       <div hidden={screen !== "entry"}>
@@ -621,8 +620,8 @@ function RiderBooking({ language }) {
               {field("destination", "destination", { ref: destinationInputRef, placeholder: t("planner.placeholders.destination"), maxLength: 300, required: true })}
               <p className="muted">{t("booking.addressPrivacy")}</p>
               <div className="time-pair">
-                {field("pickupDate", "date", { type: "date", required: true })}
-                {field("pickupTime", "time", { type: "time", required: true })}
+                {tripField(DateField, "pickupDate", "date")}
+                {tripField(TimeField, "pickupTime", "time")}
               </div>
               <p className="muted">{t("booking.webNotice").replace("{hours}", appConfig.minimumWebNoticeHours)}{" "}
                 <a href="#ride-contact">{t("booking.contact")}</a>
@@ -636,8 +635,8 @@ function RiderBooking({ language }) {
               </label>
               {formData.roundTrip && (
                 <div className="time-pair">
-                  {field("returnDate", "returnDate", { type: "date", required: true })}
-                  {field("returnTime", "returnTime", { type: "time", required: true })}
+                  {tripField(DateField, "returnDate", "returnDate")}
+                  {tripField(TimeField, "returnTime", "returnTime")}
                 </div>
               )}
             </section>

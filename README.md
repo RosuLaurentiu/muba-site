@@ -117,6 +117,9 @@ record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
 The rider form and **Add ride** use the same passenger selector. Both start at
 one passenger and use the largest configured vehicle capacity. Muba styles the
 UI SDK Select to match the existing Light and Dark controls.
+Use the calendar button or type a date in day/month/year order. Enter hours
+and minutes directly on a 24-hour clock. The rider can switch off round trip
+temporarily and still recover the return date and time when switching it back on.
 Use **Working hours** in the agenda to set a regular week in Paris time. Check
 each day when a shift starts. An end time earlier than the start means the
 shift ends the following day. **Block time** still applies to one-off changes.

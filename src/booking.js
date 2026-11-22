@@ -84,6 +84,17 @@ export function validateBooking(form, capacity, now = new Date()) {
   return { ...validateTrip(form, capacity, now), ...validatePassenger(form) };
 }
 
+export function focusBookingError(form, errors) {
+  // A typed invalid date can leave the last valid ISO value in the draft.
+  for (const input of form.querySelectorAll('[data-slot="date-picker-input"][data-invalid]')) {
+    errors[input.dataset.bookingField] = "booking.invalidDate";
+  }
+  const field = [...form.querySelectorAll("[data-booking-field], [name]")]
+    .find((element) => errors[element.dataset.bookingField || element.name]);
+  if (field) window.requestAnimationFrame(() => field.focus());
+  return Object.keys(errors).length > 0;
+}
+
 export function bookingPayload(form, language) {
   return {
     language,

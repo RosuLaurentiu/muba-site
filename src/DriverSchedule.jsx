@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
+import { DateField, TimeField } from "./DateTimeFields";
 import PassengerCountField from "./PassengerCountField";
 import { isOutsideWorkHours, workPeriods } from "./workingHours";
-import { bookingPayload, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
+import { bookingPayload, focusBookingError, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
 import { draftBlock, draftLegs, driverLink, monthDays, moveDay, parisDay, rideLegs, scheduleContext } from "./schedule";
@@ -207,14 +208,8 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
         ) : t(workHours === undefined ? "schedule.workHoursLoading" : workHours === false ? "schedule.workHoursUnavailable" : "schedule.workHoursNotSet")}</p>
         <div className="schedule-date schedule-controls">
           {day > "0001-01-01" && <a className="button" href={driverLink(moveDay(day, -1)) + "#day-heading"} aria-label={t("schedule.previous")}>‹</a>}
-          <label className="field">
-            {t("schedule.parisDay")}
-            <input type="date" value={day} max="9999-12-30" onChange={(event) => {
-              if (event.currentTarget.validity.valid && event.currentTarget.value) {
-                window.location.assign(driverLink(event.currentTarget.value) + "#day-heading");
-              }
-            }} />
-          </label>
+          <DateField name="agenda-date" label={t("schedule.parisDay")} language={language} value={day} max="9999-12-30" allowClear={false}
+            onChange={(date) => { if (date && date !== day) window.location.assign(driverLink(date) + "#day-heading"); }} />
           {day < "9999-12-30" && <a className="button" href={driverLink(moveDay(day, 1)) + "#day-heading"} aria-label={t("schedule.nextDay")}>›</a>}
         </div>
         <div className="actions schedule-controls">
@@ -313,12 +308,9 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
       pickup: parisMinute(ride.pickup_at), return: ride.return_at && parisMinute(ride.return_at)
     }) : validateBooking(draft, capacity);
     if (!durationValid) validation.estimatedMinutes = "schedule.durationInvalid";
+    const invalid = focusBookingError(event.currentTarget, validation);
     setErrors(validation);
-    const invalid = [...event.currentTarget.elements].find((field) => validation[field.name]);
-    if (invalid) {
-      window.requestAnimationFrame(() => invalid.focus());
-      return;
-    }
+    if (invalid) return;
     writing.current = true;
     setBusy(true);
     try {
@@ -358,6 +350,11 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
       value={draft[name]} onChange={update} {...options} />;
   }
 
+  function tripField(Field, name, label) {
+    return <Field name={name} label={t("planner.labels." + label)} language={language} value={draft[name]}
+      onChange={(value) => updateField(name, value)} error={errors[name] && t(errors[name])} disabled={frozen} />;
+  }
+
   return (
     <>
       <h1>{t(ride ? "schedule.reschedule" : "schedule.addRide")}</h1>
@@ -368,8 +365,8 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
             {field("pickup", "planner.labels.pickup", { maxLength: 300, required: true })}
             {field("destination", "planner.labels.destination", { maxLength: 300, required: true })}
             <div className="time-pair">
-              {field("pickupDate", "planner.labels.date", { type: "date" })}
-              {field("pickupTime", "planner.labels.time", { type: "time" })}
+              {tripField(DateField, "pickupDate", "date")}
+              {tripField(TimeField, "pickupTime", "time")}
             </div>
             <label className="check">
               <input name="roundTrip" type="checkbox" checked={draft.roundTrip} onChange={update} />
@@ -377,20 +374,22 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
             </label>
             {draft.roundTrip && (
               <div className="time-pair">
-                {field("returnDate", "planner.labels.returnDate", { type: "date" })}
-                {field("returnTime", "planner.labels.returnTime", { type: "time" })}
+                {tripField(DateField, "returnDate", "returnDate")}
+                {tripField(TimeField, "returnTime", "returnTime")}
               </div>
             )}
             {field("estimatedMinutes", "schedule.duration", { type: "number", min: 1, max: 1440 })}
           </div>
           {!ride && (
             <div className="panel stack">
-              {field("customerName", "planner.labels.name", { maxLength: 150 })}
+              {field("customerName", "driver.passengerName", { maxLength: 150 })}
               {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40 })}
               {field("customerEmail", "planner.labels.email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
               <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={draft.passengers}
                 onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)} disabled={frozen} />
-              {field("notes", "planner.labels.notes", { maxLength: 1500 })}
+              <DraftField name="notes" label={t("planner.labels.notes")}>
+                <textarea id="notes" name="notes" rows={3} maxLength={1500} value={draft.notes} onChange={update} />
+              </DraftField>
               <DraftField name="source" label={t("schedule.source")}>
                 <select id="source" name="source" value={draft.source} onChange={update}>
                   <option value="phone">{t("schedule.phone")}</option>
@@ -413,6 +412,7 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
 export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }) {
   const [times, setTimes] = useState({ start: day + "T09:00", end: day + "T10:00" });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const attempt = useRef(null);
   const t = (key) => getText(language, key);
@@ -421,12 +421,29 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
   const frozen = busy || error === "schedule.retrySame";
   const prevented = (context.conflicts.length > 0 && error !== "schedule.retrySame") || !refreshed;
 
+  function update(name, part, value) {
+    setTimes((current) => {
+      const [date, time] = current[name].split("T");
+      return { ...current, [name]: part === "date" ? value + "T" + time : date + "T" + value };
+    });
+    setFieldErrors((current) => ({ ...current, [name + "-" + part]: "" }));
+    setError("");
+  }
+
   async function save(event) {
     event.preventDefault();
     if (busy || prevented) return;
-    if (!attempt.current && !draft.length) {
-      setError("schedule.invalidBlock");
-      return;
+    if (!attempt.current) {
+      const validation = {};
+      for (const [name, value] of Object.entries(times)) {
+        const [date, time] = value.split("T");
+        if (!date) validation[name + "-date"] = "booking.invalidDate";
+        if (!time) validation[name + "-time"] = "booking.invalidParisTime";
+      }
+      if (!draft.length && !Object.keys(validation).length) validation["end-time"] = "schedule.invalidBlock";
+      const invalid = focusBookingError(event.currentTarget, validation);
+      setFieldErrors(validation);
+      if (invalid) return;
     }
     setBusy(true);
     try {
@@ -448,15 +465,24 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
   return (
     <>
       <h1>{t("schedule.addBlock")}</h1>
-      <form onSubmit={save}>
+      <form onSubmit={save} noValidate>
         <div className="panel stack">
-          {["start", "end"].map((name) => (
-            <DraftField key={name} name={name} label={t("schedule." + name)} type="datetime-local" value={times[name]}
-              disabled={frozen} required onChange={(event) => {
-                setTimes({ ...times, [name]: event.target.value });
-                setError("");
-              }} />
-          ))}
+          {["start", "end"].map((name) => {
+            const [date, time] = times[name].split("T");
+            return (
+              <fieldset className="schedule-fieldset block-date-time" key={name}>
+                <legend>{t("schedule." + name)}</legend>
+                <div className="time-pair">
+                  <DateField name={name + "-date"} label={t("booking.dateField")} language={language} value={date}
+                    onChange={(value) => update(name, "date", value)} disabled={frozen}
+                    error={fieldErrors[name + "-date"] && t(fieldErrors[name + "-date"])} />
+                  <TimeField name={name + "-time"} label={t("booking.timeField")} language={language} value={time}
+                    onChange={(value) => update(name, "time", value)} disabled={frozen}
+                    error={fieldErrors[name + "-time"] && t(fieldErrors[name + "-time"])} />
+                </div>
+              </fieldset>
+            );
+          })}
         </div>
         <SchedulePreview context={context} language={language} />
         {error && <p className="field-error form-submit" role="alert">{t(error)}</p>}
