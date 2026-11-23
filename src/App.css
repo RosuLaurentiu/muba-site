@@ -163,6 +163,7 @@ h3 { font-size: 1.05rem; }
 .button.toggle { min-width: 2.65rem; min-height: 2.75rem; padding: .35rem .55rem; border: 0; background: transparent; color: #bdbbb6; font-size: .81rem; }
 .button.toggle[aria-pressed="true"] { color: white; text-decoration: underline; text-underline-offset: .37em; text-decoration-thickness: 2px; }
 .theme-toggle svg { fill: none; }
+.icon-link svg { fill: none; }
 .theme-toggle[aria-pressed="true"] { color: white; }
 .theme-toggle[aria-pressed="true"] svg { fill: currentColor; }
 @media (hover: hover) { .button.toggle:hover { background: #292929; } }
@@ -263,6 +264,11 @@ h3 { font-size: 1.05rem; }
 .rider-estimate strong { font-variant-numeric: tabular-nums; }
 .quote-actions { width: 100%; }
 .confirm-help { font-size: .9rem; }
+.confirm-step { display: grid; flex-basis: 100%; gap: .5rem; justify-items: start; }
+.confirm-step p { font-weight: 650; }
+.block-presets { margin-top: -.25rem; }
+.pending-meta { font-size: .9rem; }
+.next-ride-time .next-ride-when { font-size: .95rem; }
 .schedule-advisory, .schedule-conflicts { border-top: 1px solid var(--line); padding-block: .5rem; }
 .schedule-advisory summary { min-height: 2.75rem; align-content: center; cursor: pointer; }
 .block-fields { gap: 1.25rem; }
@@ -343,6 +349,18 @@ h3 { font-size: 1.05rem; }
   .agenda-clock { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; }
   .work-hours-row:has(.time-pair) { padding-bottom: .9rem; }
   .time-pair:has(.date-control) { grid-template-columns: minmax(10rem, 1.2fr) minmax(0, 1fr); }
+}
+
+@media (max-width: 420px) {
+  .wordmark strong { max-width: 4.4rem; font-size: .8rem; line-height: 1.1; }
+  .preference-group + .preference-group { padding-left: .15rem; }
+  .brand-mark { width: 1.45rem; height: 1.45rem; }
+  .button.toggle { min-width: 2.4rem; padding-inline: .15rem; }
+}
+
+/* Below 360 px the name stays available to screen readers and the logo links home. */
+@media (max-width: 359px) {
+  .wordmark strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 
 @media (max-width: 360px) {

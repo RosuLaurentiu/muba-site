@@ -6,14 +6,14 @@ import { TimeInput, TimeInputSegment } from "@ui-sdk/react/time-input";
 import { getText } from "./i18n";
 import { useParisDay } from "./useParisDay";
 
-export function DateField({ name, label, language, value, onChange, disabled, error, max, allowClear = true }) {
+export function DateField({ name, label, language, value, onChange, disabled, error, min, max, allowClear = true }) {
   const today = useParisDay();
   const t = (key) => getText(language, key);
   return (
     <div className="field">
       <label htmlFor={name}>{label}</label>
       <DatePicker value={value || null} onValueChange={(next) => onChange(next ?? "")} disabled={disabled}
-        locale={language === "fr" ? "fr-FR" : "en-GB"} timeZone="Europe/Paris" weekStartsOn={1} max={max} today={today}>
+        locale={language === "fr" ? "fr-FR" : "en-GB"} timeZone="Europe/Paris" weekStartsOn={1} min={min} max={max} today={today}>
         <div className="date-control">
           <DatePickerInput id={name} data-booking-field={name} inputMode="numeric" placeholder={t("booking.dateFormat")}
             aria-invalid={error ? true : undefined} aria-describedby={error ? name + "-error" : undefined} />

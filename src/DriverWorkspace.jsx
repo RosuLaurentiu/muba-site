@@ -2,13 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
 import CalendarPanel from "./CalendarPanel";
-import { BlockEditor, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
+import { BlockEditor, ConfirmButton, DriverDay, NextPickup, ScheduleEditor, SchedulePreview } from "./DriverSchedule";
 import WorkHoursEditor from "./WorkHoursEditor";
 import { formatParisTime, getBookingConfig, getParisInstant } from "./booking";
 import { appConfig } from "./config";
 import { formatFareCents, parseAgreedFare } from "./fare";
 import { getLocalizedConfigValue, getText } from "./i18n";
 import { driverLink, plannedSchedule, rideLegs, scheduleContext } from "./schedule";
+import { durationText } from "./timeText";
 import { useParisDay } from "./useParisDay";
 import { isOutsideWorkHours } from "./workingHours";
 
@@ -84,12 +85,15 @@ function quoteSubject(ride) {
   return getText(ride.language === "fr" ? "fr" : "en", "driver.quoteSubject").replace("{reference}", ride.reference);
 }
 
-function waitingTime(minutes, language) {
-  const total = Math.max(1, Math.round(Number(minutes) || 0));
-  const hours = Math.floor(total / 60);
-  const parts = [...(hours ? [hours + " " + getText(language, "units.hourShort")] : []),
-    ...(total % 60 ? [(total % 60) + " " + getText(language, "units.minuteShort")] : [])];
-  return parts.join(" ");
+// "5 minutes ago", "2 hours ago" or "yesterday" in the site language.
+function receivedAgo(instant, now, language) {
+  const minutes = Math.floor((now - new Date(instant).getTime()) / 60000);
+  if (!Number.isFinite(minutes)) return "";
+  if (minutes < 1) return getText(language, "driver.receivedNow");
+  const format = new Intl.RelativeTimeFormat(language === "fr" ? "fr-FR" : "en-GB", { numeric: "auto" });
+  const ago = minutes < 60 ? format.format(-minutes, "minute")
+    : minutes < 1440 ? format.format(-Math.floor(minutes / 60), "hour") : format.format(-Math.floor(minutes / 1440), "day");
+  return getText(language, "driver.received").replace("{time}", ago);
 }
 
 function BookingEmailStatus({ language }) {
@@ -135,7 +139,7 @@ function BookingEmailStatus({ language }) {
       <div role="status">
         {failures === false && <p>{t("emailStatusUnavailable")}</p>}
         {failures?.overdue > 0 && <p>{t("emailOverdue")
-          .replace("{count}", failures.overdue).replace("{age}", waitingTime(failures.oldest_overdue_minutes, language))}</p>}
+          .replace("{count}", failures.overdue).replace("{age}", durationText(failures.oldest_overdue_minutes, language))}</p>}
         {failures?.retryable > 0 && <p>{t("emailFailed")} {failures.retryable}</p>}
         {failures?.expired > 0 && <p>{t("emailRetryExpired")} {failures.expired}</p>}
         {notice && <p>{t(notice)}</p>}
@@ -155,7 +159,12 @@ function rideOutsideWorkHours(ride, hours) {
 }
 
 function PendingList({ rides, language, day, latest, hours }) {
+  const [now, setNow] = useState(() => Date.now());
   const t = (key) => getText(language, key);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
   return (
     <section className={"panel driver-list" + (rides.length ? " has-pending" : "")} id="pending" aria-labelledby="pending-heading">
       <div role="status">
@@ -170,6 +179,11 @@ function PendingList({ rides, language, day, latest, hours }) {
             <li key={ride.reference}>
               <strong>{formatParisTime(ride.pickup_at, language)}</strong>
               <p>{ride.pickup} → {ride.destination}</p>
+              <p className="muted pending-meta">
+                {[receivedAgo(ride.created_at, now, language),
+                  t(Number(ride.passengers) === 1 ? "driver.passengerOne" : "driver.passengerMany").replace("{count}", ride.passengers)]
+                  .filter(Boolean).join(" · ")}
+              </p>
               {rideOutsideWorkHours(ride, hours) && <p className="field-error">{t("schedule.outsideWorkHours")}</p>}
               <a href={driverLink(day, { ride: ride.reference })}>
                 {t("driver.reviewRequest")} #{ride.reference}
@@ -215,8 +229,6 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
   async function decide(status) {
     if (changing.current) return;
     if (status === "confirmed" && !canConfirm) return;
-    if (status === "cancelled" && !window.confirm(t("schedule.confirmCancel"))) return;
-    if (status === "declined" && !window.confirm(t("driver.confirmDecline"))) return;
     changing.current = true;
     setBusy(true);
     setNotice("");
@@ -317,7 +329,8 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
               <button className="button primary" type="button" disabled={busy || refreshing || !canConfirm}
                 aria-describedby={missing.length ? "confirm-help" : undefined}
                 onClick={() => decide("confirmed")}>{t("driver.accept")}</button>
-              <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("declined")}>{t("driver.decline")}</button>
+              <ConfirmButton label={t("driver.decline")} question={t("driver.confirmDecline")} confirmLabel={t("driver.confirmDeclineYes")}
+                language={language} disabled={busy || refreshing} onConfirm={() => decide("declined")} />
             </div>
           </section>
         )}
@@ -361,7 +374,8 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
       {ride.status === "confirmed" && (
         <div className="actions form-submit">
           <a className="button" href={driverLink(day, { ride: ride.reference, edit: "", ...(returning ? { leg: "return" } : {}) })}>{t("schedule.reschedule")}</a>
-          <button className="button destructive" type="button" disabled={busy || refreshing} onClick={() => decide("cancelled")}>{t("schedule.cancelRide")}</button>
+          <ConfirmButton label={t("schedule.cancelRide")} question={t("schedule.confirmCancel")} confirmLabel={t("schedule.confirmCancelYes")}
+            language={language} disabled={busy || refreshing} onConfirm={() => decide("cancelled")} />
         </div>
       )}
       <p className="driver-feedback" role="status">{notice && t(notice)}</p>

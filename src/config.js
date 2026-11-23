@@ -31,7 +31,7 @@ export const appConfig = {
     eco: {
       label: {
         en: "Eco sedan",
-        fr: "Berline eco"
+        fr: "Berline éco"
       },
       capacity: 3
     },

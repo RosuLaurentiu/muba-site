@@ -1,11 +1,12 @@
 ---
 id: MS-028
 title: 'Refine mobile screens, copy and driver navigation after the phone audit'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-23 11:07'
-updated_date: '2026-11-23 11:17'
+updated_date: '2026-11-23 13:24'
+completed_date: '2026-11-23T13:24:37.746Z'
 labels: []
 dependencies: []
 modified_files:
@@ -34,24 +35,19 @@ Owner request 2026-11-23: audit the rider and driver screens on phones, add a wa
 
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
-done: All five criteria met and verified locally at phone widths in EN and FR.
+done: >-
+  The owner reviewed and approved the commit, so the pending owner input is
+  cleared.
 next: >-
   Owner reviews the diff and commits. The diff also contains earlier uncommitted
   cleanup in config.js, i18n.js, schedule.js, DriverSchedule.jsx and
   supabase/tests/schedule.mjs that removes unused landing-page copy, Calendly
   config and entriesOnDay.
 latestChange: >-
-  Audited every rider and driver screen at 390 px (EN) and 361 px (FR). Below
-  375 px the header no longer wraps: one moon theme button replaces Light/Dark.
-  The header name links back to the booking page. Signed-in driver screens have
-  a Booking page button. The email code field is styled and its resend button is
-  labelled. The route map is hidden on phones. Touch screens no longer keep
-  hover colours. Removed unused copy, config and code, the old scheduling-widget
-  noscript text and a setup comment. Refined EN/FR copy: round-trip hint, status
-  title, sign-in button, driver pending badge, email delay in hours, validation
-  messages. Not committed.
+  The owner reviewed and approved the commit, so the pending owner input is
+  cleared.
 action: acceptance
-resultAt: '2026-11-23T11:17:22.676Z'
+resultAt: '2026-11-23T13:24:45.980Z'
 evidence:
   - 'npm run lint, npm run build and npm test (4/4) pass'
   - EN/FR key parity checked; no unused keys remain from the scan
@@ -63,6 +59,7 @@ evidence:
     Driver at 360 px FR: Page de reservation button returns to the booking page
     from Working hours; pending badge En attente de votre decision; email delay
     shown as 30 h 46 min
+  - commit 3b5de39
 affectedFiles:
   - src/App.jsx
   - src/App.css
@@ -83,7 +80,6 @@ ownedPaths:
   - src/config.js
   - index.html
   - README.md
-ownerInput: Review the diff before commit.
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -101,12 +97,69 @@ ownerInput: Review the diff before commit.
       "intervals": [
         {
           "start": "2026-11-23T11:17:10.176Z",
-          "end": "2026-11-23T11:17:10.434Z"
+          "end": "2026-11-23T11:17:44.434Z"
+        },
+        {
+          "start": "2026-11-23T13:24:36.907Z",
+          "end": "2026-11-23T13:24:42.298Z"
         }
       ]
     }
   ],
-  "usage": [],
+  "usage": [
+    {
+      "source": "claude-task-estimate",
+      "runId": "5f10e85b-95a7-4b35-a0d6-ab8822af6300",
+      "segmentId": "auto-1795432630176",
+      "mode": "cumulative",
+      "shared": true,
+      "model": "claude-opus-5-5",
+      "scope": "task",
+      "attribution": {
+        "taskId": "MS-028",
+        "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
+        "start": "2026-11-23T11:17:10.176Z",
+        "end": "2026-11-23T11:17:44.434Z"
+      },
+      "tokens": {
+        "input": 1197076,
+        "output": 3034,
+        "cachedInput": 1193753,
+        "reasoningOutput": null,
+        "total": 1200110
+      },
+      "evidence": [
+        "claude-session:5f10e85b-95a7-4b35-a0d6-ab8822af6300"
+      ],
+      "recordedAt": "2026-11-23T11:17:44.434Z"
+    },
+    {
+      "source": "claude-task-estimate",
+      "runId": "5f10e85b-95a7-4b35-a0d6-ab8822af6300",
+      "segmentId": "auto-1795440276907",
+      "mode": "cumulative",
+      "shared": true,
+      "model": "claude-opus-5-5",
+      "scope": "task",
+      "attribution": {
+        "taskId": "MS-028",
+        "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
+        "start": "2026-11-23T13:24:36.907Z",
+        "end": "2026-11-23T13:24:41.804Z"
+      },
+      "tokens": {
+        "input": 106992,
+        "output": 200,
+        "cachedInput": 106064,
+        "reasoningOutput": null,
+        "total": 107192
+      },
+      "evidence": [
+        "claude-session:5f10e85b-95a7-4b35-a0d6-ab8822af6300"
+      ],
+      "recordedAt": "2026-11-23T13:24:41.804Z"
+    }
+  ],
   "corrections": []
 }
 ```
@@ -125,4 +178,12 @@ ownerInput: Review the diff before commit.
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-23T11:17:22.676Z: Audited every rider and driver screen at 390 px (EN) and 361 px (FR). Below 375 px the header no longer wraps: one moon theme button replaces Light/Dark. The header name links back to the booking page. Signed-in driver screens have a Booking page button. The email code field is styled and its resend button is labelled. The route map is hidden on phones. Touch screens no longer keep hover colours. Removed unused copy, config and code, the old scheduling-widget noscript text and a setup comment. Refined EN/FR copy: round-trip hint, status title, sign-in button, driver pending badge, email delay in hours, validation messages. Not committed.
+
+2026-11-23T13:24:37.738Z: Prior current facts: {"done":"All five criteria met and verified locally at phone widths in EN and FR.","resultAt":"2026-11-23T11:17:22.676Z"}
+
+2026-11-23T13:24:37.738Z: Committed the phone audit fixes as 3b5de39 after the owner asked for the commit. Changes: a driver Booking page button, a header link to the booking page, one theme toggle, the styled email code step, the map hidden on phones, refined EN/FR copy and removed leftovers. Lint, npm test (4/4) and the production build passed again before the commit. Nothing was pushed.
+
+2026-11-23T13:24:45.980Z: Prior current facts: {"done":"Committed the phone audit fixes as 3b5de39 after the owner asked for the commit. Changes: a driver Booking page button, a header link to the booking page, one theme toggle, the styled email code step, the map hidden on phones, refined EN/FR copy and removed leftovers. Lint, npm test (4/4) and the production build passed again before the commit. Nothing was pushed.","resultAt":"2026-11-23T13:24:37.738Z"}
+
+2026-11-23T13:24:45.980Z: The owner reviewed and approved the commit, so the pending owner input is cleared.
 <!-- SECTION:NOTES:END -->

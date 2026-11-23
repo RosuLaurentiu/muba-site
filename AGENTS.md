@@ -56,7 +56,7 @@ Supabase provisioning or change.
 ## Conventions
 
 - Every user-visible string needs both an `en` and an `fr` entry under the same key in `src/i18n.js`; do not hard-code text in JSX.
-- Match the existing French copy convention of spelling without accents unless the owner requests a change.
+- Write French copy with standard accents (the owner chose this in MS-029).
 - Keep business data and pricing in `src/config.js`.
 - `src/App.jsx` uses double quotes and semicolons, two-space indent, function declarations for helpers. There is no Prettier config; follow the file you are editing.
 - ESLint's `no-unused-vars` is an error, except for names starting with a capital letter or underscore.

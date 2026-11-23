@@ -6,6 +6,7 @@ import BookingDetails from "./BookingDetails";
 import { DateField, TimeField } from "./DateTimeFields";
 import PassengerCountField from "./PassengerCountField";
 import { formatFareCents, getRouteTotals, routeEstimate } from "./fare";
+import { useParisDay } from "./useParisDay";
 import {
   getInitialLanguage,
   getLocalizedConfigValue,
@@ -223,13 +224,16 @@ function tripRows(ride, t, language) {
   ];
 }
 
+const phoneHref = "tel:" + appConfig.phoneLink;
+const whatsAppHref = "https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "");
+
 function ContactFooter({ language, workspaceLink = false }) {
   const t = (key) => getText(language, key);
   return (
     <footer className="site-footer actions" id="ride-contact">
       <span>{t("booking.contact")}</span>
-      <a href={"tel:" + appConfig.phoneLink}>{t("booking.call")}</a>
-      <a href={"https://wa.me/" + appConfig.phoneLink.replace(/\D/g, "")} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
+      <a href={phoneHref}>{t("booking.call")}</a>
+      <a href={whatsAppHref} target="_blank" rel="noreferrer">{t("nav.whatsApp")}</a>
       <a href={"mailto:" + appConfig.email}>{t("footer.email")}</a>
       {workspaceLink && <a className="workspace-link" href="?driver">{t("driver.title")}</a>}
     </footer>
@@ -254,7 +258,8 @@ function BookingResult({ ride, language, children }) {
   );
 }
 
-function RiderBooking({ language }) {
+function RiderBooking({ language, layout }) {
+  const today = useParisDay();
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState({});
   const [route, setRoute] = useState(null);
@@ -275,6 +280,8 @@ function RiderBooking({ language }) {
   const previousScreen = useRef(screen);
   const mapLanguageRef = useRef(language);
   const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const mapLayoutRef = useRef(layout);
   const pickupInputRef = useRef(null);
   const destinationInputRef = useRef(null);
   const selectedPlaces = useRef({});
@@ -398,8 +405,9 @@ function RiderBooking({ language }) {
             center: appConfig.mapDefaultCenter,
             zoom: appConfig.mapDefaultZoom,
             disableDefaultUI: true,
-            styles: getMapStyles()
+            styles: mapLayoutRef.current === "dark" ? getMapStyles() : null
           });
+          mapInstanceRef.current = mapInstance;
 
           directionsServiceRef.current = new googleMaps.DirectionsService();
           directionsRendererRef.current = new googleMaps.DirectionsRenderer({
@@ -472,6 +480,21 @@ function RiderBooking({ language }) {
     };
   }, []);
 
+  useEffect(() => {
+    mapLayoutRef.current = layout;
+    mapInstanceRef.current?.setOptions({ styles: layout === "dark" ? getMapStyles() : null });
+  }, [layout]);
+
+  // The map is created while its panel is hidden, so fit the route once the panel shows it.
+  const mapVisible = screen === "review" && mapReady && Boolean(route);
+  useEffect(() => {
+    if (!mapVisible) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const bounds = directionsRendererRef.current?.getDirections()?.routes?.[0]?.bounds;
+      if (bounds) mapInstanceRef.current?.fitBounds(bounds);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mapVisible, route]);
 
   function clearEstimate() {
     estimateSequence.current++;
@@ -691,9 +714,9 @@ function RiderBooking({ language }) {
     );
   }
 
-  function tripField(Field, name, label) {
+  function tripField(Field, name, label, options = {}) {
     return <Field name={name} label={t("planner.labels." + label)} language={language} value={formData[name]}
-      onChange={(value) => updateField(name, value)} error={errors[name] && t(errors[name])} />;
+      onChange={(value) => updateField(name, value)} error={errors[name] && t(errors[name])} {...options} />;
   }
 
   return (
@@ -726,7 +749,7 @@ function RiderBooking({ language }) {
             </div>
             <p className="muted field-note">{t(mapFailed ? "booking.mapsUnavailable" : "booking.addressPrivacy")}</p>
             <div className="time-pair">
-              {tripField(DateField, "pickupDate", "date")}
+              {tripField(DateField, "pickupDate", "date", { min: today })}
               {tripField(TimeField, "pickupTime", "time")}
             </div>
             <div className="rider-fields trip-options">
@@ -740,7 +763,7 @@ function RiderBooking({ language }) {
             </div>
             {formData.roundTrip && (
               <div className="time-pair">
-                {tripField(DateField, "returnDate", "returnDate")}
+                {tripField(DateField, "returnDate", "returnDate", { min: formData.pickupDate > today ? formData.pickupDate : today })}
                 {tripField(TimeField, "returnTime", "returnTime")}
               </div>
             )}
@@ -854,13 +877,28 @@ function BookingStatus({ language, requestKey }) {
     let active = true;
     if (!validKey) return;
     bookingRpc("get_ride", { p_request_key: requestKey })
-      .then((ride) => { if (active) setResult({ status: ride ? "ready" : "missing", ride }); })
+      .then((ride) => { if (active) setResult({ status: ride ? "ready" : "missing", ride, checkedAt: Date.now() }); })
       .catch(() => { if (active) setResult((current) => ({ ...current, status: "error" })); });
     return () => { active = false; };
   }, [requestKey, refresh, validKey]);
 
+  // Check a pending request again every minute while the page is visible.
+  const waiting = result.ride?.status === "pending";
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const check = () => { if (document.visibilityState === "visible") setRefresh((count) => count + 1); };
+    const timer = window.setInterval(check, 60000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [waiting]);
+
   const ride = result.ride;
   const feedback = validKey ? result.status : "missing";
+  const checkedTime = result.checkedAt && new Intl.DateTimeFormat(language === "fr" ? "fr-FR" : "en-GB",
+    { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }).format(result.checkedAt);
   const refreshButton = validKey && <button className={feedback === "missing" ? "button" : "button primary"}
     type="button" aria-disabled={feedback === "loading"} onClick={() => {
     if (feedback === "loading") return;
@@ -876,6 +914,9 @@ function BookingStatus({ language, requestKey }) {
           <p className="muted booking-feedback" role="status">
             {feedback !== "ready" && t(feedback === "error" ? "booking.lookup.stale" : "booking.lookup.loading")}
           </p>
+          {feedback === "ready" && checkedTime && <p className="muted booking-feedback">
+            {t("booking.lastChecked").replace("{time}", checkedTime)}{ride.status === "pending" && " " + t("booking.autoRefresh")}
+          </p>}
         </BookingResult>
       ) : (
         <div className="panel stack booking-fallback">
@@ -943,6 +984,22 @@ function App() {
             <strong>{getLocalizedConfigValue(appConfig.businessName, language)}</strong>
           </a>
           <div className="preferences">
+            {!driverView && <div className="preference-group header-contact">
+              <a className="button toggle icon-link" href={phoneHref} aria-label={getText(language, "booking.callDriver")}
+                title={getText(language, "booking.callDriver")}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M6.6 3.5h2.8l1.4 4.1-2 1.5a12 12 0 0 0 6.1 6.1l1.5-2 4.1 1.4v2.8a2 2 0 0 1-2.1 2A16.5 16.5 0 0 1 4.6 5.6a2 2 0 0 1 2-2.1Z"
+                    stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
+              </a>
+              <a className="button toggle icon-link" href={whatsAppHref} target="_blank" rel="noreferrer"
+                aria-label={getText(language, "booking.whatsAppDriver")} title={getText(language, "booking.whatsAppDriver")}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M12 3.5a8.5 8.5 0 0 0-7.4 12.7L3.5 20.5l4.4-1.1A8.5 8.5 0 1 0 12 3.5Z"
+                    stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
+              </a>
+            </div>}
             <div className="preference-group">
               <button className="button toggle theme-toggle" type="button" aria-pressed={layout === "dark"}
                 aria-label={getText(language, "booking.darkTheme")} title={getText(language, "booking.darkTheme")}
@@ -968,7 +1025,7 @@ function App() {
         <Suspense fallback={<main className="site-main" id="main-content" tabIndex={-1}><p role="status">{getText(language, "driver.loading")}</p></main>}>
           <DriverWorkspace language={language} />
         </Suspense>
-      ) : privateView ? <BookingStatus key={bookingKey ?? ""} requestKey={bookingKey} language={language} /> : <RiderBooking language={language} />}
+      ) : privateView ? <BookingStatus key={bookingKey ?? ""} requestKey={bookingKey} language={language} /> : <RiderBooking language={language} layout={layout} />}
     </>
   );
 }

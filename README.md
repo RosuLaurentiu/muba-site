@@ -2,7 +2,8 @@
 
 This Vite and React site accepts advance requests for a private taxi in Paris.
 A saved request has a booking reference and stays pending until the driver
-confirms it. The private status link shows the latest decision.
+confirms it. The private status link shows the latest decision and checks again
+every minute while the request is pending.
 
 ## Commands
 
@@ -111,7 +112,9 @@ production project before provisioning or assigning the account. The Resend
 sender remains the verified address on the site domain.
 
 Use **Add ride** beside the workspace heading to add a ride to the selected day.
-The next pickup gives direct access to directions. Pending requests appear above
+The next pickup says Today or Tomorrow, counts down within a day and gives direct
+access to directions. Pending requests show when they arrived and the passenger
+count, and appear above
 the daily agenda, beside the month calendar on desktop. Select a calendar
 day to open its agenda, including pending, confirmed, cancelled and declined
 rides. Earlier months show retained bookings.
@@ -119,6 +122,8 @@ The agenda lists each leg separately. Ride details group pickup directions with
 the trip and contact actions with the passenger information. Pending requests
 group the quote and confirmation controls under **Booking decision**. The driver can
 record phone or WhatsApp bookings, reschedule a confirmed ride, and cancel it.
+Declining, cancelling and freeing a time block ask for confirmation in the page.
+**Block time** offers **Rest of today** and **All day**.
 The rider form and **Add ride** use the same passenger selector. Both start at
 one passenger and use the largest configured vehicle capacity. Muba styles the
 UI SDK Select to match the existing Light and Dark controls.
@@ -390,7 +395,9 @@ The app supports English and French.
 - The booking page and driver workspace start in Dark. The moon button in the
   header switches the theme, and each page remembers its own choice. Switching
   language or theme preserves trip details.
-- The header name links back to the booking page from every screen.
+- The header name links back to the booking page from every screen. Rider screens
+  also have header buttons to call the driver or message them on WhatsApp.
+- The rider date pickers start at today in Paris. French copy uses accents.
 - **Reserve a ride** focuses the pickup field. The footer links to the driver
   workspace, where the next pickup includes a passenger phone link and directions.
   Signed-in driver screens have a **Booking page** button next to **Sign out**.

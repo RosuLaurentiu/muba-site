@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import BookingDetails from "./BookingDetails";
 import { DateField, TimeField } from "./DateTimeFields";
 import PassengerCountField from "./PassengerCountField";
@@ -7,8 +7,42 @@ import { bookingPayload, focusBookingError, formatParisTime, parisMinute, valida
 import { appConfig } from "./config";
 import { getText } from "./i18n";
 import { draftBlock, draftLegs, driverLink, entriesByDay, monthDays, moveDay, rideLegs, scheduleContext } from "./schedule";
+import { pickupDayTime, durationText } from "./timeText";
+import { useParisDay } from "./useParisDay";
 
 const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
+
+// A destructive action that asks for confirmation in the page, in the site language.
+export function ConfirmButton({ label, question, confirmLabel, language, onConfirm, disabled }) {
+  const [asking, setAsking] = useState(false);
+  const opened = useRef(false);
+  const confirmRef = useRef(null);
+  const openRef = useRef(null);
+  const questionId = useId();
+  useEffect(() => {
+    if (asking) confirmRef.current?.focus();
+    else if (opened.current) openRef.current?.focus();
+  }, [asking]);
+  function close() {
+    opened.current = true;
+    setAsking(false);
+  }
+  if (!asking) {
+    return <button ref={openRef} className="button destructive" type="button" disabled={disabled}
+      onClick={() => setAsking(true)}>{label}</button>;
+  }
+  return (
+    <div className="confirm-step" role="group" aria-labelledby={questionId}
+      onKeyDown={(event) => { if (event.key === "Escape") close(); }}>
+      <p id={questionId}>{question}</p>
+      <div className="actions">
+        <button ref={confirmRef} className="button destructive" type="button" disabled={disabled}
+          onClick={() => { opened.current = false; setAsking(false); onConfirm(); }}>{confirmLabel}</button>
+        <button className="button" type="button" onClick={close}>{getText(language, "schedule.keep")}</button>
+      </div>
+    </div>
+  );
+}
 
 function EntryText({ entry, language }) {
   const t = (key) => getText(language, key);
@@ -101,9 +135,13 @@ export function NextPickup({ schedule, day, language }) {
         <h2 id="next-pickup">{t("schedule.nextPickup")}</h2>
         {next ? (
           <>
-            <strong>{formatParisTime(next.start, language)}</strong>
+            <strong>{pickupDayTime(next.start, now, language)}</strong>
+            {next.start - now < 86400000 && <span className="next-ride-when">
+              {t("schedule.inTime").replace("{time}", durationText((next.start - now) / 60000, language))}
+            </span>}
             <span className="muted">
-              {next.endKnown ? t("schedule.finish") + " " + formatParisTime(next.end, language) : t("schedule.finishUnknown")}
+              {next.endKnown ? t("schedule.finish") + " " + (parisMinute(next.end).slice(0, 10) === parisMinute(next.start).slice(0, 10)
+                ? parisMinute(next.end).slice(11) : formatParisTime(next.end, language)) : t("schedule.finishUnknown")}
             </span>
             {next.returning && <span>{t("schedule.returnLeg")}</span>}
           </>
@@ -150,7 +188,6 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
   }
 
   async function remove(id) {
-    if (!window.confirm(t("schedule.confirmRemove"))) return;
     setRemoving(id);
     try {
       await onRemove(id);
@@ -190,7 +227,8 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
           ) : (
             <>
               <strong>{t("schedule.timeBlocked")}</strong>
-              <button className="button destructive" type="button" disabled={Boolean(removing)} onClick={() => remove(entry.id)}>{t("schedule.removeBlock")}</button>
+              <ConfirmButton label={t("schedule.removeBlock")} question={t("schedule.confirmRemove")} confirmLabel={t("schedule.confirmRemoveYes")}
+                language={language} disabled={Boolean(removing)} onConfirm={() => remove(entry.id)} />
             </>
           )}
         </div>
@@ -415,7 +453,17 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
   );
 }
 
+function restOfToday(day) {
+  const [date, time] = parisMinute(Date.now()).split("T");
+  const [hours, minutes] = time.split(":").map(Number);
+  const start = Math.ceil((hours * 60 + minutes + 1) / 15) * 15;
+  if (date !== day || start >= 1440) return null;
+  return { start: day + "T" + String(Math.floor(start / 60)).padStart(2, "0") + ":" + String(start % 60).padStart(2, "0"),
+    end: moveDay(day, 1) + "T00:00" };
+}
+
 export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }) {
+  const today = useParisDay();
   const [times, setTimes] = useState({ start: day + "T09:00", end: day + "T10:00" });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -433,6 +481,13 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
       return { ...current, [name]: part === "date" ? value + "T" + time : date + "T" + value };
     });
     setFieldErrors((current) => ({ ...current, [name + "-" + part]: "" }));
+    setError("");
+  }
+
+  function preset(next) {
+    if (!next) return;
+    setTimes(next);
+    setFieldErrors({});
     setError("");
   }
 
@@ -473,6 +528,12 @@ export function BlockEditor({ schedule, day, language, rpc, refresh, refreshed }
       <h1>{t("schedule.addBlock")}</h1>
       <form className="schedule-editor compact-editor" onSubmit={save} noValidate>
         <div className="panel stack block-fields">
+          <div className="actions block-presets" role="group" aria-label={t("schedule.quickChoices")}>
+            {day === today && restOfToday(day) && <button className="button" type="button" disabled={frozen}
+              onClick={() => preset(restOfToday(day))}>{t("schedule.restOfToday")}</button>}
+            <button className="button" type="button" disabled={frozen}
+              onClick={() => preset({ start: day + "T00:00", end: moveDay(day, 1) + "T00:00" })}>{t("schedule.allDay")}</button>
+          </div>
           {["start", "end"].map((name) => {
             const [date, time] = times[name].split("T");
             return (
