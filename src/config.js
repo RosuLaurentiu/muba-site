@@ -7,18 +7,6 @@ export const appConfig = {
     en: "Paris and nearby cities",
     fr: "Paris et villes voisines"
   },
-  vehicleLabel: {
-    en: "Airport transfers and private rides",
-    fr: "Transferts aeroport et trajets prives"
-  },
-  responsePromise: {
-    en: "Usually within 10 minutes",
-    fr: "Reponse en general sous 10 minutes"
-  },
-  businessHours: {
-    en: "24/7 by reservation",
-    fr: "24/7 sur reservation"
-  },
   siteUrl: "https://privatetaxiparis.com",
   phoneDisplay: "+33 6 68 47 81 37",
   phoneLink: "+33668478137",
@@ -26,10 +14,7 @@ export const appConfig = {
   operatorName: "Mubashir",
   minimumWebNoticeHours: 2,
 
-  // Add your real Calendly event URL when ready.
-  calendlyUrl: "https://calendly.com/rosulaurentiu33/30min",
-
-  // Add your Google Maps browser API key to enable the live map and route calculation.
+  // Browser key for address suggestions and route estimates, restricted by HTTP referrer.
   googleMapsApiKey: "AIzaSyCm14tRKwaMWl63zaoA60yOTOfWo6j2dMk",
 
   mapDefaultCenter: {

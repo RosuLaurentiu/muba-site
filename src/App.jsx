@@ -779,13 +779,13 @@ function RiderBooking({ language }) {
                 {field("customerName", "name", { autoComplete: "name", maxLength: 150, required: true })}
                 {field("customerPhone", "phone", { type: "tel", autoComplete: "tel", maxLength: 40, required: true })}
                 {field("customerEmail", "email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
-                {codeRequested && <div className="stack">
+                {codeRequested && <div className="field email-code">
                   <label htmlFor="email-code">{t("booking.emailCode")}</label>
                   <input ref={codeInput} id="email-code" name="emailCode" value={emailCode} autoComplete="one-time-code"
                     spellCheck={false} autoCapitalize="none" aria-describedby="email-code-help"
-                    aria-invalid={saveState === "invalidCode"} onChange={(event) => setEmailCode(event.target.value)} />
-                  <p id="email-code-help" role="status">{t("booking.codeHelp")}</p>
-                  <button type="button" className="button" onClick={requestEmailCode}>{t("booking.requestCode")}</button>
+                    aria-invalid={saveState === "invalidCode" ? true : undefined} onChange={(event) => setEmailCode(event.target.value)} />
+                  <p className="muted field-note" id="email-code-help" role="status">{t("booking.codeHelp")}</p>
+                  <button type="button" className="button" onClick={requestEmailCode}>{t("booking.resendCode")}</button>
                 </div>}
                 {field("notes", "optionalNotes", { rows: 3, placeholder: t("planner.placeholders.notes"), maxLength: 1500 })}
                 <p className="muted">{t("booking.contactPrivacy")}</p>
@@ -869,7 +869,7 @@ function BookingStatus({ language, requestKey }) {
   }}>{t("booking.refresh")}</button>;
   return (
     <main className="site-main" id="main-content" tabIndex={-1}>
-      <h1>{t("booking.view")}</h1>
+      <h1>{t("booking.statusTitle")}</h1>
       {ride ? (
         <BookingResult ride={ride} language={language}>
           {refreshButton}
@@ -938,16 +938,19 @@ function App() {
       }}>{getText(language, "nav.skip")}</a>
       <header className="site-header">
         <div className="site-bar">
-          <div className="wordmark">
+          <a className="wordmark" href={window.location.pathname}>
             <img className="brand-mark" src={import.meta.env.BASE_URL + "favicon.svg"} width="34" height="34" alt="" />
             <strong>{getLocalizedConfigValue(appConfig.businessName, language)}</strong>
-          </div>
+          </a>
           <div className="preferences">
-            <div className="preference-group" role="group" aria-label={getText(language, "booking.appearance")}>
-              {["light", "dark"].map((option) => (
-                <button key={option} className="button toggle" type="button" aria-pressed={layout === option}
-                  onClick={() => selectLayout(option)}>{getText(language, "booking." + option)}</button>
-              ))}
+            <div className="preference-group">
+              <button className="button toggle theme-toggle" type="button" aria-pressed={layout === "dark"}
+                aria-label={getText(language, "booking.darkTheme")} title={getText(language, "booking.darkTheme")}
+                onClick={() => selectLayout(layout === "dark" ? "light" : "dark")}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
             <div className="preference-group" role="group" aria-label={getText(language, "nav.languageLabel")}>
               {SUPPORTED_LANGUAGES.map((option) => (

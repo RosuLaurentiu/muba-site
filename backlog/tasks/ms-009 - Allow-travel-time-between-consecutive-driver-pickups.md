@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-21 15:23'
-updated_date: '2026-11-21 16:55'
+updated_date: '2026-11-22 00:09'
 labels: []
 dependencies: []
 references:
@@ -30,20 +30,27 @@ The driver can already enter a ride duration. The schedule checks ride overlaps,
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Owner selected 60 minutes as a draft planning target, adjustable for the
-  locations. Verified the advisory at 59 and 60 minutes and when the prior
-  finish is unknown, on phone width in English and French.
+  Owner approved the existing adjustable 60-minute planning target for the
+  driver walkthrough. A short gap or unknown prior finish warns without blocking
+  save. Actual ride or time-block overlaps prevent saving. Earlier bilingual
+  mobile checks showed that a 10:30 drop-off and 11:29 pickup warn at 59 minutes
+  and an 11:30 pickup meets the default target.
 next: >-
-  Review the draft with the driver. Confirm the target, adjustment and whether a
-  short gap should remain advisory or become a save restriction.
+  Use this rule in the driver phone walkthrough. Confirm the driver can adjust
+  the target, explain an unknown finish, and distinguish a warning from a
+  blocked save.
 latestChange: >-
-  Owner approved a 60-minute draft, not final policy. Phone tests show that 59
-  minutes warns and 60 fits. Example: 10:30 drop-off and 11:29 pickup leave 59
-  minutes.
-resultAt: '2026-11-21T16:55:00.039Z'
+  Saved the owner-approved walkthrough rule: adjustable 60-minute target,
+  warnings for short gaps or unknown finishes, and blocked saves for actual
+  overlaps. Driver acceptance remains open.
+resultAt: '2026-11-22T00:09:22.874Z'
 remainingChecks:
-  - Driver review of the one-hour target and warning or blocking rule
-  - Verify final save behavior after driver review
+  - >-
+    Driver acceptance of the 60-minute default, adjustment and unknown-finish
+    guidance
+  - >-
+    Verify short gap, exact fit, unknown finish and actual overlap on the driver
+    phone, including a return leg and Maps unavailable
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -73,4 +80,8 @@ Compute available travel time on both sides of each draft leg, including time bl
 2026-11-21T16:55:00.040Z: Prior current facts: {"done":"Verified bilingual mobile previews and tests for available time on both sides, return legs, time blocks, a 14-minute gap, an exact 15-minute gap, and an unknown finish.","resultAt":"2026-11-21T16:46:56.397Z"}
 
 2026-11-21T16:55:00.040Z: Owner approved a 60-minute draft, not final policy. Phone tests show that 59 minutes warns and 60 fits. Example: 10:30 drop-off and 11:29 pickup leave 59 minutes.
+
+2026-11-22T00:09:22.874Z: Prior current facts: {"done":"Owner selected 60 minutes as a draft planning target, adjustable for the locations. Verified the advisory at 59 and 60 minutes and when the prior finish is unknown, on phone width in English and French.","resultAt":"2026-11-21T16:55:00.039Z"}
+
+2026-11-22T00:09:22.874Z: Saved the owner-approved walkthrough rule: adjustable 60-minute target, warnings for short gaps or unknown finishes, and blocked saves for actual overlaps. Driver acceptance remains open.
 <!-- SECTION:NOTES:END -->

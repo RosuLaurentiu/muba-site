@@ -48,7 +48,7 @@ h3 { font-size: 1.05rem; }
 .site-bar, .site-main { width: min(100% - 5rem, 76rem); margin-inline: auto; }
 .site-bar, .wordmark, .preferences, .preference-group, .actions, .check { display: flex; align-items: center; }
 .site-bar { min-height: 4.75rem; justify-content: space-between; gap: .8rem; }
-.wordmark { gap: .7rem; }
+.wordmark { gap: .7rem; min-height: 2.75rem; color: inherit; text-decoration: none; }
 .wordmark strong { font-size: .96rem; font-weight: 650; letter-spacing: -.025em; }
 .brand-mark { width: 2.15rem; height: 2.15rem; }
 .preferences { gap: .8rem; }
@@ -156,13 +156,16 @@ h3 { font-size: 1.05rem; }
   text-align: center; padding: .55rem 1rem; color: var(--text); background: var(--panel); border: 1px solid var(--field-line);
   border-radius: .25rem; text-decoration: none; font-size: .9rem; font-weight: 650; cursor: pointer;
 }
-.button:hover { background: var(--hint); }
+@media (hover: hover) { .button:hover { background: var(--hint); } }
 .button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .button.primary:hover, .button.hero-action:hover { filter: brightness(.86); }
 .button:disabled, .button[aria-disabled="true"] { opacity: .62; cursor: default; }
 .button.toggle { min-width: 2.65rem; min-height: 2.75rem; padding: .35rem .55rem; border: 0; background: transparent; color: #bdbbb6; font-size: .81rem; }
 .button.toggle[aria-pressed="true"] { color: white; text-decoration: underline; text-underline-offset: .37em; text-decoration-thickness: 2px; }
-.button.toggle:hover { background: #292929; }
+.theme-toggle svg { fill: none; }
+.theme-toggle[aria-pressed="true"] { color: white; }
+.theme-toggle[aria-pressed="true"] svg { fill: currentColor; }
+@media (hover: hover) { .button.toggle:hover { background: #292929; } }
 .button.hero-action { margin-top: 1.35rem; background: #f1efea; color: #151515; border-color: #f1efea; }
 .hero-action span, .reservation-submit span { font-size: 1.1rem; line-height: 1; }
 .field [aria-invalid="true"] { border: 2px solid var(--danger); }
@@ -197,7 +200,9 @@ h3 { font-size: 1.05rem; }
 .site-footer { border-top: 1px solid var(--line); margin-top: 2rem; padding-top: 1.1rem; gap: .65rem 1.25rem; font-size: .88rem; }
 .site-footer span { color: var(--muted); }
 .site-footer a { display: inline-flex; align-items: center; min-height: 2.75rem; }
-.workspace-link { margin-left: auto; }
+.workspace-link { margin-left: auto; color: var(--muted); }
+.email-code { display: grid; gap: .5rem; justify-items: start; }
+.email-code input { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .02em; }
 .signin-layout { display: grid; gap: clamp(1.25rem, 4vw, 4rem); align-items: center; }
 .signin-layout .fleet-photo { max-height: 31rem; }
 .driver-auth { width: 100%; justify-items: stretch; }
@@ -324,6 +329,7 @@ h3 { font-size: 1.05rem; }
   .booking-hero .fleet-photo { height: clamp(6.5rem, 31vw, 12rem); min-height: 0; object-position: 50% 65%; }
   .reservation-submit .button { width: 100%; }
   .workspace-link { margin-left: 0; }
+  .route-preview { display: none; }
   .signin-layout .fleet-photo { display: none; }
   .driver-main .actions { align-items: stretch; }
   .driver-main .actions .button, .reservation-submit .button { flex: 1 1 9rem; }

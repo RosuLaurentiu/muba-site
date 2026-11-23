@@ -6,7 +6,7 @@ import { isOutsideWorkHours, workPeriods } from "./workingHours";
 import { bookingPayload, focusBookingError, formatParisTime, parisMinute, validateBooking, validateTrip } from "./booking";
 import { appConfig } from "./config";
 import { getText } from "./i18n";
-import { draftBlock, draftLegs, driverLink, monthDays, moveDay, parisDay, rideLegs, scheduleContext } from "./schedule";
+import { draftBlock, draftLegs, driverLink, entriesByDay, monthDays, moveDay, rideLegs, scheduleContext } from "./schedule";
 
 const capacity = Math.max(...Object.values(appConfig.vehicles).map((vehicle) => vehicle.capacity));
 
@@ -138,18 +138,7 @@ export function DriverDay({ schedule, rides, day, today, language, onRemove, wor
   const first = dates[0];
   const last = dates[dates.length - 1];
   const weekdayOffset = (new Date(first + "T12:00:00Z").getUTCDay() + 6) % 7;
-  const byDay = new Map(dates.filter(date => date <= "9999-12-30").map(date => [date, []]));
-  for (const entry of calendar) {
-    const start = parisDay(entry.start);
-    if (entry.ride) {
-      byDay.get(start)?.push(entry);
-    } else {
-      const end = parisDay(entry.end - 1);
-      for (const [date, items] of byDay) {
-        if (date >= start && date <= end) items.push(entry);
-      }
-    }
-  }
+  const byDay = entriesByDay(calendar, dates.filter(date => date <= "9999-12-30"));
   const entries = byDay.get(day);
   const locale = language === "fr" ? "fr-FR" : "en-GB";
   const dateLabel = (value, options) => new Date(value + "T12:00:00Z").toLocaleDateString(locale, { ...options, timeZone: "UTC" });
@@ -395,7 +384,7 @@ export function ScheduleEditor({ ride, returning, schedule, day, language, rpc, 
               <h2>{t("planner.contactTitle")}</h2>
               {field("customerName", "driver.passengerName", { maxLength: 150, required: true })}
               {field("customerPhone", "planner.labels.phone", { type: "tel", maxLength: 40, required: true })}
-              {field("customerEmail", "planner.labels.email", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
+              {field("customerEmail", "driver.passengerEmail", { type: "email", autoComplete: "email", maxLength: 254, required: true })}
               <PassengerCountField capacity={capacity} label={t("planner.labels.passengers")} value={draft.passengers}
                 onChange={(value) => updateField("passengers", value)} error={errors.passengers && t(errors.passengers)} disabled={frozen} />
               <DraftField name="notes" label={t("planner.labels.optionalNotes")}>

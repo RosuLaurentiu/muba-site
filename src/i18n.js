@@ -6,62 +6,16 @@ export const translations = {
     units: {
       kilometerShort: "km",
       hourShort: "h",
-      minuteShort: "min",
-      seatOne: "seat",
-      seatMany: "seats"
+      minuteShort: "min"
     },
     meta: {
       title: "Private Taxi Paris | Paris Airport Transfers & Chauffeur Service",
       description: "Request a private transfer in Paris and review your trip before the driver confirms availability."
     },
     nav: {
-      home: "Home",
-      reserve: "Reserve",
-      schedule: "Schedule",
-      contact: "Contact",
-      callNow: "Call now",
       whatsApp: "WhatsApp",
       languageLabel: "Language selector", skip: "Skip to main content"
     },
-    hero: {
-      title: "Minimal booking, smooth rides, and a premium first impression.",
-      body: "This experience is designed for speed: clients can call you instantly, send an email, or plan their journey with a live route view before they confirm.",
-      planRide: "Plan a ride",
-      sendEmail: "Send email",
-      note: "Need a fast pickup? Call directly. For planned rides, the form below is the clearest option.",
-      response: "Response",
-      coverage: "Coverage",
-      specialty: "Specialty"
-    },
-    contactCard: {
-      label: "Quick contact",
-      title: "Give clients 3 simple choices.",
-      phone: "Phone",
-      email: "Email",
-      hours: "Hours"
-    },
-    flow: {
-      label: "Best booking flow",
-      steps: [
-        "Client enters pickup and destination.",
-        "The site shows the route, distance, and travel time.",
-        "They confirm by email, phone, or a Calendly booking slot."
-      ]
-    },
-    benefits: [
-      {
-        title: "Clearer than a generic contact page",
-        body: "People immediately understand what to do, which reduces drop-off and unnecessary back-and-forth."
-      },
-      {
-        title: "More practical than a full custom booking system",
-        body: "Calendly can handle confirmations and reminders now, while your route form keeps the taxi details organized."
-      },
-      {
-        title: "Built to feel premium on mobile",
-        body: "The design keeps actions large, readable, and calm so booking is easy even when clients are in a hurry."
-      }
-    ],
     calendar: {
       title: "Google Calendar", calendarId: "Calendar ID from Google Calendar settings",
       connect: "Connect calendar", reconnect: "Reconnect calendar", connected: "Connected calendar",
@@ -71,9 +25,9 @@ export const translations = {
     },
     schedule: {
       noUpcoming: "No upcoming pickup.",
-      dayView: "Day schedule", parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
+      parisDay: "Day in Paris", previous: "Previous day", nextDay: "Next day",
       calendar: "Reservation calendar", today: "Today", prevMonth: "Previous month", nextMonth: "Next month", entries: "Calendar entries",
-      nextPickup: "Next pickup", openDay: "Open day", dayEmpty: "No rides or time blocks for this day.",
+      nextPickup: "Next pickup", dayEmpty: "No rides or time blocks for this day.",
       calendarCount: "Day totals include rides, requests and time blocks.", timeBlocked: "Time blocked",
       workHours: "Working hours", workHoursNotSet: "Working hours not set", workHoursLoading: "Loading working hours...",
       workHoursUnavailable: "Could not load working hours. Try refreshing.", dayOff: "Day off",
@@ -86,7 +40,7 @@ export const translations = {
       returnLeg: "Return leg", finish: "Estimated finish", finishUnknown: "Finish time unavailable",
       travelBetween: "Travel time between rides", travelUnknown: "Prior finish unknown",
       travelAvailable: "available for travel",
-      travelTarget: "Draft travel target (minutes)", travelShort: "Below travel target",
+      travelTarget: "Travel time needed (minutes)", travelShort: "Below travel target",
       travelAdvisory: "Adjust the target for these locations. Check the gap before saving.",
       blocked: "Blocked until", addBlock: "Block time", removeBlock: "Remove block", confirmRemove: "Remove this time block?",
       start: "Start in Paris time", end: "End in Paris time", invalidBlock: "Choose a valid future end after the start.",
@@ -96,7 +50,7 @@ export const translations = {
       duration: "Estimated minutes per leg (optional)", durationInvalid: "Enter a whole number from 1 to 1440.",
       conflict: "Schedule conflict", legsOverlap: "The outbound and return rides overlap.",
       neighbors: "Adjacent rides", saved: "Saved.",
-      checkTravel: "Check travel time between pickups.", otherEntries: "Other rides and time blocks",
+      checkTravel: "Check travel time between pickups.",
       conflictChanged: "The schedule changed. Review the conflicts before trying again.",
       reopenEdit: "This ride changed. Reopen it to edit the latest schedule.",
       saveFailed: "Could not save the change. Check the current schedule.",
@@ -104,12 +58,13 @@ export const translations = {
       saving: "Saving...", discard: "Discard changes"
     },
     driver: {
-      title: "Driver workspace", signIn: "Driver sign-in", password: "Password", signOut: "Sign out",
+      title: "Driver workspace", signIn: "Driver sign-in", signInAction: "Sign in", bookingPage: "Booking page", statePending: "Awaiting your decision",
+      passengerEmail: "Passenger email (receipt and updates)", password: "Password", signOut: "Sign out",
       signingIn: "Signing in...", backToBooking: "Back to booking", refreshing: "Refreshing...", decision: "Booking decision",
       signInFailed: "Could not sign in. Check your email and password and try again.",
       googleSignIn: "Sign in with Google", googleSignInFailed: "Google sign-in did not finish. Try again or use your password.",
       emailFailed: "Booking emails awaiting retry:", emailRetryExpired: "Booking emails past the safe retry window:",
-      emailOverdue: "Booking emails waiting for a first delivery attempt: {count}. Oldest: {minutes} min. Check the booking inbox.",
+      emailOverdue: "{count} booking emails have not been sent yet. The oldest has waited {age}. Check the booking email service.",
       emailStatusUnavailable: "Could not check booking emails.", checkEmailStatus: "Check email status",
       retryEmail: "Retry booking emails", emailRetryQueued: "Email retry queued.", emailRetryFailed: "Could not queue an email retry.",
       latestRequest: "Open latest request",
@@ -119,7 +74,6 @@ export const translations = {
       scheduleStale: "Refresh failed. Showing the last loaded schedule.",
       notFound: "This ride could not be found.", back: "Back to rides", detail: "Ride details", reviewRequest: "Review request",
       pending: "Pending requests", pendingEmpty: "No pending requests.",
-      confirmed: "Confirmed rides", confirmedEmpty: "No confirmed rides.",
       notes: "Driver notes", emailRider: "Email rider", call: "Call passenger", directions: "Pickup directions",
       quote: "Final quote", quoteInstructions: "Enter the final fare and send it to the rider by email or WhatsApp. Tick acceptance once the rider replies.",
       riderEstimate: "Estimate shown to the rider", roundTripTotal: "round-trip total", noRiderEstimate: "The rider did not see a fare estimate.",
@@ -140,8 +94,7 @@ export const translations = {
       confirmDecline: "Decline this request? The rider will be told the ride is unavailable."
     },
     booking: {
-      appearance: "Appearance",
-      light: "Light", dark: "Dark", review: "Review request", edit: "Edit trip",
+      darkTheme: "Dark theme", review: "Review request", edit: "Edit trip",
       checkFare: "Review trip and fare",
       pickupAt: "Pickup in Paris time", returnAt: "Return in Paris time",
       pickupDateRequired: "Enter a pickup date.", pickupTimeRequired: "Enter a pickup time.",
@@ -160,8 +113,8 @@ export const translations = {
       agreedFare: "Agreed fare",
       contactPrivacy: "We use your trip and contact details to handle your request and contact you about your ride. We email your receipt, private tracking link and booking updates.",
       privacyTitle: "Privacy notice", privacyOperator: "Booking data is managed by",
-      requestCode: "Request email code", sendingCode: "Requesting code…", emailCode: "Email verification code",
-      codeHelp: "Check the inbox and spam folder for the address above. Paste the code here within 15 minutes. If it expires, request a new one.",
+      requestCode: "Email me a code", resendCode: "Send a new code", sendingCode: "Sending code…", emailCode: "Email verification code",
+      codeHelp: "We sent a code to the address above. Paste it here within 15 minutes. Check your spam folder if it has not arrived.",
       invalidCode: "Check the code and the email address. If the code has expired or was already used, request a new one.",
       codeFailed: "We could not request a code. Try again or contact the driver.",
       codeLimit: "Too many code requests. Try again later or contact the driver.",
@@ -177,7 +130,7 @@ export const translations = {
       keepLink: "Keep the private booking link to see the driver's decision.",
       copyLink: "Copy private link", linkCopied: "Link copied. Keep it to follow your request.",
       linkCopyFailed: "Could not copy the link. Open the booking and bookmark the page.",
-      view: "View booking", another: "Start a new request", refresh: "Refresh status",
+      view: "View booking", statusTitle: "Your booking", another: "Start a new request", refresh: "Refresh status",
       contact: "Contact the driver", call: "Call",
       state: { pending: "Pending driver confirmation", confirmed: "Ride confirmed", declined: "Request declined", cancelled: "Ride cancelled" },
       lookup: { loading: "Loading booking...", missing: "This booking link is invalid or has expired.", error: "Could not load the booking. Try refreshing.", stale: "Refresh failed. Showing the last known status." }
@@ -188,16 +141,11 @@ export const translations = {
       headlinePlace: "in Paris.",
       fleetImage: "A white Tesla sedan and a black Mercedes van on a Paris boulevard.",
       body: "Plan a city ride or an airport transfer. Your driver will confirm availability after you send your request.",
-      introLabel: "Mobile booking flow",
-      steps: ["1. Route", "2. Contact", "3. Confirm"],
       tripTitle: "Trip details",
-      tripBody: "Start with the route and preferred pickup time.",
       contactTitle: "Passenger details",
-      contactBody: "Enough information to call back quickly and confirm the ride.",
       labels: {
         pickup: "Pickup address",
         destination: "Destination",
-        vehicle: "Vehicle",
         roundTrip: "Add a round trip",
         date: "Pickup date",
         time: "Pickup time in Paris",
@@ -212,182 +160,45 @@ export const translations = {
       placeholders: {
         pickup: "Airport, hotel, street address",
         destination: "Where should the ride end?",
-        name: "Full name",
-        phone: "+33...",
         notes: "Flight number, luggage, child seat, or any special request"
       },
-      roundTripHint: "Round-trip estimates currently use the same route in reverse, so the total updates instantly.",
-      calculateTrip: "Calculate route and fare",
-      prepareEmail: "Prepare booking email",
-      footnote: "Tip: if a client prefers speaking directly, they can send the trip on WhatsApp instead of filling everything in."
+      roundTripHint: "Round trip: the estimate covers the same route in both directions."
     },
     map: {
-      label: "Live route preview",
-      badgeWaiting: "Waiting for Google Maps",
-      badgeAddKey: "Add API key",
-      badgeReady: "Live route ready",
-      badgeUnavailable: "Map unavailable",
-      placeholderMissingKey: "Add your Google Maps API key in config.js to enable autocomplete, map display, and driving distance calculation.",
-      placeholderLoading: "Connecting Google Maps...",
-      placeholderError: "Google Maps could not load. Check billing, the enabled APIs, and the allowed website referrers for your API key."
+      label: "Route preview"
     },
     summary: {
-      label: "Trip summary",
-      tag: "Ready to send",
-      readyLabel: "Current estimate",
-      distance: "Distance",
-      duration: "Duration",
-      fare: "Estimated fare",
-      vehicle: "Vehicle",
-      tripType: "Trip type",
-      oneWay: "One way",
-      roundTrip: "Round trip",
-      client: "Client",
-      notCalculated: "Not calculated yet",
-      farePending: "Estimate after route",
-      fareHint: "Calculate the route to show the total estimate.",
-      clientPending: "Waiting for trip details",
-      unnamedClient: "Unnamed client",
-      phoneMissing: "Phone missing",
-      emailTrip: "Email this trip",
-      whatsAppTrip: "Send on WhatsApp",
-      defaultStatus: "Add the trip details to preview the route and send a polished booking request."
+      fare: "Estimated fare"
     },
     languages: {
       en: "English",
       fr: "French"
     },
     footer: {
-      eyebrow: "Contact",
-      copy: "A clean private transport website that helps clients understand the service immediately and reserve without friction.",
-      call: "Call",
-      email: "Email"
-    },
-    mobileBar: {
-      call: "Call",
-      reserve: "Reserve",
       email: "Email"
     },
     status: {
       pickupRequired: "Enter a pickup address.",
       destinationRequired: "Enter a destination.",
-      nameRequired: "Client name is required.",
-      phoneRequired: "Phone number is required.",
-      mapsNotConfigured: "Google Maps is not configured yet. You can still prepare the booking email or send the request on WhatsApp.",
-      mapsLoading: "Google Maps is still loading. Please try again in a moment.",
-      calculatingRoute: "Calculating the driving route...",
-      routeReady: "Route ready. The client can now send the request by email or WhatsApp.",
-      routeReadyRoundTrip: "Route ready. The total estimate now includes the return trip and is ready to send.",
-      routeError: "I could not calculate that route right now. Please check the addresses or send the trip manually by email or WhatsApp.",
-      emailWithoutRoute: "The route could not be calculated automatically, but the booking email can still be prepared.",
-      emailPrepared: "Your email app should open with the trip details already filled in.",
-      mapsConnected: "Google Maps is connected. Clients can now calculate driving routes.",
-      mapsLoadError: "Google Maps could not be loaded. Check billing, the API key restrictions, and the enabled services.",
-      mapsAuthError: "Google Maps rejected the API key. Check that billing is enabled and that this website is allowed in the key referrer restrictions.",
-      mapsPlacesError: "Google Maps loaded, but Places Autocomplete is unavailable. Make sure the Places API is enabled for this key.",
-      returnDateRequired: "Return date is required for a round trip.",
-      returnTimeRequired: "Return time is required for a round trip."
-    },
-    mail: {
-      subjectPrefix: "Ride request",
-      newClient: "New client",
-      toBeConfirmed: "To be confirmed",
-      greeting: "Hello",
-      requestLine: "I would like to request a taxi ride.",
-      requestShort: "Please find my booking request below.",
-      name: "Name",
-      client: "Client",
-      phone: "Phone",
-      vehicle: "Vehicle",
-      tripType: "Trip type",
-      route: "Route",
-      departure: "Departure",
-      returnTrip: "Return",
-      estimate: "Estimate",
-      notes: "Notes",
-      pickup: "Pickup",
-      destination: "Destination",
-      preferredDate: "Pickup date",
-      preferredTime: "Pickup time in Paris",
-      returnDate: "Return date",
-      returnTime: "Return time in Paris",
-      passengers: "Passengers",
-      distance: "Distance",
-      travelTime: "Travel time",
-      estimatedFare: "Estimated fare",
-      extraDetails: "Extra details",
-      none: "None",
-      notApplicable: "Not applicable",
-      confirm: "Please confirm availability.",
-      notProvided: "Not provided"
-    },
-    whatsApp: {
-      greeting: "Hello",
-      requestLine: "I would like to request this ride on WhatsApp.",
-      requestShort: "Please find my booking request below.",
-      confirm: "Please confirm availability here on WhatsApp."
+      nameRequired: "Enter a name.",
+      returnDateRequired: "Enter a return date.",
+      returnTimeRequired: "Enter a return time."
     }
   },
   fr: {
     units: {
       kilometerShort: "km",
       hourShort: "h",
-      minuteShort: "min",
-      seatOne: "place",
-      seatMany: "places"
+      minuteShort: "min"
     },
     meta: {
       title: "Private Taxi Paris | Transferts aeroport et chauffeur prive a Paris",
       description: "Demandez un transfert prive a Paris. Verifiez les details de votre trajet avant la confirmation du chauffeur."
     },
     nav: {
-      home: "Accueil",
-      reserve: "Reserver",
-      schedule: "Planifier",
-      contact: "Contact",
-      callNow: "Appeler",
       whatsApp: "WhatsApp",
       languageLabel: "Selecteur de langue", skip: "Aller au contenu principal"
     },
-    hero: {
-      title: "Reservation simple, trajets fluides et premiere impression premium.",
-      body: "Cette experience est pensee pour aller vite : les clients peuvent vous appeler tout de suite, envoyer un email ou preparer leur trajet avec un apercu d'itineraire avant de confirmer.",
-      planRide: "Planifier un trajet",
-      sendEmail: "Envoyer un email",
-      note: "Besoin d'un pickup rapide ? Appelez directement. Pour les trajets prevus, le formulaire ci-dessous est l'option la plus claire.",
-      response: "Reponse",
-      coverage: "Zone",
-      specialty: "Specialite"
-    },
-    contactCard: {
-      label: "Contact rapide",
-      title: "Donnez aux clients 3 choix simples.",
-      phone: "Telephone",
-      email: "Email",
-      hours: "Horaires"
-    },
-    flow: {
-      label: "Meilleur parcours",
-      steps: [
-        "Le client indique le depart et la destination.",
-        "Le site affiche l'itineraire, la distance et le temps de trajet.",
-        "Il confirme par email, telephone ou via un creneau Calendly."
-      ]
-    },
-    benefits: [
-      {
-        title: "Plus clair qu'une simple page contact",
-        body: "Les gens comprennent tout de suite quoi faire, ce qui reduit les abandons et les allers-retours inutiles."
-      },
-      {
-        title: "Plus pratique qu'un systeme de reservation sur mesure",
-        body: "Calendly peut gerer les confirmations et rappels des maintenant, pendant que le formulaire garde les details du trajet bien organises."
-      },
-      {
-        title: "Pense pour etre premium sur mobile",
-        body: "Le design garde des actions larges, lisibles et rassurantes pour reserver facilement meme quand le client est presse."
-      }
-    ],
     calendar: {
       title: "Google Agenda", calendarId: "Identifiant dans les parametres de Google Agenda",
       connect: "Connecter l'agenda", reconnect: "Reconnecter l'agenda", connected: "Agenda connecte",
@@ -397,9 +208,9 @@ export const translations = {
     },
     schedule: {
       noUpcoming: "Aucun depart a venir.",
-      dayView: "Planning du jour", parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
+      parisDay: "Jour a Paris", previous: "Jour precedent", nextDay: "Jour suivant",
       calendar: "Calendrier des reservations", today: "Aujourd'hui", prevMonth: "Mois precedent", nextMonth: "Mois suivant", entries: "Entrees du calendrier",
-      nextPickup: "Prochain depart", openDay: "Ouvrir ce jour", dayEmpty: "Aucune course ni plage bloquee ce jour.",
+      nextPickup: "Prochain depart", dayEmpty: "Aucune course ni plage bloquee ce jour.",
       calendarCount: "Les totaux incluent les courses, les demandes et les plages bloquees.", timeBlocked: "Plage bloquee",
       workHours: "Horaires de travail", workHoursNotSet: "Horaires de travail non definis", workHoursLoading: "Chargement des horaires...",
       workHoursUnavailable: "Impossible de charger les horaires. Actualisez la page.", dayOff: "Jour de repos",
@@ -412,7 +223,7 @@ export const translations = {
       returnLeg: "Trajet retour", finish: "Fin estimee", finishUnknown: "Heure de fin indisponible",
       travelBetween: "Temps de trajet entre les courses", travelUnknown: "Fin de la course precedente inconnue",
       travelAvailable: "disponibles pour le trajet",
-      travelTarget: "Objectif provisoire de trajet (minutes)", travelShort: "Temps de trajet insuffisant",
+      travelTarget: "Temps de trajet necessaire (minutes)", travelShort: "Temps de trajet insuffisant",
       travelAdvisory: "Adaptez l'objectif aux adresses. Verifiez le delai avant d'enregistrer.",
       blocked: "Bloque jusqu'a", addBlock: "Bloquer un creneau", removeBlock: "Liberer le creneau", confirmRemove: "Liberer ce creneau ?",
       start: "Debut, heure de Paris", end: "Fin, heure de Paris", invalidBlock: "Choisissez une fin future apres le debut.",
@@ -422,7 +233,7 @@ export const translations = {
       duration: "Duree estimee par trajet en minutes (facultatif)", durationInvalid: "Saisissez un entier de 1 a 1440.",
       conflict: "Conflit de planning", legsOverlap: "Le trajet aller chevauche le trajet retour.",
       neighbors: "Courses proches", saved: "Enregistre.",
-      checkTravel: "Verifiez le temps de trajet entre deux departs.", otherEntries: "Autres courses et creneaux bloques",
+      checkTravel: "Verifiez le temps de trajet entre deux departs.",
       conflictChanged: "Le planning a change. Verifiez les conflits avant de reessayer.",
       reopenEdit: "Cette course a change. Rouvrez-la pour modifier le dernier planning.",
       saveFailed: "Impossible d'enregistrer la modification. Verifiez le planning actuel.",
@@ -430,12 +241,13 @@ export const translations = {
       saving: "Enregistrement...", discard: "Ignorer les modifications"
     },
     driver: {
-      title: "Espace chauffeur", signIn: "Connexion chauffeur", password: "Mot de passe", signOut: "Se deconnecter",
+      title: "Espace chauffeur", signIn: "Connexion chauffeur", signInAction: "Se connecter", bookingPage: "Page de reservation", statePending: "En attente de votre decision",
+      passengerEmail: "E-mail du passager (recu et suivi)", password: "Mot de passe", signOut: "Se deconnecter",
       signingIn: "Connexion en cours...", backToBooking: "Retour a la reservation", refreshing: "Actualisation...", decision: "Decision sur la demande",
       signInFailed: "Connexion impossible. Verifiez votre e-mail et votre mot de passe, puis reessayez.",
       googleSignIn: "Se connecter avec Google", googleSignInFailed: "La connexion Google a echoue. Reessayez ou utilisez votre mot de passe.",
       emailFailed: "E-mails de reservation en attente de nouvel essai :", emailRetryExpired: "E-mails hors delai de nouvel essai :",
-      emailOverdue: "E-mails de reservation en attente du premier envoi : {count}. Le plus ancien attend depuis {minutes} min. Verifiez les demandes de reservation.",
+      emailOverdue: "{count} e-mails de reservation ne sont pas encore partis. Le plus ancien attend depuis {age}. Verifiez le service d'envoi des e-mails.",
       emailStatusUnavailable: "Impossible de verifier les e-mails de reservation.", checkEmailStatus: "Verifier le statut des e-mails",
       retryEmail: "Reessayer les e-mails", emailRetryQueued: "Nouvel essai en attente.", emailRetryFailed: "Impossible de relancer les e-mails.",
       latestRequest: "Ouvrir la derniere demande",
@@ -445,7 +257,6 @@ export const translations = {
       scheduleStale: "Echec de l'actualisation. Affichage du dernier planning charge.",
       notFound: "Cette course est introuvable.", back: "Retour aux courses", detail: "Details de la course", reviewRequest: "Examiner la demande",
       pending: "Demandes en attente", pendingEmpty: "Aucune demande en attente.",
-      confirmed: "Courses confirmees", confirmedEmpty: "Aucune course confirmee.",
       notes: "Notes du chauffeur", emailRider: "Ecrire au passager", call: "Appeler le passager", directions: "Itineraire vers le depart",
       quote: "Tarif final", quoteInstructions: "Saisissez le tarif final et envoyez-le au passager par e-mail ou sur WhatsApp. Cochez son accord des sa reponse.",
       riderEstimate: "Estimation affichee au passager", roundTripTotal: "total aller-retour", noRiderEstimate: "Le passager n'a pas vu d'estimation de tarif.",
@@ -466,8 +277,7 @@ export const translations = {
       confirmDecline: "Refuser cette demande ? Le passager sera informe que la course est indisponible."
     },
     booking: {
-      appearance: "Apparence",
-      light: "Clair", dark: "Sombre", review: "Verifier la demande", edit: "Modifier le trajet",
+      darkTheme: "Theme sombre", review: "Verifier la demande", edit: "Modifier le trajet",
       checkFare: "Verifier le trajet et le tarif",
       pickupAt: "Depart, heure de Paris", returnAt: "Retour, heure de Paris",
       pickupDateRequired: "Indiquez une date de depart.", pickupTimeRequired: "Indiquez une heure de depart.",
@@ -486,8 +296,8 @@ export const translations = {
       agreedFare: "Tarif convenu",
       contactPrivacy: "Nous utilisons les informations de votre trajet et vos coordonnees pour traiter votre demande et vous contacter au sujet de votre course. Nous envoyons par e-mail votre recu, votre lien prive et le suivi de votre reservation.",
       privacyTitle: "Confidentialite", privacyOperator: "Les donnees de reservation sont gerees par",
-      requestCode: "Demander un code par e-mail", sendingCode: "Demande du code…", emailCode: "Code de verification par e-mail",
-      codeHelp: "Consultez la boite de reception et les courriers indesirables de l'adresse ci-dessus. Collez le code ici sous 15 minutes. Si le code expire, demandez-en un nouveau.",
+      requestCode: "Recevoir un code par e-mail", resendCode: "Envoyer un nouveau code", sendingCode: "Envoi du code…", emailCode: "Code de verification par e-mail",
+      codeHelp: "Nous avons envoye un code a l'adresse ci-dessus. Collez-le ici sous 15 minutes. Verifiez les courriers indesirables s'il n'arrive pas.",
       invalidCode: "Verifiez le code et l'adresse e-mail. Si le code a expire ou a deja servi, demandez-en un nouveau.",
       codeFailed: "Impossible de demander un code. Reessayez ou contactez le chauffeur.",
       codeLimit: "Trop de demandes de code. Reessayez plus tard ou contactez le chauffeur.",
@@ -503,7 +313,7 @@ export const translations = {
       keepLink: "Conservez le lien prive pour consulter la decision du chauffeur.",
       copyLink: "Copier le lien prive", linkCopied: "Lien copie. Gardez-le pour suivre votre demande.",
       linkCopyFailed: "Impossible de copier le lien. Ouvrez la reservation et ajoutez la page aux favoris.",
-      view: "Voir la reservation", another: "Nouvelle demande", refresh: "Actualiser le statut",
+      view: "Voir la reservation", statusTitle: "Votre reservation", another: "Nouvelle demande", refresh: "Actualiser le statut",
       contact: "Contacter le chauffeur", call: "Appeler",
       state: { pending: "En attente de confirmation du chauffeur", confirmed: "Course confirmee", declined: "Demande refusee", cancelled: "Course annulee" },
       lookup: { loading: "Chargement de la reservation...", missing: "Le lien de reservation est invalide ou expire.", error: "Impossible de charger la reservation. Actualisez le statut.", stale: "Echec de l'actualisation. Dernier statut connu affiche." }
@@ -514,16 +324,11 @@ export const translations = {
       headlinePlace: "a Paris.",
       fleetImage: "Une Tesla blanche et un van Mercedes noir sur un boulevard parisien.",
       body: "Preparez un trajet en ville ou un transfert aeroport. Le chauffeur confirmera sa disponibilite apres votre demande.",
-      introLabel: "Parcours mobile",
-      steps: ["1. Itineraire", "2. Contact", "3. Confirmation"],
       tripTitle: "Details du trajet",
-      tripBody: "Commencez par l'itineraire et l'heure souhaitee.",
       contactTitle: "Details du passager",
-      contactBody: "Juste assez d'informations pour rappeler rapidement et confirmer la course.",
       labels: {
         pickup: "Adresse de depart",
         destination: "Destination",
-        vehicle: "Vehicule",
         roundTrip: "Ajouter un aller-retour",
         date: "Date de depart",
         time: "Heure de depart a Paris",
@@ -538,120 +343,29 @@ export const translations = {
       placeholders: {
         pickup: "Aeroport, hotel, adresse",
         destination: "Ou le trajet doit-il se terminer ?",
-        name: "Nom complet",
-        phone: "+33...",
         notes: "Numero de vol, bagages, siege enfant ou demande particuliere"
       },
-      roundTripHint: "Les estimations aller-retour utilisent actuellement le meme trajet en sens inverse pour mettre a jour le total instantanement.",
-      calculateTrip: "Calculer le trajet et le tarif",
-      prepareEmail: "Preparer l'email de reservation",
-      footnote: "Astuce : si un client prefere aller vite, il peut envoyer le trajet sur WhatsApp au lieu de tout remplir."
+      roundTripHint: "Aller-retour : l'estimation couvre le meme trajet dans les deux sens."
     },
     map: {
-      label: "Apercu de l'itineraire",
-      badgeWaiting: "En attente de Google Maps",
-      badgeAddKey: "Ajouter la cle API",
-      badgeReady: "Itineraire pret",
-      badgeUnavailable: "Carte indisponible",
-      placeholderMissingKey: "Ajoutez votre cle API Google Maps dans config.js pour activer l'autocompletion, l'affichage de la carte et le calcul de distance.",
-      placeholderLoading: "Connexion a Google Maps...",
-      placeholderError: "Google Maps n'a pas pu se charger. Verifiez la facturation, les API actives et les referers autorises pour votre cle."
+      label: "Apercu de l'itineraire"
     },
     summary: {
-      label: "Resume du trajet",
-      tag: "Pret a envoyer",
-      readyLabel: "Estimation actuelle",
-      distance: "Distance",
-      duration: "Duree",
-      fare: "Tarif estime",
-      vehicle: "Vehicule",
-      tripType: "Type de trajet",
-      oneWay: "Aller simple",
-      roundTrip: "Aller-retour",
-      client: "Client",
-      notCalculated: "Pas encore calcule",
-      farePending: "Estimation apres l'itineraire",
-      fareHint: "Calculez l'itineraire pour afficher le total estime.",
-      clientPending: "En attente des details du trajet",
-      unnamedClient: "Client sans nom",
-      phoneMissing: "Telephone manquant",
-      emailTrip: "Envoyer ce trajet par email",
-      whatsAppTrip: "Envoyer sur WhatsApp",
-      defaultStatus: "Ajoutez les details du trajet pour afficher l'itineraire et envoyer une demande de reservation plus soignee."
+      fare: "Tarif estime"
     },
     languages: {
       en: "Anglais",
       fr: "Francais"
     },
     footer: {
-      eyebrow: "Contact",
-      copy: "Un site de transport prive clair qui aide les clients a comprendre le service immediatement et a reserver sans friction.",
-      call: "Appeler",
-      email: "Email"
-    },
-    mobileBar: {
-      call: "Appeler",
-      reserve: "Reserver",
       email: "Email"
     },
     status: {
       pickupRequired: "Indiquez une adresse de depart.",
       destinationRequired: "Indiquez une destination.",
-      nameRequired: "Le nom du client est obligatoire.",
-      phoneRequired: "Le numero de telephone est obligatoire.",
-      mapsNotConfigured: "Google Maps n'est pas encore configure. Vous pouvez quand meme preparer l'email de reservation ou envoyer la demande sur WhatsApp.",
-      mapsLoading: "Google Maps est encore en cours de chargement. Reessayez dans un instant.",
-      calculatingRoute: "Calcul de l'itineraire en cours...",
-      routeReady: "Itineraire pret. Le client peut maintenant envoyer la demande par email ou WhatsApp.",
-      routeReadyRoundTrip: "Itineraire pret. Le total estime inclut maintenant aussi le retour et peut etre envoye.",
-      routeError: "Impossible de calculer cet itineraire pour le moment. Verifiez les adresses ou envoyez la demande manuellement par email ou WhatsApp.",
-      emailWithoutRoute: "L'itineraire n'a pas pu etre calcule automatiquement, mais l'email de reservation peut quand meme etre prepare.",
-      emailPrepared: "Votre application email devrait s'ouvrir avec les details du trajet deja remplis.",
-      mapsConnected: "Google Maps est connecte. Les clients peuvent maintenant calculer les itineraires routiers.",
-      mapsLoadError: "Google Maps n'a pas pu etre charge. Verifiez la facturation, les restrictions de la cle API et les services actives.",
-      mapsAuthError: "Google Maps a refuse la cle API. Verifiez que la facturation est active et que ce site est autorise dans les restrictions de referer.",
-      mapsPlacesError: "Google Maps est charge, mais l'autocompletion Places est indisponible. Assurez-vous que l'API Places est active pour cette cle.",
-      returnDateRequired: "La date du retour est obligatoire pour un aller-retour.",
-      returnTimeRequired: "L'heure du retour est obligatoire pour un aller-retour."
-    },
-    mail: {
-      subjectPrefix: "Demande de trajet",
-      newClient: "Nouveau client",
-      toBeConfirmed: "A confirmer",
-      greeting: "Bonjour",
-      requestLine: "Je souhaite reserver une course en taxi.",
-      requestShort: "Veuillez trouver ma demande de reservation ci-dessous.",
-      name: "Nom",
-      client: "Client",
-      phone: "Telephone",
-      vehicle: "Vehicule",
-      tripType: "Type de trajet",
-      route: "Trajet",
-      departure: "Depart",
-      returnTrip: "Retour",
-      estimate: "Estimation",
-      notes: "Notes",
-      pickup: "Depart",
-      destination: "Destination",
-      preferredDate: "Date de depart",
-      preferredTime: "Heure de depart a Paris",
-      returnDate: "Date du retour",
-      returnTime: "Heure du retour a Paris",
-      passengers: "Passagers",
-      distance: "Distance",
-      travelTime: "Temps de trajet",
-      estimatedFare: "Tarif estime",
-      extraDetails: "Details supplementaires",
-      none: "Aucun",
-      notApplicable: "Non applicable",
-      confirm: "Merci de confirmer la disponibilite.",
-      notProvided: "Non renseigne"
-    },
-    whatsApp: {
-      greeting: "Bonjour",
-      requestLine: "Je souhaite demander ce trajet sur WhatsApp.",
-      requestShort: "Veuillez trouver ma demande de reservation ci-dessous.",
-      confirm: "Merci de confirmer la disponibilite ici sur WhatsApp."
+      nameRequired: "Saisissez un nom.",
+      returnDateRequired: "Saisissez une date de retour.",
+      returnTimeRequired: "Saisissez une heure de retour."
     }
   }
 };

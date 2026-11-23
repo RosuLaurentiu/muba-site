@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { draftBlock, draftLegs, entriesOnDay, monthDays, plannedSchedule, scheduleContext } from "../../src/schedule.js";
+import { draftBlock, draftLegs, entriesByDay, monthDays, plannedSchedule, scheduleContext } from "../../src/schedule.js";
 
 assert.equal(monthDays("2028-02-01").at(-1), "2028-02-29");
 assert.equal(monthDays("2027-02-28").length, 28);
@@ -11,10 +11,12 @@ const ride = {
 };
 const block = { id: "block", starts_at: "2090-03-25T22:30:00Z", ends_at: "2090-03-25T23:15:00Z" };
 const schedule = plannedSchedule([ride, { ...ride, reference: 2, status: "declined" }], [block]);
-const springDay = entriesOnDay(schedule, "2090-03-26");
+const days = entriesByDay(schedule, ["2090-03-25", "2090-03-26", "2090-03-27"]);
+const springDay = days.get("2090-03-26");
 assert.deepEqual(springDay.map((entry) => entry.id), ["block", "1-out"]);
-assert.equal(entriesOnDay(schedule, "2090-03-27")[0].pickup, "Paris-Orly");
-assert.equal(entriesOnDay(schedule, "2090-03-27")[0].returning, true);
+assert.deepEqual(days.get("2090-03-25").map((entry) => entry.id), ["block"]);
+assert.equal(days.get("2090-03-27")[0].pickup, "Paris-Orly");
+assert.equal(days.get("2090-03-27")[0].returning, true);
 
 const startsInside = draftLegs("2090-03-26T01:00", null, 30);
 assert.deepEqual(scheduleContext(startsInside, schedule).conflicts.map((entry) => entry.id), ["1-out"]);

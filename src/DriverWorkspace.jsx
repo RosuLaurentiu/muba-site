@@ -84,6 +84,14 @@ function quoteSubject(ride) {
   return getText(ride.language === "fr" ? "fr" : "en", "driver.quoteSubject").replace("{reference}", ride.reference);
 }
 
+function waitingTime(minutes, language) {
+  const total = Math.max(1, Math.round(Number(minutes) || 0));
+  const hours = Math.floor(total / 60);
+  const parts = [...(hours ? [hours + " " + getText(language, "units.hourShort")] : []),
+    ...(total % 60 ? [(total % 60) + " " + getText(language, "units.minuteShort")] : [])];
+  return parts.join(" ");
+}
+
 function BookingEmailStatus({ language }) {
   const [failures, setFailures] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -127,7 +135,7 @@ function BookingEmailStatus({ language }) {
       <div role="status">
         {failures === false && <p>{t("emailStatusUnavailable")}</p>}
         {failures?.overdue > 0 && <p>{t("emailOverdue")
-          .replace("{count}", failures.overdue).replace("{minutes}", failures.oldest_overdue_minutes)}</p>}
+          .replace("{count}", failures.overdue).replace("{age}", waitingTime(failures.oldest_overdue_minutes, language))}</p>}
         {failures?.retryable > 0 && <p>{t("emailFailed")} {failures.retryable}</p>}
         {failures?.expired > 0 && <p>{t("emailRetryExpired")} {failures.expired}</p>}
         {notice && <p>{t(notice)}</p>}
@@ -237,7 +245,7 @@ function RideDetail({ ride, returning, language, onChanged, notice, setNotice, r
     <>
       <header className="ride-heading">
         <h1 ref={heading} tabIndex={-1}>{t(ride.status === "pending" ? "driver.reviewRequest" : "driver.detail")} <span>#{ride.reference}</span></h1>
-        <strong className="ride-state" data-status={ride.status}>{t("booking.state." + ride.status)}</strong>
+        <strong className="ride-state" data-status={ride.status}>{t(ride.status === "pending" ? "driver.statePending" : "booking.state." + ride.status)}</strong>
       </header>
       {ride.status === "pending" && rideOutsideWorkHours(ride, hours) && (
         <p className="field-error form-submit">{t("schedule.outsideWorkHours")}</p>
@@ -637,6 +645,7 @@ export default function DriverWorkspace({ language }) {
       ) : session ? (
         <>
           <DriverRides key={session.user.id} session={session} language={language}>
+            <a className="button" href={window.location.pathname}>{t("driver.bookingPage")}</a>
             <button className="button" type="button" onClick={signOut} disabled={busy}>{t("driver.signOut")}</button>
           </DriverRides>
           {errorKey && <p className="field-error form-submit" role="alert">{t(errorKey)}</p>}
@@ -654,7 +663,7 @@ export default function DriverWorkspace({ language }) {
                 <input id="driver-password" name="password" type="password" autoComplete="current-password" required />
               </div>
               {errorKey && <p className="field-error" role="alert">{t(errorKey)}</p>}
-              <button className="button primary" type="submit" disabled={busy}>{t(busy ? "driver.signingIn" : "driver.signIn")}</button>
+              <button className="button primary" type="submit" disabled={busy}>{t(busy ? "driver.signingIn" : "driver.signInAction")}</button>
               {googleEnabled && (
                 <button className="button" type="button" disabled={busy} onClick={signInWithGoogle}>
                   {t("driver.googleSignIn")}

@@ -92,12 +92,17 @@ export function scheduleContext(drafts, schedule, excludedReference) {
   };
 }
 
-export function entriesOnDay(schedule, day) {
-  const start = getParisInstant(day + "T00:00").getTime();
-  const end = getParisInstant(moveDay(day, 1) + "T00:00").getTime();
-  return schedule.filter((entry) =>
-    entry.ride ? entry.start >= start && entry.start < end : entry.start < end && entry.end > start
-  );
+// Group entries by Paris day. A ride counts on its pickup day; a block on every day it covers.
+export function entriesByDay(entries, dates) {
+  const byDay = new Map(dates.map((date) => [date, []]));
+  for (const entry of entries) {
+    const first = parisDay(entry.start);
+    const last = entry.ride ? first : parisDay(entry.end - 1);
+    for (const [date, items] of byDay) {
+      if (date >= first && date <= last) items.push(entry);
+    }
+  }
+  return byDay;
 }
 
 export function parisDay(date) {
