@@ -304,6 +304,16 @@ number and the private tracking link and email later changes. The web receipt
 page also shows the same link. The private email queue commits with the
 booking. Existing bookings keep their current access and email settings.
 
+Each booking email lists the trip as it was when the email was queued: Paris
+pickup and return times, pickup address, destination, passengers and the fare.
+Receipts and driver alerts show the rider's estimate; once the driver confirms,
+emails show the agreed fare. Decline and cancellation emails leave out the fare.
+Passenger names, phone numbers and notes stay out of the email queue, and the
+queued copy is deleted with its ride. French emails use standard accents.
+Deploy a change to email wording only when no partly attempted email is waiting
+(`sent_at is null and first_attempt is not null`), because a retry reuses its
+delivery ID and the provider rejects a changed message under the same ID.
+
 Riders review their trip and estimate before entering passenger details. They
 can edit the trip without losing those details. If a rider cannot verify a
 save, **Retry request** repeats the same request. The private booking page

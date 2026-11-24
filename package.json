@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test supabase/tests/rider-input.mjs supabase/tests/fare.mjs supabase/tests/schedule.mjs supabase/tests/work-hours.mjs",
+    "test": "node --test supabase/tests/rider-input.mjs supabase/tests/fare.mjs supabase/tests/schedule.mjs supabase/tests/work-hours.mjs supabase/tests/email-message.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

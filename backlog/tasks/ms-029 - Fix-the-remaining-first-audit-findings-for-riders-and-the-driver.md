@@ -1,11 +1,12 @@
 ---
 id: MS-029
 title: Fix the remaining first-audit findings for riders and the driver
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-23 13:52'
-updated_date: '2026-11-23 14:08'
+updated_date: '2026-11-23 14:40'
+completed_date: '2026-11-23T14:40:54.505Z'
 labels: []
 dependencies: []
 references:
@@ -40,21 +41,22 @@ The owner asked to fix the eight findings still open from the first full UX audi
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  All eight open first-audit findings are fixed and verified in headless
-  Chromium in EN and FR; lint, npm test (4/4) and build pass.
+  The owner asked for the commit, so the work is committed as fbf09c5. Lint, npm
+  test (4/4) and the build passed again just before the commit. Nothing was
+  pushed. The booking emails sent by supabase/functions/booking-email still have
+  French without accents. Changing them needs an update and a hosted deploy,
+  which needs the owner's approval first.
 next: >-
   Owner reviews the diff and decides whether to commit; booking emails from
   supabase/functions/booking-email still use unaccented French until that
   function is updated and deployed.
 latestChange: >-
-  Fixed the eight remaining first-audit findings: past dates blocked, header
-  Call and WhatsApp buttons on rider screens, theme-matched desktop map fitted
-  to the route, pending status page checking every minute with a last-checked
-  time, pending list with arrival time and passenger count, Next pickup with
-  Today/Tomorrow and a countdown, Block time presets, in-page confirms for
-  decline, cancel and remove, and accented French copy. Lint, tests, build and
-  EN/FR browser checks pass. Nothing is committed.
-resultAt: '2026-11-23T14:08:11.807Z'
+  The owner asked for the commit, so the work is committed as fbf09c5. Lint, npm
+  test (4/4) and the build passed again just before the commit. Nothing was
+  pushed. The booking emails sent by supabase/functions/booking-email still have
+  French without accents. Changing them needs an update and a hosted deploy,
+  which needs the owner's approval first.
+resultAt: '2026-11-23T14:40:54.497Z'
 evidence:
   - >-
     Header stays 61 px tall at 320, 360, 375 and 390 px in EN and FR with 38x44
@@ -73,6 +75,7 @@ evidence:
     Decline asks in the page (EN and FR), Escape closes and returns focus; Rest
     of today and All day fill the block times.
   - No console errors.
+  - commit fbf09c5
 approach: >-
   Small changes in the existing components; new strings in i18n.js with EN/FR
   parity; time helpers in src/timeText.js.
@@ -102,7 +105,6 @@ ownedPaths:
   - src/config.js
   - README.md
   - AGENTS.md
-ownerInput: Review the diff and decide whether to commit.
 ```
 <!-- SECTION:CURRENT_CHECKPOINT:END -->
 
@@ -120,7 +122,7 @@ ownerInput: Review the diff and decide whether to commit.
       "intervals": [
         {
           "start": "2026-11-23T14:07:57.629Z",
-          "end": "2026-11-23T14:08:11.327Z"
+          "end": "2026-11-23T14:08:28.332Z"
         }
       ]
     }
@@ -138,19 +140,19 @@ ownerInput: Review the diff and decide whether to commit.
         "taskId": "MS-029",
         "planningRoot": "C:\\Users\\rosu_\\Desktop\\Development\\Muba Site",
         "start": "2026-11-23T14:07:57.629Z",
-        "end": "2026-11-23T14:08:11.327Z"
+        "end": "2026-11-23T14:08:28.332Z"
       },
       "tokens": {
-        "input": 256286,
-        "output": 1317,
-        "cachedInput": 254894,
+        "input": 773329,
+        "output": 2705,
+        "cachedInput": 769375,
         "reasoningOutput": null,
-        "total": 257603
+        "total": 776034
       },
       "evidence": [
         "claude-session:5f10e85b-95a7-4b35-a0d6-ab8822af6300"
       ],
-      "recordedAt": "2026-11-23T14:08:11.327Z"
+      "recordedAt": "2026-11-23T14:08:28.332Z"
     }
   ],
   "corrections": []
@@ -174,4 +176,8 @@ ownerInput: Review the diff and decide whether to commit.
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-23T14:08:11.807Z: Fixed the eight remaining first-audit findings: past dates blocked, header Call and WhatsApp buttons on rider screens, theme-matched desktop map fitted to the route, pending status page checking every minute with a last-checked time, pending list with arrival time and passenger count, Next pickup with Today/Tomorrow and a countdown, Block time presets, in-page confirms for decline, cancel and remove, and accented French copy. Lint, tests, build and EN/FR browser checks pass. Nothing is committed.
+
+2026-11-23T14:40:54.497Z: Prior current facts: {"done":"All eight open first-audit findings are fixed and verified in headless Chromium in EN and FR; lint, npm test (4/4) and build pass.","resultAt":"2026-11-23T14:08:11.807Z"}
+
+2026-11-23T14:40:54.497Z: The owner asked for the commit, so the work is committed as fbf09c5. Lint, npm test (4/4) and the build passed again just before the commit. Nothing was pushed. The booking emails sent by supabase/functions/booking-email still have French without accents. Changing them needs an update and a hosted deploy, which needs the owner's approval first.
 <!-- SECTION:NOTES:END -->

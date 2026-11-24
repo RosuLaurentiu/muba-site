@@ -100,7 +100,7 @@ try {
       assert.equal(url, "http://mail.test/");
       const message = JSON.parse(options.body);
       assert.ok(message.to.every(recipient => recipient.endsWith("@example.test")));
-      if (message.subject === "Code de verification Private Taxi Paris") {
+      if (message.subject === "Code de vérification Private Taxi Paris") {
         assert.deepEqual(message.to, [address]);
         code = message.text.match(/\b[a-f0-9]{32}\b/)?.[0];
       }

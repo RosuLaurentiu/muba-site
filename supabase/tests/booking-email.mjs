@@ -123,6 +123,8 @@ try {
   assert.equal(delivered.size, 1);
   assert.equal([...attempts.values()][0], 2);
   assert.ok([...delivered.values()][0].text.includes("http://127.0.0.1:5173/?booking#key=" + keys[0]), "Receipt includes the private tracking link");
+  assert.ok([...delivered.values()][0].text.includes("Pickup address: Gare de Lyon\nDestination: Paris-Orly\nPassengers: 2\n"),
+    "Receipt includes the trip");
   assert.equal(sql(`select (receipt_key is null)::text from booking_private.booking_email where reference = ${booking.reference}`), "true");
   assert.deepEqual(await rpc("get_ride", { p_request_key: keys[0] }), pending);
   assert.deepEqual(await rpc("booking_email_failures", {}, driver.token), healthy);
@@ -163,18 +165,22 @@ try {
   assert.equal(delivered.size, 16);
   const texts = [...delivered.values()];
   for (const title of ["Ride request received", "Ride confirmed", "Ride details updated", "Ride request declined",
-    "Ride cancelled", "Demande de trajet recue", "Trajet confirme", "Trajet mis a jour",
-    "Demande de trajet refusee", "Trajet annule"]) {
+    "Ride cancelled", "Demande de trajet reçue", "Trajet confirmé", "Trajet mis à jour",
+    "Demande de trajet refusée", "Trajet annulé"]) {
     const email = texts.find(({ subject }) => subject.startsWith(title));
     assert.ok(email, title);
-    assert.match(email.text, /Reference #\d+\n.*\(Paris\)/);
+    assert.match(email.text, /R[eé]f[eé]rence #\d+\n.*\(Paris\)/);
   }
-  for (const [title, instruction] of [["Ride details updated", "check the addresses and times"],
-    ["Trajet mis a jour", "verifier les adresses et les horaires"]]) {
+  for (const [title, instruction] of [["Ride details updated", "updated details of your confirmed ride"],
+    ["Trajet mis à jour", "nouveaux détails de votre trajet confirmé"]]) {
     const updates = texts.filter(({ subject }) => subject.startsWith(title));
     assert.equal(updates.length, 3);
     assert.ok(updates.every(({ text }) => text.includes(instruction) && text.includes("12:30")));
+    assert.ok(updates.some(({ text }) => text.includes(": New pickup\n")));
+    assert.ok(updates.some(({ text }) => text.includes(": New destination\n")));
   }
+  assert.ok(texts.some(({ subject, text }) => subject.startsWith("Ride confirmed") && text.includes("Agreed fare: €72.50")));
+  assert.ok(texts.some(({ subject, text }) => subject.startsWith("Trajet confirmé") && /Tarif convenu: 72,50\s€/.test(text)));
   assert.ok(texts.every(({ to }) => to[0].endsWith("@example.test")));
   console.log("PASS required email, private tracking receipt, five localized messages and duplicate-safe delivery retry");
 
@@ -263,6 +269,7 @@ try {
   assert.deepEqual(email.to, ["assigned-google@example.test"]);
   assert.ok(email.text.includes("ride=" + newRide.reference));
   assert.ok(!email.text.includes("Local Test"));
+  assert.ok(email.text.includes("Pickup address: Gare de Lyon\nDestination: Paris-Orly\nPassengers: 2\n"));
   const receipt = [...delivered.values()].find(({ to }) => to[0] === "manual-rider@example.test");
   assert.equal(receipt.subject, "Ride confirmed #" + manual.reference);
   assert.ok(receipt.text.startsWith("Ride confirmed\n"));
@@ -284,9 +291,10 @@ try {
   await change(whatsApp, 1, "cancelled");
   assert.equal((await (await runWorker()).json()).sent, 1);
   const frenchReceipt = [...delivered.values()].find(({ to }) => to[0] === "whatsapp@example.test");
-  assert.equal(frenchReceipt.subject, "Trajet confirme #" + whatsApp.reference);
-  assert.ok(frenchReceipt.text.startsWith("Trajet confirme\n"));
-  assert.ok(frenchReceipt.text.includes("Lien prive de suivi: http://127.0.0.1:5173/?booking#key=" + keys[11]));
+  assert.equal(frenchReceipt.subject, "Trajet confirmé #" + whatsApp.reference);
+  assert.ok(frenchReceipt.text.startsWith("Trajet confirmé\n"));
+  assert.ok(frenchReceipt.text.includes("Adresse de départ: Gare de Lyon\nDestination: Paris-Orly\nPassagers: 2\n"));
+  assert.ok(frenchReceipt.text.includes("Lien privé de suivi: http://127.0.0.1:5173/?booking#key=" + keys[11]));
   assert.equal((await (await runWorker()).json()).sent, 1);
 
   // A manual receipt first attempted by the previous worker keeps its original provider payload.
