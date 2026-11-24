@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-21 21:48'
-updated_date: '2026-11-22 15:58'
+updated_date: '2026-11-24 01:55'
 labels: []
 dependencies:
   - MS-002
@@ -30,22 +30,20 @@ The owner selected a controlled hosted test before public launch. The driver and
 <!-- SECTION:CURRENT_CHECKPOINT:BEGIN -->
 ```yaml
 done: >-
-  Published approved commit 72394f37f6934073897e52637b46225059992260. The exact
-  GitHub Pages run succeeded. The custom domain returned 200 and served the new
-  bundle for both rider and driver entry points, configured for Muba Booking.
-  Browser smoke verified rider form and driver Google sign-in entry in English
-  and French, and the rider theme switch. The netcup timer continued succeeding
-  after publication. Verified the new approved commit c6de1a7, remote main,
-  production backend identity, active timer, empty outbox and existing migration
-  names.
+  Published d2a6b7f (MS-027–MS-030) to the custom domain. The fresh CI run
+  passed all checks, and Pages attempt 2 succeeded. The production database has
+  both migrations. Booking-email v5 matches the release and a scheduled
+  invocation exited successfully. Headless Edge reached the live rider
+  verification form and Google driver sign-in in English and French.
 next: >-
-  Use the production migration history in a disposable release directory, deploy
-  the worker and two migrations, resume dispatch, publish c6de1a7 then verify a
-  fictional live booking.
+  The release is live. Complete the operator walkthrough for a real verification
+  email, signed-in decision and Calendar mirror, and record first-day ownership
+  under the remaining acceptance criteria.
 latestChange: >-
-  Owner approved c6de1a7, its two migrations and email worker on Muba Booking,
-  plus one live rider and driver smoke booking. Production identity verified.
-resultAt: '2026-11-22T15:58:27.542Z'
+  Verified HTTP 200, bundle index-r1EO0O60.js, the Muba backend configuration,
+  both source files of the active email worker, the live database grants and
+  trigger, and bilingual browser entry paths. No live test ride was created.
+resultAt: '2026-11-24T01:55:10.786Z'
 evidence:
   - Supabase project name Muba Booking and API URL verified after rename
   - 'Hosted aggregate check and Edge Functions inventory, no booking writes'
@@ -71,6 +69,12 @@ evidence:
   - >-
     Read-only live verification: new asset assets/index-DVBBOxOb.js targets Muba
     Booking. Netcup timer remained enabled and successful.
+  - 'https://github.com/RosuLaurentiu/muba-site/actions/runs/45307805602'
+  - >-
+    https://github.com/RosuLaurentiu/muba-site/actions/runs/45307805602/attempts/2
+  - >-
+    Production asset assets/index-r1EO0O60.js and live EN/FR browser smoke;
+    scheduled dispatch exited 0 after v5 deployment.
 remainingChecks:
   - >-
     Verify a production booking decision, private status, rider email update and
@@ -143,37 +147,32 @@ remainingChecks:
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-[100%] Verify exact commit, backend and dispatch state. [15%] Deploy worker and both migrations and verify dispatch. [0%] Publish the exact commit and verify the live bundle. [0%] Verify one live booking and record results.
+[100%] Verify exact production baseline and dispatch state.
+[100%] Resolve the release scope and verify the candidate.
+[100%] Publish the selected site, database and worker changes.
+[100%] Verify production and save the release evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-2026-11-22T00:14:21.983Z: Owner approved the first-day split between driver inbox coverage and owner delivery and recovery checks.
-
-2026-11-22T12:46:50.438Z: Prior current facts: {"done":"Owner agreed that the driver monitors bookings during service hours and follows up by phone or WhatsApp. The owner reviews delivery failures, verifies the first scheduled encrypted export and decides whether to pause web intake.","resultAt":"2026-11-22T00:14:21.982Z"}
-
-2026-11-22T12:46:50.438Z: Owner selected the existing Supabase backend and its name is now Muba Booking. Local booking and recovery rehearsals passed. Hosted email delivery is blocked by the missing booking-email function and sender and controlled recipient details; hosted backup destination and public release approval are pending.
-
-2026-11-22T14:08:12.091Z: Prior current facts: {"done":"Owner agreed that the driver monitors bookings during service hours and follows up by phone or WhatsApp. The owner reviews delivery failures, verifies the first scheduled encrypted export and decides whether to pause web intake. Owner chose to keep the existing Supabase project. Its dashboard display name is Muba Booking, with the same project reference and API URL. Isolated local checks passed for both booking paths, fare acceptance, private tracking, email and Calendar queue entries, pause and resume, and encrypted archive and restore.","resultAt":"2026-11-22T12:46:50.437Z"}
-
-2026-11-22T14:08:12.091Z: The exact candidate 72394f3 is ready for hosted rehearsal. Live worker credentials and verified off-VPS recovery still block publication.
-
-2026-11-22T14:36:43.702Z: Prior current facts: {"done":"Muba Booking is the approved backend. Resend verified the domain and delivered the template test. The hosted booking-email worker is deployed and rejects unauthenticated calls. Local candidate 72394f3 passed lint, build, bilingual browser checks and fictional booking, pause and encrypted restore rehearsals.","resultAt":"2026-11-22T14:08:12.089Z"}
-
-2026-11-22T14:36:43.702Z: Aligned the release gate with the owner-approved Supabase and VPS setup. Hosted delivery and the VPS restore remain open.
-
-2026-11-22T14:57:50.703Z: Prior current facts: {"done":"Muba Booking is the approved backend. Resend verified the domain and delivered the template test. The hosted booking-email worker is deployed and rejects unauthenticated calls. Local candidate 72394f3 passed lint, build, bilingual browser checks and fictional booking, pause and encrypted restore rehearsals. The owner saved the mail credentials, and the hosted fictional booking queued the rider receipt and driver alert in a transaction that was rolled back.","resultAt":"2026-11-22T14:36:43.701Z"}
-
-2026-11-22T14:57:50.703Z: Recorded release authorization and verified the exact candidate and email timer before publication.
-
-2026-11-22T15:00:17.658Z: Prior current facts: {"done":"The owner approved deployment of the tested booking app against Muba Booking after the scheduled email verification. Candidate 72394f37f6934073897e52637b46225059992260 passed a fresh build, lint and rider, schedule, working hours and fare tests. The hosted email test delivered both messages, and the netcup timer invoked the worker successfully.","resultAt":"2026-11-22T14:57:50.702Z"}
-
-2026-11-22T15:00:17.658Z: Published the checked booking app and verified the live rider and driver entry points. A production booking-to-Calendar rehearsal remains open.
-
 2026-11-22T15:42:39.134Z: Removed first-export ownership from release scope. Operational ownership covers retention, missed requests and failed deliveries. The hosted smoke remains subject to separate approval.
 
 2026-11-22T15:58:27.543Z: Prior current facts: {"done":"Published approved commit 72394f37f6934073897e52637b46225059992260. The exact GitHub Pages run succeeded. The custom domain returned 200 and served the new bundle for both rider and driver entry points, configured for Muba Booking. Browser smoke verified rider form and driver Google sign-in entry in English and French, and the rider theme switch. The netcup timer continued succeeding after publication.","resultAt":"2026-11-22T15:00:17.657Z"}
 
 2026-11-22T15:58:27.543Z: Owner approved c6de1a7, its two migrations and email worker on Muba Booking, plus one live rider and driver smoke booking. Production identity verified.
+
+2026-11-24T01:46:33.287Z: Prior current facts: {"done":"Published approved commit 72394f37f6934073897e52637b46225059992260. The exact GitHub Pages run succeeded. The custom domain returned 200 and served the new bundle for both rider and driver entry points, configured for Muba Booking. Browser smoke verified rider form and driver Google sign-in entry in English and French, and the rider theme switch. The netcup timer continued succeeding after publication. Verified the new approved commit c6de1a7, remote main, production backend identity, active timer, empty outbox and existing migration names.","resultAt":"2026-11-22T15:58:27.542Z"}
+
+2026-11-24T01:46:33.287Z: Confirmed production at c6de1a7 and found two later committed UI updates and one uncommitted email feature alongside MS-027.
+
+2026-11-24T01:48:07.410Z: Owner selected all app changes through MS-030 for publication.
+
+2026-11-24T01:52:58.031Z: Prior current facts: {"done":"Production main is c6de1a7. The custom domain serves its bundle. Muba Booking is healthy, migration history ends at driver_schedule_revision, booking-email v4 is active, dispatch is enabled and the pending and in-flight counts are zero.","resultAt":"2026-11-24T01:46:33.286Z"}
+
+2026-11-24T01:52:58.031Z: CI passed all tests and the build. The first Pages publish could not find its artifact. GitHub now lists the artifact and the exact commit is retrying.
+
+2026-11-24T01:55:10.787Z: Prior current facts: {"done":"Both production migrations are recorded. The verification RPC and private queue permissions, all five email fields, and the enabled snapshot trigger were checked. Hosted booking-email v5 matches both files at d2a6b7f; a post-update timer invocation exited successfully.","resultAt":"2026-11-24T01:52:58.029Z"}
+
+2026-11-24T01:55:10.787Z: Verified HTTP 200, bundle index-r1EO0O60.js, the Muba backend configuration, both source files of the active email worker, the live database grants and trigger, and bilingual browser entry paths. No live test ride was created.
 <!-- SECTION:NOTES:END -->
