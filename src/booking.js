@@ -147,6 +147,7 @@ export async function bookingRpc(name, body, token) {
   if (!response.ok) {
     const error = new Error("BOOKING_REQUEST_FAILED");
     error.code = result?.code;
+    error.reason = result?.message;
     throw error;
   }
   return result;

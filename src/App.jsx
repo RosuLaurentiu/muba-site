@@ -642,6 +642,9 @@ function RiderBooking({ language, layout }) {
         attempt.current = null;
         setSaveState("invalidCode");
         window.requestAnimationFrame(() => codeInput.current?.focus());
+      } else if (error.code === "42501" && error.reason === "WEB_INTAKE_LIMIT") {
+        attempt.current = null;
+        setSaveState("intakeLimit");
       } else if (error.code === "PT422") {
         attempt.current = null;
         setSaveState("shortNotice");
@@ -682,7 +685,7 @@ function RiderBooking({ language, layout }) {
   const t = (key) => getText(language, key);
   const retrySave = saveState === "failed" || saveState === "paused";
   const saveMessage = { failed: "saveFailed", paused: "savePaused", rejected: "saveRejected", shortNotice: "shortNotice",
-    invalidCode: "invalidCode", codeLimit: "codeLimit", codeFailed: "codeFailed" }[saveState];
+    invalidCode: "invalidCode", codeLimit: "codeLimit", codeFailed: "codeFailed", intakeLimit: "intakeLimit" }[saveState];
   const busy = saveState === "saving" || saveState === "sendingCode";
   const totals = getRouteTotals(route, formData.roundTrip);
   const receiptLink = receipt ? "?booking#key=" + receipt.key : "";
@@ -825,7 +828,7 @@ function RiderBooking({ language, layout }) {
               </details>
               {saveMessage && (
                 <p className="field-error save-message" role="alert">{t("booking." + saveMessage)}
-                  {saveState === "shortNotice" && <>{" "}<a href="#ride-contact">{t("booking.contact")}</a></>}
+                  {(saveState === "shortNotice" || saveState === "intakeLimit") && <>{" "}<a href="#ride-contact">{t("booking.contact")}</a></>}
                 </p>
               )}
               <div className="reservation-submit">

@@ -96,6 +96,38 @@ function receivedAgo(instant, now, language) {
   return getText(language, "driver.received").replace("{time}", ago);
 }
 
+function DriverBookingCode({ language }) {
+  const [status, setStatus] = useState("");
+  const t = (key) => getText(language, key);
+
+  async function approve(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setStatus("booking.sendingCode");
+    try {
+      await driverRpc("approve_booking_code", { p_email: form.elements.email.value.trim(), p_language: language });
+      form.reset();
+      setStatus("driver.codeApproved");
+    } catch (error) {
+      setStatus(error.code === "PT429" ? "driver.approvalLimit" : "driver.approvalFailed");
+    }
+  }
+
+  return (
+    <details className="panel">
+      <summary>{t("driver.approveCode")}</summary>
+      <form className="stack" onSubmit={approve}>
+        <p>{t("driver.approvalHelp")}</p>
+        <label>{t("planner.labels.email")}
+          <input name="email" type="email" required maxLength={254} autoComplete="off" />
+        </label>
+        <button className="button" disabled={status === "booking.sendingCode"}>{t("driver.approveCode")}</button>
+        <div role="status">{status && t(status)}</div>
+      </form>
+    </details>
+  );
+}
+
 function BookingEmailStatus({ language }) {
   const [failures, setFailures] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -545,6 +577,7 @@ function DriverRides({ session, language, children }) {
         </p>}
       </div>}
       <footer className="driver-tools">
+        {haveData && !editingHours && <DriverBookingCode language={language} />}
         {haveData && !editingHours && <BookingEmailStatus language={language} />}
         {haveData && !editingHours && <CalendarPanel client={client} language={language} day={day} updateKey={load.rides} />}
         <div className="actions">

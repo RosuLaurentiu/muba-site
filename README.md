@@ -205,7 +205,9 @@ short-notice ride directly. A retry of a saved request returns the original
 booking, including after its pickup enters the two-hour window.
 
 `save_ride` accepts at most 10 web requests per hour and 30 per day across
-all riders. Above either limit it refuses new web requests with
+all riders. Public bookings can use the first 9 hourly and 27 daily slots.
+The remaining capacity is available to riders with a driver-approved code.
+Above the applicable limit it refuses new web requests with
 `WEB_INTAKE_LIMIT`, and the rider sees the phone and WhatsApp fallback. A retry
 with an already saved key still returns that booking. The web form accepts at
 most 3 new bookings per rider email address in a rolling day so every accepted
@@ -224,11 +226,22 @@ bucket. An absent header uses one shared bucket for local development.
 A self-hosted public gateway must overwrite this header and prevent direct
 access to PostgREST. The private tables store per-row salted fingerprints.
 The dispatcher clears expired booking fingerprints after 24 hours and
-verification records after an hour. Code issuance is limited separately to
-six new emails per network and 60 overall per rolling hour.
+verification records after an hour. Each rolling hour allows 54 public code
+requests, up to six per network. Repeat requests count toward both limits
+and keep an unused code valid. The public response is the same when a
+request is accepted, a code already exists, or a limit is reached.
 
-For rollout, apply the migration, deploy the email worker, then publish the
-form. Older forms cannot create a new web ride once the migration is active.
+When a rider contacts the driver for help, the signed-in driver can open
+**Approve a rider’s booking code** and enter the rider’s email address.
+This approves an existing unused code or emails a new one in the driver’s
+selected site language. The rider then submits the web form with that code.
+Approval applies to one booking. The driver can issue up to six new codes per
+rolling hour, within the existing 60-email ceiling. The per-mailbox and
+per-network booking limits still apply. At the full booking ceiling, the
+driver can handle the trip through the existing phone or WhatsApp flow.
+
+For rollout of reserved capacity, apply the migration before publishing the
+updated rider and driver screens. The existing code-delivery worker is compatible.
 Verify code delivery through the production gateway and sender after approval.
 
 A confirmed round trip can keep an outbound pickup that already happened while
